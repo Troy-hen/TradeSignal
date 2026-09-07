@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+:root {
+  /* TradeSignal brand tokens */
+  --signal-orange: #ff6a00;
+  --charcoal: #1f2937;
+  --slate: #64748b;
+  --light-grey: #e5e7eb;
+  --soft-surface: #f8fafc;
+  --white: #ffffff;
+  --success: #16a34a;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --locked-overlay: rgba(31, 41, 55, 0.72);
+
+  --background: var(--white);
+  --foreground: var(--charcoal);
+}
+
+@theme inline {
+  --color-signal-orange: var(--signal-orange);
+  --color-charcoal: var(--charcoal);
+  --color-slate: var(--slate);
+  --color-light-grey: var(--light-grey);
+  --color-soft-surface: var(--soft-surface);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-locked-overlay: var(--locked-overlay);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* Opportunity score badges */
+.badge-hot {
+  background-color: color-mix(in srgb, var(--signal-orange) 12%, white);
+  color: var(--signal-orange);
+}
+.badge-strong {
+  background-color: color-mix(in srgb, var(--success) 12%, white);
+  color: var(--success);
+}
+.badge-possible {
+  background-color: color-mix(in srgb, var(--warning) 12%, white);
+  color: var(--warning);
+}
+.badge-low {
+  background-color: var(--light-grey);
+  color: var(--slate);
+}
+
+/* Free-tier locked-detail scrim */
+.locked-panel {
+  position: relative;
+  overflow: hidden;
+}
+.locked-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--locked-overlay);
+  backdrop-filter: blur(3px);
+}
