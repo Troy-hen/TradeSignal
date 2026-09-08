@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { FALLBACK_PRICING, PricingGrid, type PricingItem } from "@/components/marketing/pricing-grid";
 
@@ -64,9 +65,9 @@ export default async function PricingPage() {
             <p className="text-lg font-semibold text-charcoal">See what is available in your area.</p>
             <p className="mt-1 text-sm leading-6 text-slate">Preview the local signal first, then decide whether the territory is worth owning.</p>
           </div>
-          <a href="/territories" className="inline-flex shrink-0 items-center justify-center rounded-xl bg-signal-orange px-5 py-3 text-sm font-semibold text-white hover:bg-[#e95f00]">
+          <Link href="/territories" className="inline-flex shrink-0 items-center justify-center rounded-xl bg-signal-orange px-5 py-3 text-sm font-semibold text-white hover:bg-[#e95f00]">
             Check availability
-          </a>
+          </Link>
         </div>
       </section>
     </div>
