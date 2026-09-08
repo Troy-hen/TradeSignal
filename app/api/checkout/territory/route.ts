@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isConfiguredDemoUser } from "@/lib/auth/demo";
 import { getStripeClient } from "@/lib/stripe/client";
 
 const bodySchema = z.object({
@@ -67,6 +68,37 @@ export async function POST(request: Request) {
       throw new Error("Could not load company/territory/trade for checkout");
     }
 
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
+    // Demo access is explicit and server-side. It still reserves through the
+    // normal RPC, then activates the real claim so DB matching triggers,
+    // dashboard access and RLS behave exactly like a paid territory.
+    if (isConfiguredDemoUser(user)) {
+      const { data: activatedClaim, error: activationError } = await admin
+        .from("territory_claims")
+        .update({
+          status: "active",
+          activated_at: new Date().toISOString(),
+          reserved_expires_at: null,
+          stripe_checkout_session_id: null,
+          stripe_subscription_id: null,
+        })
+        .eq("id", claim.id)
+        .eq("company_id", claim.company_id)
+        .eq("status", "reserved")
+        .select("id")
+        .maybeSingle();
+
+      if (activationError || !activatedClaim) {
+        throw new Error("demo_activation_failed");
+      }
+
+      return NextResponse.json({
+        demo: true,
+        url: \`\${appUrl}/territories/claim/confirming?claim=\${claim.id}&demo=1\`,
+      });
+    }
+
     const stripe = getStripeClient();
 
     let stripeCustomerId = company.stripe_customer_id;
@@ -80,7 +112,6 @@ export async function POST(request: Request) {
       await supabase.from("companies").update({ stripe_customer_id: stripeCustomerId }).eq("id", company.id);
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
     const metadata = {
       territory_claim_id: claim.id,
       territory_id: claim.territory_id,
@@ -97,15 +128,15 @@ export async function POST(request: Request) {
             unit_amount: territory.monthly_price_pence,
             recurring: { interval: "month" },
             product_data: {
-              name: `${territory.postcode_district} ${trade.name} territory`,
+              name: \`\${territory.postcode_district} \${trade.name} territory\`,
               description: "Exclusive MyTradeBox local territory subscription",
             },
           },
           quantity: 1,
         },
       ],
-      success_url: `${appUrl}/territories/claim/confirming?claim=${claim.id}`,
-      cancel_url: `${appUrl}/territories/${territory.postcode_district}/${trade.slug}`,
+      success_url: \`\${appUrl}/territories/claim/confirming?claim=\${claim.id}\`,
+      cancel_url: \`\${appUrl}/territories/\${territory.postcode_district}/\${trade.slug}\`,
       metadata,
       // Session-level metadata does not propagate to the Subscription object —
       // only subscription_data.metadata does, and subscription-lifecycle
@@ -118,13 +149,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ url: session.url });
   } catch (err) {
     console.error("checkout/territory failed after reservation", err);
-    // Free the slot immediately rather than leaving the caller locked out of
-    // their own reservation for the full 15-minute expiry window.
     await admin
       .from("territory_claims")
       .update({ status: "expired" })
       .eq("id", claim.id)
       .eq("status", "reserved");
-    return NextResponse.json({ error: "checkout_failed" }, { status: 502 });
+
+    const error = err instanceof Error && err.message === "demo_activation_failed" ? "demo_activation_failed" : "checkout_failed";
+    return NextResponse.json({ error }, { status: error === "demo_activation_failed" ? 500 : 502 });
   }
 }

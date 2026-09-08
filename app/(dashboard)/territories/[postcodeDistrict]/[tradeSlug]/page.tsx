@@ -4,8 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentCompany } from "@/lib/auth/get-current-company";
 import { joinTerritoryWaitlist } from "@/lib/actions/territory";
 import { ClaimTerritoryButton } from "@/components/claim-territory-button";
+import { LockedOpportunityPreview } from "@/components/locked-opportunity-preview";
 import { SubmitButton } from "@/components/submit-button";
-import { OpportunityBadge, formatGbp, formatGbpRange } from "@/components/opportunity-badge";
+import { formatGbp } from "@/components/opportunity-badge";
 
 const STATUS_COPY: Record<string, { label: string; className: string }> = {
   available: { label: "Available", className: "text-success" },
@@ -13,42 +14,6 @@ const STATUS_COPY: Record<string, { label: string; className: string }> = {
   active: { label: "Claimed exclusively", className: "text-slate" },
   suspended: { label: "Claimed (payment issue)", className: "text-slate" },
 };
-const PLANNING_STATUS_COPY: Record<string, string> = {
-  submitted: "Submitted",
-  validated: "Validated",
-  under_consideration: "Under consideration",
-  decision_expected: "Decision expected",
-  approved: "Approved",
-  rejected: "Rejected",
-  withdrawn: "Withdrawn",
-  appeal_lodged: "Appeal lodged",
-  unknown: "Status not supplied",
-};
-
-const CLASSIFICATION_COPY: Record<string, { label: string; className: string }> = {
-  completed: { label: "AI ready", className: "bg-success/10 text-success" },
-  processing: { label: "AI processing", className: "bg-warning/10 text-warning" },
-  pending: { label: "Queued for AI", className: "bg-warning/10 text-warning" },
-  stale: { label: "Queued for refresh", className: "bg-warning/10 text-warning" },
-  failed: { label: "AI needs attention", className: "bg-danger/10 text-danger" },
-};
-
-function providerLabel(provider: string) {
-  if (provider === "plota") return "Plota feed";
-  if (provider === "mock") return "Demo fixture";
-  return provider;
-}
-
-function providerClassName(provider: string) {
-  return provider === "plota"
-    ? "border-signal-orange/25 bg-signal-orange/10 text-signal-orange"
-    : "border-light-grey bg-soft-surface text-slate";
-}
-
-function planningStatusLabel(status: string | null) {
-  return status ? (PLANNING_STATUS_COPY[status] ?? status.replaceAll("_", " ")) : "Status not supplied";
-}
-
 
 export default async function TerritoryDetailPage({
   params,
@@ -68,25 +33,13 @@ export default async function TerritoryDetailPage({
 
   if (!trade) notFound();
 
-  const [{ data: availability }, { data: opportunities }, { data: territoryActivity }, company] = await Promise.all([
+  const [{ data: availability }, company] = await Promise.all([
     supabase.rpc("check_territory_availability", {
       p_postcode_district: district,
       p_trade_slug: trade.slug,
     }),
-    supabase.rpc("browse_territory_opportunities", {
-      p_postcode_district: district,
-      p_trade_category_id: trade.id,
-      p_limit: 10,
-    }),
-    supabase.rpc("browse_territory_activity", {
-      p_postcode_district: district,
-      p_trade_category_id: trade.id,
-      p_limit: 12,
-    }),
     getCurrentCompany(),
   ]);
-
-  const activityRows = territoryActivity ?? [];
 
   const stats = Array.isArray(availability) ? availability[0] : availability;
   if (!stats) notFound();
@@ -120,7 +73,7 @@ export default async function TerritoryDetailPage({
             <h1 className="mt-2 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">
               {district} · {trade.name}
             </h1>
-            <p className={`mt-3 inline-flex items-center gap-2 text-sm font-semibold ${status.className}`}>
+            <p className={\`mt-3 inline-flex items-center gap-2 text-sm font-semibold \${status.className}\`}>
               <span className="h-2 w-2 rounded-full bg-current" />
               {status.label}
             </p>
@@ -143,9 +96,9 @@ export default async function TerritoryDetailPage({
         {isOwnClaim ? (
           <div className="rounded-3xl border border-success/20 bg-success/5 p-6">
             <p className="text-sm font-semibold text-charcoal">You hold this territory.</p>
-            <p className="mt-1 text-sm text-slate">Your opportunity feed is available from the dashboard.</p>
+            <p className="mt-1 text-sm text-slate">The full opportunity feed, AI interpretation and contact tools are available from your dashboard.</p>
             <Link href="/dashboard" className="mt-4 inline-flex text-sm font-semibold text-success hover:underline">
-              Go to your dashboard →
+              Open your opportunity feed →
             </Link>
           </div>
         ) : stats.territory_status === "available" ? (
@@ -178,128 +131,31 @@ export default async function TerritoryDetailPage({
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Local signal</p>
-            <h2 className="mt-2 text-2xl font-bold tracking-tight text-charcoal">Recent opportunities</h2>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight text-charcoal">Opportunity feed</h2>
           </div>
           <p className="max-w-xl text-sm leading-6 text-slate sm:text-right">
-            A preview of what the {district} {trade.name} territory holder sees. Claim the territory to unlock full addresses, AI scope analysis and contact timing.
+            Counts and indicative value stay visible while specific projects remain private until the territory is active.
           </p>
         </div>
 
-        {!opportunities || opportunities.length === 0 ? (
-          <p className="mt-5 rounded-3xl border border-dashed border-light-grey bg-white p-8 text-center text-sm text-slate">
-            {activityRows.length > 0
-              ? "Planning activity is loaded below. AI matching and trade scoring can take a moment to complete."
-              : "No provider-backed planning activity has been loaded for this district yet."}
-          </p>
-        ) : (
-          <ul className="mt-5 space-y-3">
-            {opportunities.map((opp) => (
-              <li key={opp.id}>
-                <Link
-                  href={`/opportunities/${opp.id}`}
-                  className="group block rounded-2xl border border-light-grey bg-white p-4 transition hover:-translate-y-0.5 hover:border-signal-orange/40 hover:shadow-[0_12px_32px_rgba(31,41,55,0.08)] sm:p-5"
-                >
-                  <div className="flex items-start gap-4">
-                    <OpportunityBadge bucket={opp.opportunity_bucket} score={opp.opportunity_score} variant="tile" />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div>
-                          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate">{trade.name} · {district}</p>
-                          <h3 className="mt-1 text-base font-semibold tracking-tight text-charcoal">{opp.project_type ?? "Planning application"}</h3>
-                        </div>
-                        <span className="text-xs font-medium text-slate">{opp.received_date ? new Date(opp.received_date).toLocaleDateString("en-GB") : "—"}</span>
-                      </div>
-                      <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-xs text-slate">
-                        <span>Est. project value: {formatGbpRange(opp.estimated_total_project_value_low, opp.estimated_total_project_value_high)}</span>
-                        <span>Est. trade value: {formatGbpRange(opp.estimated_trade_value_low, opp.estimated_trade_value_high)}</span>
-                      </div>
-                      <div className="locked-panel mt-4 rounded-xl bg-soft-surface p-3">
-                        <span className="relative z-10 text-xs font-medium text-white">Address, AI scope analysis &amp; contact timing — unlock with the territory</span>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-      <section>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Provider feed</p>
-            <h2 className="mt-2 text-2xl font-bold tracking-tight text-charcoal">Recent planning activity</h2>
-          </div>
-          <p className="max-w-xl text-sm leading-6 text-slate sm:text-right">
-            These are the latest planning applications loaded for {district}. The provider label shows whether the row came from Plota or a local demo fixture, while the AI status shows where it is in the matching pipeline.
-          </p>
+        <div className="mt-5">
+          {isOwnClaim ? (
+            <div className="rounded-3xl border border-success/20 bg-success/5 p-6">
+              <p className="font-semibold text-charcoal">Your feed is unlocked.</p>
+              <p className="mt-1 text-sm leading-6 text-slate">
+                Open the dashboard to see addresses, planning references, AI scope analysis, recommendations and contact timing.
+              </p>
+              <Link href="/opportunities" className="mt-4 inline-flex text-sm font-semibold text-success hover:underline">
+                View opportunities →
+              </Link>
+            </div>
+          ) : (
+            <LockedOpportunityPreview
+              title="Specific opportunities are locked"
+              body="Claim the territory to reveal actual projects, addresses, planning references, AI interpretation and the recommended next move."
+            />
+          )}
         </div>
-
-        {activityRows.length === 0 ? (
-          <div className="mt-5 rounded-3xl border border-dashed border-light-grey bg-white p-8">
-            <p className="text-center text-sm font-semibold text-charcoal">No planning applications are showing for {district} yet.</p>
-            <p className="mx-auto mt-2 max-w-xl text-center text-sm leading-6 text-slate">
-              Once the Plota sync is configured and has run, applications will appear here before AI turns them into trade-specific opportunities.
-            </p>
-          </div>
-        ) : (
-          <ul className="mt-5 space-y-3">
-            {activityRows.map((activity) => {
-              const classification = CLASSIFICATION_COPY[activity.classification_status] ?? CLASSIFICATION_COPY.pending;
-
-              return (
-                <li key={activity.id} className="rounded-2xl border border-light-grey bg-white p-4 sm:p-5">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${providerClassName(activity.provider)}`}>
-                          {providerLabel(activity.provider)}
-                        </span>
-                        {activity.authority_name ? (
-                          <span className="text-xs text-slate">{activity.authority_name}</span>
-                        ) : null}
-                      </div>
-                      <h3 className="mt-3 text-base font-semibold tracking-tight text-charcoal">
-                        {activity.project_type ?? activity.application_type ?? "Planning application"}
-                      </h3>
-                      <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate">
-                        {activity.proposal_description ?? "The provider did not include a proposal description."}
-                      </p>
-                    </div>
-                    <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
-                      <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${classification.className}`}>
-                        {classification.label}
-                      </span>
-                      {activity.matched_to_trade ? (
-                        <span className="rounded-full bg-success/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-success">
-                          Matched to {trade.name}
-                        </span>
-                      ) : activity.classification_status === "completed" ? (
-                        <span className="rounded-full bg-soft-surface px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate">
-                          Not matched to {trade.name}
-                        </span>
-                      ) : null}
-                    </div>
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 border-t border-light-grey pt-3 text-xs text-slate">
-                    <span>{planningStatusLabel(activity.planning_status)}</span>
-                    <span>{activity.received_date ? new Date(activity.received_date).toLocaleDateString("en-GB") : "Date not supplied"}</span>
-                    {activity.ai_confidence !== null && activity.ai_confidence !== undefined && activity.classification_status === "completed" ? (
-                      <span>AI confidence {Math.round(activity.ai_confidence * 100)}%</span>
-                    ) : null}
-                  </div>
-
-                  {activity.classification_summary ? (
-                    <p className="mt-3 rounded-xl bg-soft-surface px-3 py-2.5 text-xs leading-5 text-slate">
-                      {activity.classification_summary}
-                    </p>
-                  ) : null}
-                </li>
-              );
-            })}
-          </ul>
-        )}
       </section>
     </div>
   );
@@ -310,7 +166,6 @@ function Kpi({ label, value }: { label: string; value: string }) {
     <div className="rounded-2xl border border-light-grey bg-white p-5">
       <dt className="text-[10px] font-semibold uppercase tracking-[0.11em] text-slate">{label}</dt>
       <dd className="mt-2 text-xl font-bold tracking-tight text-charcoal">{value}</dd>
-
     </div>
   );
 }

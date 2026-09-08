@@ -1659,64 +1659,13 @@ export type Database = {
       browse_opportunity_teaser: {
         Args: { p_opportunity_id: string }
         Returns: {
-          estimated_total_project_value_high: number
-          estimated_total_project_value_low: number
-          estimated_trade_value_high: number
-          estimated_trade_value_low: number
           id: string
           monthly_price_pence: number
-          opportunity_bucket: Database["public"]["Enums"]["opportunity_bucket"]
-          opportunity_score: number
-          planning_status: Database["public"]["Enums"]["planning_application_status"]
           postcode_district: string
-          project_type: string
-          received_date: string
           territory_status: string
           trade_category_id: string
           trade_category_name: string
           trade_category_slug: string
-        }[]
-      }
-      browse_territory_activity: {
-        Args: {
-          p_limit?: number
-          p_postcode_district: string
-          p_trade_category_id: string
-        }
-        Returns: {
-          ai_confidence: number | null
-          application_type: string | null
-          authority_name: string | null
-          classification_status: string
-          classification_summary: string | null
-          id: string
-          matched_to_trade: boolean
-          planning_status: Database["public"]["Enums"]["planning_application_status"]
-          project_type: string | null
-          proposal_description: string | null
-          provider: string
-          received_date: string | null
-          status_raw: string | null
-        }[]
-      }
-      browse_territory_opportunities: {
-        Args: {
-          p_limit?: number
-          p_postcode_district: string
-          p_trade_category_id: string
-        }
-        Returns: {
-          estimated_total_project_value_high: number
-          estimated_total_project_value_low: number
-          estimated_trade_value_high: number
-          estimated_trade_value_low: number
-          id: string
-          opportunity_bucket: Database["public"]["Enums"]["opportunity_bucket"]
-          opportunity_score: number
-          planning_status: Database["public"]["Enums"]["planning_application_status"]
-          postcode_district: string
-          project_type: string
-          received_date: string
         }[]
       }
       check_territory_availability: {

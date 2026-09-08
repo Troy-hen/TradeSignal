@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { TerritoryCheckerWidget } from "@/components/territory-checker-widget";
+import { LockedOpportunityPreview } from "@/components/locked-opportunity-preview";
 
 const FALLBACK_TRADES = [
   { slug: "general-builder", name: "General Builder" },
@@ -156,7 +157,7 @@ export default async function LandingPage() {
             </ul>
 
             <Link
-              href="/#territory-checker"
+              href="#territory-checker"
               className="mt-9 inline-flex items-center gap-2 text-sm font-semibold text-signal-orange transition hover:text-[#e95f00]"
             >
               Check a postcode district
@@ -187,7 +188,7 @@ export default async function LandingPage() {
             </ul>
 
             <Link
-              href="/#territory-checker"
+              href="#territory-checker"
               className="mt-9 inline-flex items-center gap-2 text-sm font-semibold text-signal-orange transition hover:text-[#e95f00]"
             >
               Check availability
@@ -288,59 +289,30 @@ function OpportunityFeedPreview() {
       <div className="rounded-2xl bg-soft-surface p-4 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Opportunity feed</p>
-            <p className="mt-1 text-lg font-semibold text-charcoal">Your local pipeline</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Example signal</p>
+            <p className="mt-1 text-lg font-semibold text-charcoal">A clearer local pipeline</p>
           </div>
-          <span className="rounded-full border border-light-grey bg-white px-3 py-1.5 text-xs font-semibold text-slate">NR15 · Today</span>
+          <span className="rounded-full border border-light-grey bg-white px-3 py-1.5 text-xs font-semibold text-slate">Aggregate view</span>
         </div>
 
         <div className="mt-5 grid grid-cols-3 gap-3">
-          <Kpi label="New" value="8" />
+          <Kpi label="New matches" value="8" />
           <Kpi label="High priority" value="3" />
-          <Kpi label="Pipeline" value="£42k" />
+          <Kpi label="Est. value" value="£42k" />
         </div>
 
-        <div className="mt-5 space-y-3">
-          <FeedRow score="92" scoreClass="badge-hot" title="New-build bungalow" meta="NR15 · 1.8 miles" value="£18k–£25k" />
-          <FeedRow score="86" scoreClass="badge-strong" title="Two-storey extension" meta="NR15 · 3.4 miles" value="£12k–£18k" />
-          <FeedRow score="64" scoreClass="badge-possible" title="Loft conversion" meta="NR14 · 6.2 miles" value="£7k–£11k" />
+        <div className="mt-5">
+          <LockedOpportunityPreview
+            compact
+            title="Specific opportunities stay private"
+            body="Check a postcode district to see the signal. Claim the territory to reveal the projects worth chasing."
+          />
         </div>
 
         <div className="mt-5 flex items-center justify-between border-t border-light-grey pt-4 text-sm">
-          <span className="text-slate">Updated from recent planning activity</span>
-          <span className="font-semibold text-signal-orange">View feed →</span>
+          <span className="text-slate">Real territory totals appear in the checker</span>
+          <span className="font-semibold text-signal-orange">Check your area →</span>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function FeedRow({
-  score,
-  scoreClass,
-  title,
-  meta,
-  value,
-}: {
-  score: string;
-  scoreClass: string;
-  title: string;
-  meta: string;
-  value: string;
-}) {
-  return (
-    <div className="flex items-center gap-3 rounded-2xl border border-light-grey bg-white p-3 sm:p-4">
-      <div className={"flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl " + scoreClass}>
-        <span className="text-lg font-bold leading-none">{score}</span>
-        <span className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.1em]">score</span>
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-charcoal">{title}</p>
-        <p className="mt-1 truncate text-xs text-slate">{meta}</p>
-      </div>
-      <div className="hidden text-right sm:block">
-        <p className="text-xs text-slate">Est. value</p>
-        <p className="mt-1 text-sm font-bold text-charcoal">{value}</p>
       </div>
     </div>
   );

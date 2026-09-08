@@ -8,6 +8,7 @@ const ERROR_COPY: Record<string, string> = {
   no_authorized_company: "Only a company owner or admin can claim a territory.",
   unknown_territory: "We couldn't recognise that postcode district or trade.",
   checkout_failed: "Something went wrong starting checkout. Please try again.",
+  demo_activation_failed: "We could not activate the demo territory. Please try again.",
 };
 
 export function ClaimTerritoryButton({

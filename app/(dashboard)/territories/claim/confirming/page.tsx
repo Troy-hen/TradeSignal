@@ -14,7 +14,7 @@ export default function ConfirmingClaimPage() {
     <Suspense
       fallback={
         <div className="mx-auto max-w-md py-16 text-center">
-          <ConfirmingMessage />
+          <ConfirmingMessage isDemo={false} />
         </div>
       }
     >
@@ -27,6 +27,7 @@ function ConfirmingClaimContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const claimId = searchParams.get("claim");
+  const isDemo = searchParams.get("demo") === "1";
   const [status, setStatus] = useState("checking");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
@@ -82,21 +83,27 @@ function ConfirmingClaimContent() {
 
   return (
     <div className="mx-auto max-w-md py-16 text-center">
-      <ConfirmingMessage />
+      <ConfirmingMessage isDemo={isDemo} />
       {elapsedSeconds > 30 && (
         <p className="mt-4 text-sm text-slate">
-          Still waiting on confirmation from Stripe — this can take a little longer for some payment methods.
+          {isDemo
+            ? "Demo activation is taking a little longer than expected. You can keep this page open."
+            : "Still waiting on confirmation from Stripe — this can take a little longer for some payment methods."}
         </p>
       )}
     </div>
   );
 }
 
-function ConfirmingMessage() {
+function ConfirmingMessage({ isDemo }: { isDemo: boolean }) {
   return (
     <>
-      <h1 className="text-xl font-semibold text-charcoal">Confirming your payment…</h1>
-      <p className="mt-2 text-sm text-slate">This usually takes a few seconds. Don&apos;t close this page.</p>
+      <h1 className="text-xl font-semibold text-charcoal">
+        {isDemo ? "Activating your demo territory…" : "Confirming your payment…"}
+      </h1>
+      <p className="mt-2 text-sm text-slate">
+        {isDemo ? "Your demo claim is being activated. Don&apos;t close this page." : "This usually takes a few seconds. Don&apos;t close this page."}
+      </p>
     </>
   );
 }

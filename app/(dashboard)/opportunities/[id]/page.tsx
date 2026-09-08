@@ -4,6 +4,7 @@ import { requireCurrentCompany } from "@/lib/auth/get-current-company";
 import { createClient } from "@/lib/supabase/server";
 import { OpportunityBadge, formatGbpRange } from "@/components/opportunity-badge";
 import { ClaimTerritoryButton } from "@/components/claim-territory-button";
+import { LockedOpportunityPreview } from "@/components/locked-opportunity-preview";
 import { LeadActionPanel } from "@/components/lead-action-panel";
 import { OutreachAssistant } from "@/components/outreach-assistant";
 import type { Database } from "@/lib/types/database";
@@ -324,41 +325,39 @@ function LockedBrief({ teaser }: { teaser: OpportunityTeaser }) {
       </Link>
 
       <div className="mt-4 rounded-3xl border border-light-grey bg-white p-6 sm:p-8">
-        <div className="flex flex-wrap items-center gap-3">
-          <OpportunityBadge bucket={teaser.opportunity_bucket} score={teaser.opportunity_score} variant="tile" />
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Opportunity preview</p>
-            <h1 className="mt-1 text-2xl font-bold tracking-tight text-charcoal sm:text-3xl">{teaser.project_type ?? "Planning application"}</h1>
-          </div>
-        </div>
-        <p className="mt-4 text-sm text-slate">
-          {teaser.postcode_district} · {teaser.trade_category_name} · {STATUS_LABELS[teaser.planning_status] ?? teaser.planning_status}
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Opportunity preview</p>
+        <h1 className="mt-2 text-2xl font-bold tracking-tight text-charcoal sm:text-3xl">Opportunity details locked</h1>
+        <p className="mt-3 text-sm text-slate">
+          {teaser.postcode_district} · {teaser.trade_category_name}
         </p>
       </div>
 
-      <dl className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <Kpi
-          label="Est. total project value"
-          value={formatGbpRange(teaser.estimated_total_project_value_low, teaser.estimated_total_project_value_high)}
+      <div className="mt-6">
+        <LockedOpportunityPreview
+          title="Claim this territory to see the brief"
+          body="The address, planning reference, project summary, AI interpretation, value estimate and recommended next move are reserved for the territory holder."
         />
-        <Kpi label="Est. trade value" value={formatGbpRange(teaser.estimated_trade_value_low, teaser.estimated_trade_value_high)} />
-        <Kpi label="Received" value={teaser.received_date ?? "—"} />
-      </dl>
+      </div>
 
-      <div className="locked-panel mt-6 rounded-3xl bg-charcoal p-8 sm:p-12">
-        <div className="relative z-10 text-center text-white">
-          <p className="text-lg font-semibold">
-            Claiming {teaser.postcode_district} unlocks the full address, planning reference, AI scope analysis,
-            match reasoning, contact timing, status history, and the outreach assistant for this opportunity.
-          </p>
-          {isAvailable ? (
-            <div className="mt-4 flex justify-center">
-              <ClaimTerritoryButton postcodeDistrict={teaser.postcode_district} tradeCategoryId={teaser.trade_category_id} priceGbp={priceGbp} />
+      <div className="mt-6 rounded-3xl border border-light-grey bg-white p-6">
+        {isAvailable ? (
+          <>
+            <p className="font-semibold text-charcoal">Unlock {teaser.postcode_district} for {teaser.trade_category_name}</p>
+            <p className="mt-1 text-sm text-slate">One exclusive territory for your business, from £{priceGbp}/month.</p>
+            <div className="mt-4">
+              <ClaimTerritoryButton
+                postcodeDistrict={teaser.postcode_district}
+                tradeCategoryId={teaser.trade_category_id}
+                priceGbp={priceGbp}
+              />
             </div>
-          ) : (
-            <p className="mt-4 text-sm">This territory is already claimed exclusively by another business.</p>
-          )}
-        </div>
+          </>
+        ) : (
+          <>
+            <p className="font-semibold text-charcoal">This territory is already claimed.</p>
+            <p className="mt-1 text-sm text-slate">The opportunity brief is available to the current territory holder.</p>
+          </>
+        )}
       </div>
     </div>
   );

@@ -77,6 +77,19 @@ export default async function AdminHealthPage() {
         ) : (
           <EmptyNote text="No ingestion runs recorded yet — CRON_SECRET likely isn't set on the Edge Functions yet." />
         )}
+        {recentIngestionRuns?.some((run) => run.error_details) && (
+          <div className="mt-4 space-y-2">
+            <p className="text-sm font-medium text-charcoal">Recent provider diagnostics</p>
+            {recentIngestionRuns
+              .filter((run) => run.error_details)
+              .slice(0, 3)
+              .map((run) => (
+                <pre key={run.id} className="overflow-x-auto rounded-md bg-charcoal p-3 text-xs leading-5 text-white/80">
+                  {JSON.stringify(run.error_details, null, 2)}
+                </pre>
+              ))}
+          </div>
+        )}
       </Section>
 
       <Section title="AI classification backlog">

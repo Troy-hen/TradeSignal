@@ -42,7 +42,7 @@ pg_cron ──▶ notify-leads ────────────────�
 - **Opportunity scoring** is a Postgres function/trigger (`0–100`, bucketed HOT/STRONG/POSSIBLE/LOW) — additive on trade fit, value, project size, and recency, then multiplied by a planning-stage factor (an approved application scores far higher than a submitted one; a rejected one is crushed to near-zero) and an AI-confidence factor. This is deterministic, not an LLM call — the SQL function is the single source of truth.
 - **Notifications** (`supabase/functions/notify-leads`) run on three cadences (instant / daily / weekly) plus approval alerts and any queued transactional email (payment failed, territory became available), all idempotent so re-running a tick is harmless.
 - **Territory exclusivity** is enforced by a single Postgres partial unique index (`territory_claims (territory_id) WHERE status IN ('reserved','active','suspended')`) — not application logic. Two concurrent checkout attempts for the same district+trade race at the database, and the loser gets a typed `territory_unavailable` error, with no TOCTOU window.
-- **Three-tier data access**, all enforced by RLS/grants (never a frontend filter): anonymous visitors get aggregate counts only via `check_territory_availability()`; any signed-up (unpaid) user can browse teaser-level opportunity rows via `browse_territory_opportunities()`/`browse_opportunity_teaser()`; full detail (address, planning reference, AI reasoning, outreach assistant) requires an active territory claim, gated by `has_active_lead_match()` directly on the underlying tables.
+- **Three-tier data access**, all enforced by RLS/grants (never a frontend filter): anonymous visitors and signed-up users without an active territory claim get aggregate counts plus a locked detail preview via `check_territory_availability()`; full detail (address, planning reference, AI reasoning, outreach assistant) requires an active territory claim, gated by `has_active_lead_match()` directly on the underlying tables.
 
 ## Local development
 
@@ -68,7 +68,7 @@ Open [http://localhost:3000](http://localhost:3000). With `PLANNING_PROVIDER=moc
    | `ANTHROPIC_API_KEY` | Only needed if `AI_ENRICHMENT_PROVIDER=anthropic`. |
    | `RESEND_API_KEY`, `RESEND_FROM_EMAIL` | Email sending. |
    | `PLANNING_PROVIDER` | `mock` (default) or `plota`. |
-   | `PLOTA_API_KEY`, `PLOTA_PLAN_TIER` | Only read when `PLANNING_PROVIDER=plota`. |
+   | `PLOTA_API_KEY` | Only read when `PLANNING_PROVIDER=plota`. Demo operation does not require a plan-tier variable. |
    | `NEXT_PUBLIC_APP_URL` | Used to build links inside emails. |
 
    `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` are auto-injected by the platform — never set these manually.
@@ -106,7 +106,18 @@ Set `RESEND_API_KEY` and `RESEND_FROM_EMAIL` as Edge Function secrets (email sen
 `lib/planning-providers` from an earlier iteration of this codebase has been superseded — the real, active implementation lives in `supabase/functions/_shared/planning-providers/` (Deno), since ingestion is an autonomous Edge Function concern, not something the Next.js app touches directly.
 
 - **`mock` (default)** — `MockPlanningProvider` generates ~250 seeded, deterministic, realistic UK-style applications across the districts in `postcode_districts`, marked `is_demo_data`. Zero external dependency; this is what local dev and a fresh deploy run against out of the box.
-- **`plota`** — built against Plota's documented API contract (auth, pagination, rate-limit headers, error shape, webhook HMAC verification). `fetchUpdatedApplications` is tiered by plan: Pro+ uses the real `changed_since` change-feed signal; Starter/Demo (no access to that parameter) falls back to re-checking currently-pending applications on rotation. `include_contact` is never set to `true` by default — applicant/agent fields stay unpopulated unless that add-on is deliberately enabled (GDPR minimisation). The demo API key is capped at **500 requests total, not monthly** — enough for one smoke test, not real ingestion; switch `PLANNING_PROVIDER=plota` only once a real paid-tier key is in place, and switch it back to `mock` (or just don't flip it) otherwise.
+- **`plota`** — uses Plota's bearer-auth REST API with the current application fields (`description`, `address`, `planning_route`, `date_decided`, `commercial`) mapped into the normalized planning schema. List requests explicitly use a ten-row page, cursor pagination is followed, and `include_contact` is never set to `true` by default. The Demo key is capped at **500 requests total, not monthly**; use the targeted manual sync below for smoke-testing, not an unrestricted historical backfill. A plan-tier environment variable is not required for Demo operation.
+
+For a bounded end-to-end smoke test, call the ingestion function with only the districts you want to inspect. This makes one Plota list request per district (maximum ten rows per request):
+
+```bash
+curl -X POST "https://<project-ref>.supabase.co/functions/v1/ingest-planning-applications" \
+  -H "Authorization: Bearer $CRON_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{"run_type":"manual_backfill","postcode_districts":["IP22","NR1","N2"]}'
+```
+
+The ingestion response reports fetched/created rows. The classifier then needs to run with a configured `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` and an active `application_enrichment` prompt before aggregate opportunity counts and AI-backed values can appear.
 
 ## AI / LLM configuration
 
@@ -126,6 +137,8 @@ STRIPE_SECRET_KEY
 STRIPE_WEBHOOK_SECRET
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
 NEXT_PUBLIC_APP_URL          # the real deployed URL, not localhost
+MYTRADEBOX_DEMO_USER_EMAILS # exact internal demo account email(s), comma/newline separated
+MYTRADEBOX_DEMO_USER_IDS    # exact internal demo auth UUID(s), comma/newline separated
 ```
 
 The `TERRITORY_CHECK_LIMITER` rate-limiting binding in `wrangler.jsonc` (edge-layer defense on the public territory checker) uses wrangler's pre-GA `unsafe.bindings` form rather than the newer first-class `ratelimits` config key introduced in Cloudflare's September 2025 GA release — confirmed via Cloudflare's own changelog that existing `unsafe`-binding deployments continue to function, but the exact field names for the newer syntax weren't verifiable from the sandbox this was built in (`developers.cloudflare.com` was network-blocked there). Worth migrating to the current syntax from an environment with real docs access.
@@ -167,5 +180,6 @@ Never point `DATABASE_URL` at a database with real customer data — the suite i
 ## Known gaps / manual setup still needed
 
 - `lib/planning-providers/` (an early Next.js-side draft, superseded by the Deno rewrite in `supabase/functions/_shared/planning-providers/`) is dead code left in the repo — safe to delete.
+- Demo territory activation is allow-listed by exact user email or auth UUID via `MYTRADEBOX_DEMO_USER_EMAILS` / `MYTRADEBOX_DEMO_USER_IDS`; it activates the real claim and matching triggers without creating a Stripe subscription.
 - No admin-invite flow exists in this MVP; the first `admin_users` grant is a direct SQL operation (`insert into admin_users (profile_id) values (...)`) against a real `auth.users` row, which is now audited via trigger regardless of how it happens.
 - Plota's webhook-based push ingestion (`application.match.created`) is implemented (HMAC verification, event dedup) but not wired as the primary ingestion path — polling via the endpoints in [Planning data provider](#planning-data-provider) already satisfies "incremental scheduled ingestion" on its own; the webhook path is a documented, tested-but-dormant latency optimization for later.

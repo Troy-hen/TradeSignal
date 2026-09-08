@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { LockedOpportunityPreview } from "@/components/locked-opportunity-preview";
 
 interface TradeOption {
   slug: string;
