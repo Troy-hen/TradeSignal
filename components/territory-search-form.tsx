@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { normalisePostcodeDistrict } from "@/lib/postcode";
 
 type TradeOption = { id: string; slug: string; name: string };
 
@@ -21,7 +22,7 @@ export function TerritorySearchForm({
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const cleaned = district.trim().toUpperCase();
+    const cleaned = normalisePostcodeDistrict(district);
     if (!cleaned || !tradeSlug) return;
     startTransition(() => {
       router.push(`/territories/${encodeURIComponent(cleaned)}/${encodeURIComponent(tradeSlug)}`);
@@ -49,7 +50,7 @@ export function TerritorySearchForm({
             placeholder="e.g. NR15"
             autoComplete="postal-code"
             required
-            maxLength={7}
+            maxLength={8}
             className="w-full rounded-xl border border-light-grey bg-white px-4 py-3 text-sm text-charcoal placeholder:text-slate/60 focus:border-signal-orange focus:outline-none focus:ring-2 focus:ring-signal-orange/15"
           />
         </label>
@@ -72,12 +73,17 @@ export function TerritorySearchForm({
 
       <button
         type="submit"
-        disabled={isPending}
+        disabled={isPending || trades.length === 0}
         className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-signal-orange px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#e95f00] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isPending ? "Searching…" : "Check this territory"}
         {!isPending && <span className="ml-2">→</span>}
       </button>
+      {trades.length === 0 && (
+        <p role="status" className="mt-3 text-center text-xs text-danger">
+          Trade options are temporarily unavailable. Please refresh and try again.
+        </p>
+      )}
       <p className="mt-3 text-center text-xs text-slate">Try NR15, IP22 or SW11.</p>
     </form>
   );
