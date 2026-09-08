@@ -77,7 +77,25 @@ function serialiseError(err: unknown): Record<string, unknown> {
       requestId: err.requestId ?? null,
     };
   }
-  return { message: err instanceof Error ? err.message : String(err) };
+  if (err instanceof Error) {
+    return { message: err.message, name: err.name };
+  }
+  if (err && typeof err === "object") {
+    const record = err as Record<string, unknown>;
+    let fallback = "Unknown error";
+    try {
+      fallback = JSON.stringify(err) || fallback;
+    } catch {
+      // Keep the ingestion run serialisable even for unusual error objects.
+    }
+    return {
+      message: typeof record.message === "string" ? record.message : fallback,
+      ...(typeof record.code === "string" ? { code: record.code } : {}),
+      ...(typeof record.details === "string" ? { details: record.details } : {}),
+      ...(typeof record.hint === "string" ? { hint: record.hint } : {}),
+    };
+  }
+  return { message: String(err) };
 }
 
 Deno.serve(async (req: Request) => {
