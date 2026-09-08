@@ -1,7 +1,7 @@
 import type { NormalisedApplication, PlanningDataProvider, RawApplication } from "../types.ts";
 import { normaliseApplication } from "../normalise.ts";
 import { PlotaClient } from "./client.ts";
-import type { PlotaApplication } from "./types.ts";
+import type { PlotaApplication, PlotaListMeta } from "./types.ts";
 
 export class PlotaTierLimitationError extends Error {
   constructor(message: string) {
@@ -97,17 +97,38 @@ export class PlotaPlanningProvider implements PlanningDataProvider {
     return app ? toRawApplication(app) : null;
   }
 
-  async searchByPostcode(postcodeOrDistrict: string, opts?: { radius?: number }): Promise<RawApplication[]> {
+  async searchByPostcode(
+    postcodeOrDistrict: string,
+    opts?: { radius?: number; maxPages?: number },
+  ): Promise<RawApplication[]> {
     const trimmed = postcodeOrDistrict.trim().toUpperCase();
+    const maxPages = Math.max(1, Math.min(opts?.maxPages ?? 1, 20));
     // A space means a full postcode ("NR15 1AB") -> nearby search; no space
     // means a bare district ("NR15") -> the plain list endpoint.
-    if (/\s/.test(trimmed)) {
-      const radius = Math.min(opts?.radius ?? 1000, 5000);
-      const apps = await this.client.list("/applications/nearby", { postcode: trimmed, radius });
-      return apps.map(toRawApplication);
+    const path = /\s/.test(trimmed) ? "/applications/nearby" : "/applications";
+    const searchParams = /\s/.test(trimmed)
+      ? { postcode: trimmed, radius: Math.min(opts?.radius ?? 1000, 5000) }
+      : { postcode: trimmed };
+    const apps: PlotaApplication[] = [];
+    let pagesRead = 0;
+    for await (const page of this.client.paginate(path, searchParams)) {
+      apps.push(...page);
+      pagesRead++;
+      if (pagesRead >= maxPages) break;
     }
-    const apps = await this.client.list("/applications", { postcode: trimmed });
     return apps.map(toRawApplication);
+  }
+
+  get lastMeta(): PlotaListMeta | null {
+    return this.client.lastMeta;
+  }
+
+  get lastPageCount(): number {
+    return this.client.lastPageCount;
+  }
+
+  get apiRequestCount(): number {
+    return this.client.requestCount;
   }
 
   async searchByDate(dateFrom: string, dateTo: string): Promise<RawApplication[]> {
