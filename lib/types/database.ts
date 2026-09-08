@@ -659,6 +659,13 @@ export type Database = {
             foreignKeyName: "lead_actions_lead_match_id_fkey"
             columns: ["lead_match_id"]
             isOneToOne: false
+            referencedRelation: "lead_match_current_state"
+            referencedColumns: ["lead_match_id"]
+          },
+          {
+            foreignKeyName: "lead_actions_lead_match_id_fkey"
+            columns: ["lead_match_id"]
+            isOneToOne: false
             referencedRelation: "lead_matches"
             referencedColumns: ["id"]
           },
@@ -729,6 +736,7 @@ export type Database = {
           error_message: string | null
           id: string
           lead_match_id: string | null
+          metadata: Json | null
           notification_type: string
           provider_message_id: string | null
           sent_at: string | null
@@ -742,6 +750,7 @@ export type Database = {
           error_message?: string | null
           id?: string
           lead_match_id?: string | null
+          metadata?: Json | null
           notification_type: string
           provider_message_id?: string | null
           sent_at?: string | null
@@ -755,6 +764,7 @@ export type Database = {
           error_message?: string | null
           id?: string
           lead_match_id?: string | null
+          metadata?: Json | null
           notification_type?: string
           provider_message_id?: string | null
           sent_at?: string | null
@@ -769,6 +779,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_log_lead_match_id_fkey"
+            columns: ["lead_match_id"]
+            isOneToOne: false
+            referencedRelation: "lead_match_current_state"
+            referencedColumns: ["lead_match_id"]
           },
           {
             foreignKeyName: "notification_log_lead_match_id_fkey"
@@ -1460,6 +1477,34 @@ export type Database = {
         }
         Relationships: []
       }
+      lead_match_current_state: {
+        Row: {
+          application_trade_opportunity_id: string | null
+          company_id: string | null
+          current_action: Database["public"]["Enums"]["lead_action_type"] | null
+          current_action_at: string | null
+          current_contract_value_gbp: number | null
+          lead_match_id: string | null
+          matched_at: string | null
+          viewed_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_matches_application_trade_opportunity_id_fkey"
+            columns: ["application_trade_opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "application_trade_opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_matches_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       _postgis_deprecate: {
@@ -1611,6 +1656,27 @@ export type Database = {
             Returns: string
           }
       auth_company_ids: { Args: never; Returns: string[] }
+      browse_opportunity_teaser: {
+        Args: { p_opportunity_id: string }
+        Returns: {
+          estimated_total_project_value_high: number
+          estimated_total_project_value_low: number
+          estimated_trade_value_high: number
+          estimated_trade_value_low: number
+          id: string
+          monthly_price_pence: number
+          opportunity_bucket: Database["public"]["Enums"]["opportunity_bucket"]
+          opportunity_score: number
+          planning_status: Database["public"]["Enums"]["planning_application_status"]
+          postcode_district: string
+          project_type: string
+          received_date: string
+          territory_status: string
+          trade_category_id: string
+          trade_category_name: string
+          trade_category_slug: string
+        }[]
+      }
       browse_territory_opportunities: {
         Args: {
           p_limit?: number
@@ -1640,6 +1706,15 @@ export type Database = {
           high_priority_count: number
           monthly_price_pence: number
           territory_status: string
+        }[]
+      }
+      claim_classification_batch: {
+        Args: { p_limit?: number }
+        Returns: {
+          attempts: number
+          id: string
+          planning_application_id: string
+          previous_status: Database["public"]["Enums"]["classification_status"]
         }[]
       }
       compute_opportunity_score: {
@@ -2525,6 +2600,42 @@ export type Database = {
         }
         Returns: string
       }
+      upsert_company_notification_preferences: {
+        Args: {
+          p_approval_alerts_enabled: boolean
+          p_channel_email: boolean
+          p_company_id: string
+          p_digest_frequency: string
+          p_digest_min_score: number
+          p_instant_alert_min_score: number
+        }
+        Returns: {
+          approval_alerts_enabled: boolean
+          channel_email: boolean
+          company_id: string
+          created_at: string
+          digest_frequency: string
+          digest_min_score: number
+          id: string
+          instant_alert_min_score: number
+          updated_at: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "notification_preferences"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      upsert_planning_application: {
+        Args: { p_application: Json }
+        Returns: {
+          id: string
+          is_changed: boolean
+          is_new: boolean
+        }[]
+      }
     }
     Enums: {
       application_update_change_type:
@@ -2533,7 +2644,12 @@ export type Database = {
         | "date_updated"
         | "description_updated"
         | "other"
-      classification_status: "pending" | "completed" | "failed" | "stale"
+      classification_status:
+        | "pending"
+        | "completed"
+        | "failed"
+        | "stale"
+        | "processing"
       company_member_role: "owner" | "admin" | "member"
       company_member_status: "invited" | "active" | "removed"
       lead_action_type:
@@ -2711,7 +2827,13 @@ export const Constants = {
         "description_updated",
         "other",
       ],
-      classification_status: ["pending", "completed", "failed", "stale"],
+      classification_status: [
+        "pending",
+        "completed",
+        "failed",
+        "stale",
+        "processing",
+      ],
       company_member_role: ["owner", "admin", "member"],
       company_member_status: ["invited", "active", "removed"],
       lead_action_type: [

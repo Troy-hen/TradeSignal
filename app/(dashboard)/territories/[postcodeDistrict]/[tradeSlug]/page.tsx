@@ -131,31 +131,36 @@ export default async function TerritoryDetailPage({
         ) : (
           <ul className="space-y-3">
             {opportunities.map((opp) => (
-              <li key={opp.id} className="rounded-md border border-light-grey bg-white p-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <OpportunityBadge bucket={opp.opportunity_bucket} score={opp.opportunity_score} />
-                    <span className="font-medium text-charcoal">{opp.project_type ?? "Planning application"}</span>
+              <li key={opp.id}>
+                <Link
+                  href={`/opportunities/${opp.id}`}
+                  className="block rounded-md border border-light-grey bg-white p-4 transition hover:border-signal-orange"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <OpportunityBadge bucket={opp.opportunity_bucket} score={opp.opportunity_score} />
+                      <span className="font-medium text-charcoal">{opp.project_type ?? "Planning application"}</span>
+                    </div>
+                    <span className="text-sm text-slate">
+                      {opp.received_date ? new Date(opp.received_date).toLocaleDateString("en-GB") : "—"}
+                    </span>
                   </div>
-                  <span className="text-sm text-slate">
-                    {opp.received_date ? new Date(opp.received_date).toLocaleDateString("en-GB") : "—"}
-                  </span>
-                </div>
-                <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-slate">
-                  <span>
-                    Est. project value:{" "}
-                    {formatGbpRange(opp.estimated_total_project_value_low, opp.estimated_total_project_value_high)}
-                  </span>
-                  <span>
-                    Est. trade value:{" "}
-                    {formatGbpRange(opp.estimated_trade_value_low, opp.estimated_trade_value_high)}
-                  </span>
-                </div>
-                <div className="locked-panel mt-3 rounded-md bg-soft-surface p-3">
-                  <span className="relative z-10 text-xs font-medium text-white">
-                    Address, AI scope analysis &amp; contact timing — unlock with the territory
-                  </span>
-                </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-slate">
+                    <span>
+                      Est. project value:{" "}
+                      {formatGbpRange(opp.estimated_total_project_value_low, opp.estimated_total_project_value_high)}
+                    </span>
+                    <span>
+                      Est. trade value:{" "}
+                      {formatGbpRange(opp.estimated_trade_value_low, opp.estimated_trade_value_high)}
+                    </span>
+                  </div>
+                  <div className="locked-panel mt-3 rounded-md bg-soft-surface p-3">
+                    <span className="relative z-10 text-xs font-medium text-white">
+                      Address, AI scope analysis &amp; contact timing — unlock with the territory
+                    </span>
+                  </div>
+                </Link>
               </li>
             ))}
           </ul>
