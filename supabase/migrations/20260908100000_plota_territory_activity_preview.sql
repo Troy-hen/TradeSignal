@@ -56,7 +56,7 @@ as $$
   limit least(greatest(coalesce(p_limit, 12), 1), 25)
 $$;
 
-revoke all on function public.browse_territory_activity(text, uuid, int) from public;
+revoke execute on function public.browse_territory_activity(text, uuid, int) from public, anon;
 grant execute on function public.browse_territory_activity(text, uuid, int) to authenticated;
 
 -- N2 is a valid London postcode district used by the territory explorer.
