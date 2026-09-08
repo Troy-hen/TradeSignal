@@ -85,7 +85,7 @@ export default async function LandingPage() {
             </div>
           </div>
 
-          <div id="territory-checker" className="relative mx-auto w-full max-w-xl scroll-mt-28 lg:mt-3">
+          <div id="territory-checker" className="relative mx-auto w-full max-w-xl scroll-mt-36 lg:mt-3">
             <div className="pointer-events-none absolute -right-5 -top-5 hidden h-24 w-24 rounded-2xl border border-signal-orange/30 sm:block" />
             <TerritoryCheckerWidget trades={tradeOptions} compact />
             <p className="mt-4 text-center text-xs font-medium text-white/55">
@@ -156,7 +156,7 @@ export default async function LandingPage() {
             </ul>
 
             <Link
-              href="#territory-checker"
+              href="/#territory-checker"
               className="mt-9 inline-flex items-center gap-2 text-sm font-semibold text-signal-orange transition hover:text-[#e95f00]"
             >
               Check a postcode district
@@ -187,7 +187,7 @@ export default async function LandingPage() {
             </ul>
 
             <Link
-              href="#territory-checker"
+              href="/#territory-checker"
               className="mt-9 inline-flex items-center gap-2 text-sm font-semibold text-signal-orange transition hover:text-[#e95f00]"
             >
               Check availability

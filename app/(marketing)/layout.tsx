@@ -22,12 +22,6 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
               >
                 How it works
               </Link>
-              <Link
-                href="/#territory-checker"
-                className="text-sm font-medium text-white/70 transition hover:text-white"
-              >
-                Check your area
-              </Link>
             </div>
             <Link
               href="/login"
@@ -36,10 +30,10 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
               Log in
             </Link>
             <Link
-              href="/#territory-checker"
+              href="/signup"
               className="inline-flex items-center rounded-xl bg-signal-orange px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#e95f00]"
             >
-              Check your area
+              Create your account
             </Link>
           </nav>
         </div>
