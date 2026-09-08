@@ -16,11 +16,11 @@ const ERROR_COPY: Record<string, string> = {
 export function ClaimTerritoryButton({
   postcodeDistrict,
   tradeCategoryId,
-  priceGbp,
+  priceLabel,
 }: {
   postcodeDistrict: string;
   tradeCategoryId: string;
-  priceGbp: number;
+  priceLabel: string;
 }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +61,7 @@ export function ClaimTerritoryButton({
         aria-busy={isLoading}
         className="rounded-md bg-signal-orange px-6 py-3 font-semibold text-white transition hover:brightness-95 disabled:opacity-60"
       >
-        {isLoading ? "Starting checkout…" : `Claim ${postcodeDistrict} — £${priceGbp}/month`}
+        {isLoading ? "Starting checkout…" : "Claim " + postcodeDistrict + " — " + priceLabel + "/month"}
       </button>
       {error && <p role="alert" className="mt-2 text-sm text-danger">{error}</p>}
     </div>
