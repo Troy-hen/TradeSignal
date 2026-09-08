@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     "MyTradeBox turns UK planning applications into qualified local opportunities for trade businesses.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={sora.variable + " h-full antialiased"}>
       <body className="min-h-full flex flex-col bg-soft-surface text-charcoal font-sans">
