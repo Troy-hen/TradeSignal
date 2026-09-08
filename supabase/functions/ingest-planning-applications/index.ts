@@ -2,7 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { getPlanningProvider } from "../_shared/planning-providers/index.ts";
 import { PlotaApiError } from "../_shared/planning-providers/plota/client.ts";
-import { PlotaTierLimitationError } from "../_shared/planning-providers/plota/provider.ts";
+import { PlotaPlanningProvider, PlotaTierLimitationError } from "../_shared/planning-providers/plota/provider.ts";
 import type { NormalisedApplication, PlanningDataProvider, RawApplication } from "../_shared/planning-providers/types.ts";
 
 /**
@@ -162,13 +162,14 @@ Deno.serve(async (req: Request) => {
   let manualBudgetExhausted = false;
   const emptyDistricts: string[] = [];
   const plotaHints: Record<string, string> = {};
-  let provider: PlanningDataProvider | null = null;
+  let providerForDiagnostics: PlanningDataProvider | null = null;
 
   try {
     // The provider is created after the run row so a missing/invalid provider
     // secret is visible in the admin health table instead of becoming a
     // silent function-level 500 before a run is recorded.
-    provider = getPlanningProvider();
+    const provider: PlanningDataProvider = getPlanningProvider();
+    providerForDiagnostics = provider;
 
     async function processRaw(raw: RawApplication | null) {
       if (!raw) return;
@@ -271,7 +272,7 @@ Deno.serve(async (req: Request) => {
           manualPagesPerDistrict: runType === "manual_backfill" ? manualPagesPerDistrict : null,
           emptyDistricts,
           plotaHints,
-          plotaApiCalls: provider instanceof PlotaPlanningProvider ? provider.apiRequestCount : null,
+          plotaApiCalls: providerForDiagnostics instanceof PlotaPlanningProvider ? providerForDiagnostics.apiRequestCount : null,
           manualBudgetExhausted,
           fellBackToPendingRotation,
         },
@@ -285,7 +286,7 @@ Deno.serve(async (req: Request) => {
       postcodeDistricts: targetDistricts,
       pagesRead,
       manualPagesPerDistrict: runType === "manual_backfill" ? manualPagesPerDistrict : null,
-      plotaApiCalls: provider instanceof PlotaPlanningProvider ? provider.apiRequestCount : null,
+      plotaApiCalls: providerForDiagnostics instanceof PlotaPlanningProvider ? providerForDiagnostics.apiRequestCount : null,
       emptyDistricts,
       plotaHints,
       manualBudgetExhausted,
