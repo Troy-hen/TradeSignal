@@ -19,6 +19,10 @@ export class PlotaApiError extends Error {
 export class PlotaClient {
   /** The latest response metadata is retained for diagnostics (never sent to the browser). */
   public lastMeta: PlotaListMeta | null = null;
+  /** Number of HTTP requests made by this client, including rate-limit retries. */
+  public requestCount = 0;
+  /** Number of successful list pages returned by the latest list/paginate operation. */
+  public lastPageCount = 0;
 
   constructor(private readonly apiKey: string) {}
 
@@ -32,6 +36,7 @@ export class PlotaClient {
       if (value !== undefined) url.searchParams.set(key, String(value));
     }
 
+    this.requestCount++;
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${this.apiKey}` },
     });
@@ -74,12 +79,14 @@ export class PlotaClient {
     delete filters.cursor;
 
     let cursor: string | undefined = initialCursor;
+    this.lastPageCount = 0;
     do {
       const page = await this.request<PlotaListResponse>(path, {
         ...this.listParams(filters),
         cursor,
       });
       this.lastMeta = page.meta ?? null;
+      this.lastPageCount++;
       yield page.data ?? [];
       cursor = page.meta?.next_cursor ?? undefined;
     } while (cursor);
@@ -88,6 +95,7 @@ export class PlotaClient {
   async list(path: string, searchParams?: Record<string, string | number | undefined>): Promise<PlotaApplication[]> {
     const page = await this.request<PlotaListResponse>(path, this.listParams(searchParams));
     this.lastMeta = page.meta ?? null;
+    this.lastPageCount = 1;
     return page.data ?? [];
   }
 
