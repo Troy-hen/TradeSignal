@@ -10,11 +10,11 @@ const sora = Sora({
 
 export const metadata: Metadata = {
   title: {
-    default: "TradeSignal — Find the local jobs worth chasing",
-    template: "%s · TradeSignal",
+    default: "MyTradeBox — Find the local jobs worth chasing",
+    template: "%s · MyTradeBox",
   },
   description:
-    "TradeSignal turns UK planning applications into qualified local opportunities for trade businesses.",
+    "MyTradeBox turns UK planning applications into qualified local opportunities for trade businesses.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

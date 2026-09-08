@@ -10,7 +10,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-50 border-b border-white/10 bg-charcoal">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
-          <Link href="/" aria-label="TradeSignal home">
+          <Link href="/" aria-label="MyTradeBox home">
             <Logo tone="light" />
           </Link>
 
@@ -58,7 +58,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
             </div>
             <div className="text-left text-sm text-white/50 sm:text-right">
               <p>Built for UK trade businesses.</p>
-              <p className="mt-2">© {currentYear()} TradeSignal. All rights reserved.</p>
+              <p className="mt-2">© {currentYear()} MyTradeBox. All rights reserved.</p>
             </div>
           </div>
         </div>

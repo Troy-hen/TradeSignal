@@ -48,7 +48,7 @@ export default async function RoiPage() {
   return (
     <div>
       <h1 className="text-2xl font-semibold text-charcoal">ROI</h1>
-      <p className="mt-2 text-slate">A simple view of what TradeSignal is worth to your business.</p>
+      <p className="mt-2 text-slate">A simple view of what MyTradeBox is worth to your business.</p>
 
       <dl className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
         <Kpi label="Pipeline value" value={formatGbp(totalPipeline)} />

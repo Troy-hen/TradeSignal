@@ -55,7 +55,7 @@ export default async function LandingPage() {
             </h1>
 
             <p className="mt-6 max-w-xl text-base leading-7 text-white/70 sm:text-lg">
-              TradeSignal turns planning applications into qualified opportunities for your trade, your area and
+              MyTradeBox turns planning applications into qualified opportunities for your trade, your area and
               your next job — before the competition gets there first.
             </p>
 
@@ -106,12 +106,12 @@ export default async function LandingPage() {
       <section id="how-it-works" className="bg-soft-surface px-6 py-24 sm:py-28">
         <div className="mx-auto max-w-7xl lg:px-2">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">How TradeSignal works</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">How MyTradeBox works</p>
             <h2 className="mt-4 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">
               From planning application to paid work, with less guesswork.
             </h2>
             <p className="mt-5 text-base leading-7 text-slate sm:text-lg">
-              The useful information is already out there. TradeSignal brings it together, filters it for your
+              The useful information is already out there. MyTradeBox brings it together, filters it for your
               trade and puts the next move in front of you.
             </p>
           </div>
@@ -144,7 +144,7 @@ export default async function LandingPage() {
               Less time hunting. More time quoting the right work.
             </h2>
             <p className="mt-5 text-base leading-7 text-slate">
-              TradeSignal gives you a practical opportunity feed instead of another noisy list of raw planning
+              MyTradeBox gives you a practical opportunity feed instead of another noisy list of raw planning
               records.
             </p>
 
@@ -247,12 +247,12 @@ export default async function LandingPage() {
 
 function OpportunityPreview() {
   return (
-    <div className="relative mx-auto w-full max-w-lg" aria-label="Example TradeSignal opportunity preview">
+    <div className="relative mx-auto w-full max-w-lg" aria-label="Example MyTradeBox opportunity preview">
       <div className="pointer-events-none absolute -right-5 -top-5 hidden h-24 w-24 rounded-2xl border border-signal-orange/30 sm:block" />
       <div className="relative rounded-3xl border border-white/15 bg-white p-3 text-charcoal shadow-2xl shadow-black/20 sm:p-4">
         <div className="flex items-center justify-between px-2 pb-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">TradeSignal feed</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">MyTradeBox feed</p>
             <p className="mt-1 text-sm font-medium text-charcoal">Example opportunity</p>
           </div>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-success/10 px-2.5 py-1 text-xs font-semibold text-success">
