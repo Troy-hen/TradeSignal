@@ -44,6 +44,9 @@ export async function GET(request: Request) {
     if (message.includes("rate_limited")) {
       return NextResponse.json({ error: "rate_limited" }, { status: 429 });
     }
+    if (message.includes("unknown_postcode_district")) {
+      return NextResponse.json({ error: "unknown_postcode_district" }, { status: 400 });
+    }
     if (message.includes("unknown_trade")) {
       return NextResponse.json({ error: "unknown_trade" }, { status: 400 });
     }
