@@ -117,8 +117,6 @@ export async function POST(request: Request) {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
-  // Demo access is explicit and server-side. It activates every claim in the
-  // coverage plan, so matching triggers and RLS behave exactly like paid access.
   if (isConfiguredDemoUser(user)) {
     const now = new Date().toISOString();
     const { error: activationError } = await adminDb
@@ -153,7 +151,13 @@ export async function POST(request: Request) {
       demo: true,
       plan: reservation.coverage_plan_id,
       claim: reservation.first_territory_claim_id,
-      url: \`\${appUrl}/territories/claim/confirming?plan=\${reservation.coverage_plan_id}&claim=\${reservation.first_territory_claim_id}&demo=1\`,
+      url:
+        appUrl +
+        "/territories/claim/confirming?plan=" +
+        encodeURIComponent(reservation.coverage_plan_id) +
+        "&claim=" +
+        encodeURIComponent(reservation.first_territory_claim_id) +
+        "&demo=1",
     });
   }
 
@@ -187,15 +191,24 @@ export async function POST(request: Request) {
             unit_amount: reservation.monthly_price_pence,
             recurring: { interval: "month" },
             product_data: {
-              name: \`\${reservation.postcode_count} postcode \${trade.name} coverage\`,
-              description: \`Exclusive MyTradeBox coverage across \${reservation.postcode_count} postcode district\${reservation.postcode_count === 1 ? "" : "s"}\`,
+              name: String(reservation.postcode_count) + " postcode " + trade.name + " coverage",
+              description:
+                "Exclusive MyTradeBox coverage across " +
+                String(reservation.postcode_count) +
+                " postcode district" +
+                (reservation.postcode_count === 1 ? "" : "s"),
             },
           },
           quantity: 1,
         },
       ],
-      success_url: \`\${appUrl}/territories/claim/confirming?plan=\${reservation.coverage_plan_id}&claim=\${reservation.first_territory_claim_id}\`,
-      cancel_url: \`\${appUrl}/territories/\${firstDistrict}/\${trade.slug}\`,
+      success_url:
+        appUrl +
+        "/territories/claim/confirming?plan=" +
+        encodeURIComponent(reservation.coverage_plan_id) +
+        "&claim=" +
+        encodeURIComponent(reservation.first_territory_claim_id),
+      cancel_url: appUrl + "/territories/" + firstDistrict + "/" + trade.slug,
       metadata,
       subscription_data: { metadata },
     });
