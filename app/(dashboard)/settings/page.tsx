@@ -63,7 +63,7 @@ export default async function SettingsPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Email delivery</p>
         <h2 className="mt-2 text-xl font-semibold tracking-tight text-charcoal">Recent notification activity</h2>
         <p className="mt-2 text-sm leading-6 text-slate">
-          MyTradeBox records delivery events here when it sends opportunity alerts and account notifications through Resend.
+          MyTradeBox records email send activity here. A Sent status confirms Resend accepted the message; it does not confirm that it was opened.
         </p>
         <div className="mt-6">
           <NotificationActivity notifications={notifications ?? []} />
@@ -125,7 +125,7 @@ function notificationLabel(value: string): string {
 }
 
 function notificationStatus(status: string): { label: string; className: string; dot: string } {
-  if (status === "sent") return { label: "Delivered", className: "bg-success/10 text-success", dot: "bg-success" };
+  if (status === "sent") return { label: "Sent", className: "bg-success/10 text-success", dot: "bg-success" };
   if (status === "queued") return { label: "Queued", className: "bg-warning/10 text-warning", dot: "bg-warning" };
   return { label: "Failed", className: "bg-danger/10 text-danger", dot: "bg-danger" };
 }
