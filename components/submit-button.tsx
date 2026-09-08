@@ -17,6 +17,7 @@ export function SubmitButton({
     <button
       type="submit"
       disabled={pending}
+      aria-busy={pending}
       className={
         className ??
         "w-full rounded-md bg-signal-orange px-4 py-2.5 font-semibold text-white transition hover:brightness-95 disabled:opacity-60"
