@@ -58,18 +58,25 @@ export default async function LandingPage() {
               MyTradeBox turns planning applications into qualified opportunities for your trade and your local area. See the signal, estimate the value and make the next move before the competition gets there first.
             </p>
 
-            <div id="territory-checker" className="mt-8 scroll-mt-28">
-              <TerritoryCheckerWidget trades={tradeOptions} compact />
+            <div className="mt-9 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+              <Link
+                href="#how-it-works"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 px-5 py-3.5 text-sm font-semibold text-white transition hover:border-white/40 hover:bg-white/5"
+              >
+                See how it works
+                <ArrowUpRight />
+              </Link>
+              <span className="text-xs font-medium text-white/55">No account needed to preview</span>
             </div>
 
-            <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs font-medium text-white/60">
+            <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm text-white/65">
               <span className="inline-flex items-center gap-2">
                 <CheckIcon />
-                No signup to preview
+                Exclusive territories
               </span>
               <span className="inline-flex items-center gap-2">
                 <CheckIcon />
-                One business per territory
+                Trade-specific scoring
               </span>
               <span className="inline-flex items-center gap-2">
                 <CheckIcon />
@@ -78,7 +85,13 @@ export default async function LandingPage() {
             </div>
           </div>
 
-          <OpportunityPreview />
+          <div id="territory-checker" className="relative mx-auto w-full max-w-xl scroll-mt-28 lg:mt-3">
+            <div className="pointer-events-none absolute -right-5 -top-5 hidden h-24 w-24 rounded-2xl border border-signal-orange/30 sm:block" />
+            <TerritoryCheckerWidget trades={tradeOptions} compact />
+            <p className="mt-4 text-center text-xs font-medium text-white/55">
+              Preview local planning activity, estimated value and territory availability before you sign up.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -265,80 +278,6 @@ export default async function LandingPage() {
           </Link>
         </div>
       </section>
-    </div>
-  );
-}
-
-function OpportunityPreview() {
-  return (
-    <div className="relative mx-auto w-full max-w-lg" aria-label="Example MyTradeBox opportunity preview">
-      <div className="pointer-events-none absolute -right-5 -top-5 hidden h-24 w-24 rounded-2xl border border-signal-orange/30 sm:block" />
-      <div className="relative rounded-3xl border border-white/15 bg-white p-3 text-charcoal shadow-2xl shadow-black/20 sm:p-4">
-        <div className="flex items-center justify-between px-2 pb-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">MyTradeBox feed</p>
-            <p className="mt-1 text-sm font-medium text-charcoal">Example opportunity</p>
-          </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-success/10 px-2.5 py-1 text-xs font-semibold text-success">
-            <span className="h-1.5 w-1.5 rounded-full bg-success" />
-            Live
-          </span>
-        </div>
-
-        <div className="rounded-2xl border border-light-grey bg-soft-surface p-4 sm:p-5">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-signal-orange/10 text-signal-orange">
-                <MapPinIcon />
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate">General Builder · NR15</p>
-                <p className="mt-1 text-sm font-semibold text-charcoal">High-value match</p>
-              </div>
-            </div>
-            <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-2xl bg-signal-orange/10">
-              <span className="text-3xl font-bold leading-none text-signal-orange">86</span>
-              <span className="mt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-signal-orange">Strong</span>
-            </div>
-          </div>
-
-          <div className="mt-5">
-            <h3 className="text-lg font-bold tracking-tight text-charcoal">Two-storey rear extension</h3>
-            <p className="mt-1 text-sm text-slate">Planning application · South Norfolk</p>
-          </div>
-
-          <div className="mt-5 grid grid-cols-2 gap-3">
-            <MiniStat label="Estimated trade value" value="£12k–£18k" />
-            <MiniStat label="Recommended action" value="Approach now" />
-          </div>
-
-          <div className="mt-4 flex items-center justify-between gap-3 border-t border-light-grey pt-4">
-            <span className="inline-flex items-center gap-2 text-xs font-medium text-slate">
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-success/10 text-success">
-                <CheckIcon />
-              </span>
-              Exclusive to your territory
-            </span>
-            <span className="text-sm font-semibold text-signal-orange">View opportunity →</span>
-          </div>
-        </div>
-
-        <div className="mt-3 grid grid-cols-2 gap-3">
-          <div className="rounded-2xl bg-charcoal p-4 text-white">
-            <p className="text-2xl font-bold">5</p>
-            <p className="mt-1 text-xs text-white/60">new matches this week</p>
-          </div>
-          <div className="rounded-2xl border border-light-grey bg-white p-4">
-            <p className="text-2xl font-bold text-charcoal">£42k</p>
-            <p className="mt-1 text-xs text-slate">potential trade value</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="absolute -bottom-5 -left-5 hidden rounded-2xl border border-white/15 bg-charcoal px-4 py-3 text-white shadow-xl sm:block">
-        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-signal-orange">Territory</p>
-        <p className="mt-1 text-sm font-semibold">NR15 · General Builder</p>
-      </div>
     </div>
   );
 }
