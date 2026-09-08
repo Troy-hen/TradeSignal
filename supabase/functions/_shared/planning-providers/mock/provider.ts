@@ -49,7 +49,10 @@ export class MockPlanningProvider implements PlanningDataProvider {
     return this.applications.find((app) => app.providerId === providerId) ?? null;
   }
 
-  async searchByPostcode(postcodeOrDistrict: string): Promise<RawApplication[]> {
+  async searchByPostcode(
+    postcodeOrDistrict: string,
+    _opts?: { radius?: number; maxPages?: number },
+  ): Promise<RawApplication[]> {
     const district = postcodeOrDistrict.trim().toUpperCase().split(" ")[0];
     return this.applications.filter((app) => (app.postcode ?? "").toUpperCase().startsWith(district));
   }
