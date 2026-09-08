@@ -17,6 +17,11 @@ const eslintConfig = defineConfig([
     ".open-next/**",
     ".wrangler/**",
     "cloudflare-env.d.ts",
+    // Deno Edge Functions are a separate project (own runtime, own npm:/jsr:
+    // import specifiers, Deno globals) — linted/typechecked via `deno lint`/
+    // `deno check`, not this Next.js-oriented config. See tsconfig.json's
+    // matching exclude.
+    "supabase/functions/**",
   ]),
 ]);
 
