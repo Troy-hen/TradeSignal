@@ -80,9 +80,9 @@ All scheduled via `pg_cron`/`pg_net` (see the relevant `supabase/migrations/*_cr
 
 | Job | Schedule | Purpose |
 |---|---|---|
-| `ingest-planning-applications-new` | every 30 min | New applications since the last run |
-| `ingest-planning-applications-updated` | `:15`/`:45` past the hour | Changed applications (offset from the above so they interleave) |
-| `classify-planning-application` | every 2 min | Drains the pending/stale classification queue, batch of 15 |
+| `ingest-planning-applications-new` | 06:00 and 18:00 UTC | One quota-safe ten-row Plota page per run |
+| `ingest-planning-applications-updated` | 07:00 and 19:00 UTC | Demo-safe pending-application rotation; the Plota change feed is a paid-tier feature |
+| `classify-planning-application` | paused during development | Cost-guarded; enable only after AI credits and a deliberate spend limit are in place |
 | `notify-leads-instant` | every 10 min | Score ≥ threshold → immediate email |
 | `notify-leads-daily` | 07:00 UTC | Daily digest |
 | `notify-leads-weekly` | Mon 07:00 UTC | Weekly digest |
@@ -104,7 +104,7 @@ Set `RESEND_API_KEY` and `RESEND_FROM_EMAIL` as Edge Function secrets (email sen
 
 ## Planning data provider
 
-`lib/planning-providers` from an earlier iteration of this codebase has been superseded — the real, active implementation lives in `supabase/functions/_shared/planning-providers/` (Deno), since ingestion is an autonomous Edge Function concern, not something the Next.js app touches directly.
+`lib/planning-providers` from an earlier iteration of this codebase has been superseded — the real, active implementation lives in `supabase/functions/_shared/planning-providers/` (Deno), since ingestion is an autonomous Edge Function concern, not something the Next.js app touches directly. The legacy adapter remains compile-safe for older tooling but does not read a plan-tier environment variable.
 
 - **`mock` (default)** — `MockPlanningProvider` generates ~250 seeded, deterministic, realistic UK-style applications across the districts in `postcode_districts`, marked `is_demo_data`. Zero external dependency; this is what local dev and a fresh deploy run against out of the box.
 - **`plota`** — uses Plota's bearer-auth REST API with the current application fields (`description`, `address`, `planning_route`, `date_decided`, `commercial`) mapped into the normalized planning schema. List requests explicitly use a ten-row page, cursor pagination is followed, and `include_contact` is never set to `true` by default. The Demo key is capped at **500 requests total, not monthly**; use the targeted manual sync below for smoke-testing, not an unrestricted historical backfill. Scheduled Plota reads default to one ten-row page per run; set `PLOTA_MAX_PAGES_PER_RUN` only when you deliberately want to spend more calls. A plan-tier environment variable is not required for Demo operation.
