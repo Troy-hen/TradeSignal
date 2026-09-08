@@ -19,6 +19,25 @@
 			"service": "tradesignal"
 		}
 	],
+	// Edge-layer primary defense for the public territory checker
+	// (/api/territory-availability), ahead of the portable secondary layer
+	// in check_territory_availability() itself (rate_limit_events table —
+	// see supabase/migrations/20260907171200_territory_checker_rate_limit.sql).
+	// Simple sliding-window: 30 requests per 60s per rate-limiting key (the
+	// route derives the key from the request IP, see lib/rate-limit.ts).
+	// This binding has no local-dev equivalent — wrangler dev/next dev fall
+	// straight through to the DB-level layer, which is why that layer alone
+	// still has to hold on its own.
+	"unsafe": {
+		"bindings": [
+			{
+				"name": "TERRITORY_CHECK_LIMITER",
+				"type": "ratelimit",
+				"namespace_id": "1001",
+				"simple": { "limit": 30, "period": 60 }
+			}
+		]
+	},
 	"observability": {
 		"enabled": true
 	}

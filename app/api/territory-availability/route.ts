@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { checkEdgeRateLimit } from "@/lib/rate-limit";
 
 const querySchema = z.object({
   postcode: z.string().trim().min(2).max(5),
@@ -8,10 +9,13 @@ const querySchema = z.object({
 });
 
 /**
- * Public, unauthenticated. Thin wrapper over check_territory_availability(),
- * which is where the real rate limiting lives (it's GRANTed directly to
- * anon and reachable via PostgREST regardless of this route, so limiting
- * only here would protect nothing against a direct RPC call).
+ * Public, unauthenticated. Two rate-limit layers, per plan section 12:
+ * Cloudflare's edge binding here (fast, cheap, but only present on
+ * Cloudflare) is the first line of defense; check_territory_availability()
+ * enforces its own DB-level limit regardless (it's GRANTed directly to
+ * anon and reachable via PostgREST independent of this route, so that
+ * layer alone is what actually protects a direct RPC call, and what
+ * protects local dev / any environment without the edge binding).
  */
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -21,6 +25,12 @@ export async function GET(request: Request) {
   });
   if (!parsed.success) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
+  }
+
+  const ip = request.headers.get("cf-connecting-ip") ?? request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const edgeAllowed = await checkEdgeRateLimit(ip);
+  if (!edgeAllowed) {
+    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
   }
 
   const supabase = await createClient();
