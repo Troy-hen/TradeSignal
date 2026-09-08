@@ -12,7 +12,7 @@ import {
 export default async function CoveragePage() {
   const company = await requireCurrentCompany();
   const supabase = await createClient();
-  const db = supabase as any;
+  const db = supabase;
 
   const [{ data: trades }, { data: postcodeDistricts }, { data: coverageAreas }] = await Promise.all([
     supabase
