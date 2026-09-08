@@ -25,7 +25,7 @@ export async function signUp(
 
   const fullName = formData.get("fullName");
   const supabase = await createClient();
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
@@ -35,6 +35,11 @@ export async function signUp(
   });
 
   if (error) return { error: error.message };
+
+  // Supabase projects with email confirmation enabled return no session until
+  // the user clicks the confirmation link. Do not send that user into
+  // onboarding, where every action would immediately redirect them back out.
+  if (!data.session) redirect("/signup/check-email");
 
   redirect("/onboarding/company");
 }
