@@ -34,8 +34,8 @@ function ConfirmingClaimContent() {
 
     async function poll() {
       try {
-        const planQuery = planId ? \`?plan=\${encodeURIComponent(planId)}\` : "";
-        const res = await fetch(\`/api/territory-claims/\${referenceId}/status\${planQuery}\`, { cache: "no-store" });
+        const planQuery = planId ? "?plan=" + encodeURIComponent(planId) : "";
+        const res = await fetch("/api/territory-claims/" + referenceId + "/status" + planQuery, { cache: "no-store" });
         if (!res.ok || cancelled) return;
         const body: { status: string } = await res.json();
         if (cancelled) return;
