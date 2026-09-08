@@ -33,7 +33,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   const districts = [...new Set(parsed.data.postcode_districts.map((district) => district.trim().toUpperCase()))];
-  const db = supabase as any;
+  const db = supabase;
   const { data, error } = await db.rpc("change_coverage_plan", {
     p_coverage_plan_id: id,
     p_postcode_districts: districts,
