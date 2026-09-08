@@ -95,7 +95,7 @@ export async function POST(request: Request) {
 
       return NextResponse.json({
         demo: true,
-        url: \`\${appUrl}/territories/claim/confirming?claim=\${claim.id}&demo=1\`,
+        url: `${appUrl}/territories/claim/confirming?claim=${claim.id}&demo=1`,
       });
     }
 
@@ -128,15 +128,15 @@ export async function POST(request: Request) {
             unit_amount: territory.monthly_price_pence,
             recurring: { interval: "month" },
             product_data: {
-              name: \`\${territory.postcode_district} \${trade.name} territory\`,
+              name: `${territory.postcode_district} ${trade.name} territory`,
               description: "Exclusive MyTradeBox local territory subscription",
             },
           },
           quantity: 1,
         },
       ],
-      success_url: \`\${appUrl}/territories/claim/confirming?claim=\${claim.id}\`,
-      cancel_url: \`\${appUrl}/territories/\${territory.postcode_district}/\${trade.slug}\`,
+      success_url: `${appUrl}/territories/claim/confirming?claim=${claim.id}`,
+      cancel_url: `${appUrl}/territories/${territory.postcode_district}/${trade.slug}`,
       metadata,
       // Session-level metadata does not propagate to the Subscription object —
       // only subscription_data.metadata does, and subscription-lifecycle

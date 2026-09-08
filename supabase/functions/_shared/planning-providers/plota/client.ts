@@ -27,13 +27,13 @@ export class PlotaClient {
     searchParams?: Record<string, string | number | undefined>,
     retryCount = 0,
   ): Promise<T> {
-    const url = new URL(\`\${BASE_URL}\${path}\`);
+    const url = new URL(`${BASE_URL}${path}`);
     for (const [key, value] of Object.entries(searchParams ?? {})) {
       if (value !== undefined) url.searchParams.set(key, String(value));
     }
 
     const res = await fetch(url, {
-      headers: { Authorization: \`Bearer \${this.apiKey}\` },
+      headers: { Authorization: `Bearer ${this.apiKey}` },
     });
 
     if (res.status === 429 && retryCount < MAX_RATE_LIMIT_RETRIES) {
@@ -45,7 +45,7 @@ export class PlotaClient {
     if (!res.ok) {
       const body = (await res.json().catch(() => null)) as PlotaErrorBody | null;
       throw new PlotaApiError(
-        body?.error?.message ?? \`Plota API request failed with status \${res.status}\`,
+        body?.error?.message ?? `Plota API request failed with status ${res.status}`,
         body?.error?.type ?? "unknown_error",
         res.status,
         body?.error?.request_id,
@@ -93,7 +93,7 @@ export class PlotaClient {
 
   async getApplication(id: string): Promise<PlotaApplication | null> {
     try {
-      return await this.request<PlotaApplication>(\`/applications/\${encodeURIComponent(id)}\`);
+      return await this.request<PlotaApplication>(`/applications/${encodeURIComponent(id)}`);
     } catch (err) {
       if (err instanceof PlotaApiError && err.status === 404) return null;
       throw err;

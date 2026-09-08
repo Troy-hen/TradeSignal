@@ -73,7 +73,7 @@ export default async function TerritoryDetailPage({
             <h1 className="mt-2 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">
               {district} · {trade.name}
             </h1>
-            <p className={\`mt-3 inline-flex items-center gap-2 text-sm font-semibold \${status.className}\`}>
+            <p className={`mt-3 inline-flex items-center gap-2 text-sm font-semibold ${status.className}`}>
               <span className="h-2 w-2 rounded-full bg-current" />
               {status.label}
             </p>

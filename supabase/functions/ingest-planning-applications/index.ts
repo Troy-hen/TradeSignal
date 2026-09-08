@@ -64,7 +64,7 @@ function serialiseError(err: unknown): Record<string, unknown> {
 Deno.serve(async (req: Request) => {
   const cronSecret = Deno.env.get("CRON_SECRET");
   const authHeader = req.headers.get("Authorization");
-  if (!cronSecret || authHeader !== \`Bearer \${cronSecret}\`) {
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     return json({ error: "unauthorized" }, 401);
   }
 

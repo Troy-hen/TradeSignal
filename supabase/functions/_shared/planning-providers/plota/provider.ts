@@ -84,7 +84,7 @@ export class PlotaPlanningProvider implements PlanningDataProvider {
   async *fetchUpdatedApplications({ since, cursor }: { since: string; cursor?: string }): AsyncGenerator<RawApplication[]> {
     if (!PRO_PLUS_TIERS.has(this.planTier)) {
       throw new PlotaTierLimitationError(
-        \`changed_since is not available on the Plota "\${this.planTier}" plan — fall back to re-checking individual undecided applications via getApplication().\`,
+        `changed_since is not available on the Plota "${this.planTier}" plan — fall back to re-checking individual undecided applications via getApplication().`,
       );
     }
     for await (const page of this.client.paginate("/applications", { changed_since: since, cursor })) {
