@@ -8,20 +8,38 @@ function currentYear(): number {
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="border-b border-light-grey bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/">
-            <Logo />
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-charcoal">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
+          <Link href="/" aria-label="TradeSignal home">
+            <Logo tone="light" />
           </Link>
-          <nav className="flex items-center gap-4">
-            <Link href="/login" className="text-sm font-medium text-charcoal hover:text-signal-orange">
+
+          <nav aria-label="Primary navigation" className="flex items-center gap-3 sm:gap-6">
+            <div className="hidden items-center gap-6 md:flex">
+              <Link
+                href="/#how-it-works"
+                className="text-sm font-medium text-white/70 transition hover:text-white"
+              >
+                How it works
+              </Link>
+              <Link
+                href="/#territory-checker"
+                className="text-sm font-medium text-white/70 transition hover:text-white"
+              >
+                Check your area
+              </Link>
+            </div>
+            <Link
+              href="/login"
+              className="hidden text-sm font-semibold text-white/80 transition hover:text-white sm:inline-flex"
+            >
               Log in
             </Link>
             <Link
               href="/signup"
-              className="rounded-md bg-signal-orange px-4 py-2 text-sm font-semibold text-white transition hover:brightness-95"
+              className="inline-flex items-center rounded-xl bg-signal-orange px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#e95f00]"
             >
-              Sign up free
+              Get started
             </Link>
           </nav>
         </div>
@@ -29,9 +47,20 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
 
       <main className="flex-1">{children}</main>
 
-      <footer className="border-t border-light-grey bg-white">
-        <div className="mx-auto max-w-6xl px-6 py-8 text-sm text-slate">
-          <p>© {currentYear()} TradeSignal. UK planning opportunity intelligence for trade businesses.</p>
+      <footer className="bg-charcoal text-white">
+        <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
+          <div className="flex flex-col gap-10 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <Logo tone="light" />
+              <p className="mt-4 max-w-sm text-sm leading-6 text-white/60">
+                Planning intelligence that helps trade businesses find the local jobs worth chasing.
+              </p>
+            </div>
+            <div className="text-left text-sm text-white/50 sm:text-right">
+              <p>Built for UK trade businesses.</p>
+              <p className="mt-2">© {currentYear()} TradeSignal. All rights reserved.</p>
+            </div>
+          </div>
         </div>
       </footer>
     </div>
