@@ -217,8 +217,8 @@ Deno.serve(async (req: Request) => {
         }
       }
     } else if (runType === "manual_backfill") {
-      // One request per requested district, one ten-row page per request.
-      // This is intentionally bounded for Plota's 500-call demo key.
+      // One sync request can target many districts. Each district consumes a
+      // bounded number of ten-row Plota pages; the global budget protects Demo.
       for (const district of targetDistricts) {
         const remainingBudget = MAX_PLOTA_MANUAL_PAGES_PER_RUN - pagesRead;
         if (providerName === "plota" && remainingBudget <= 0) {
