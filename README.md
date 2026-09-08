@@ -104,7 +104,7 @@ Set `RESEND_API_KEY` and `RESEND_FROM_EMAIL` as Edge Function secrets (email sen
 
 ## Planning data provider
 
-`lib/planning-providers` from an earlier iteration of this codebase has been superseded — the real, active implementation lives in `supabase/functions/_shared/planning-providers/` (Deno), since ingestion is an autonomous Edge Function concern, not something the Next.js app touches directly. The legacy adapter remains compile-safe for older tooling but does not read a plan-tier environment variable.
+The active planning-provider implementation lives in `supabase/functions/_shared/planning-providers/` (Deno), since ingestion is an autonomous Edge Function concern, not something the Next.js app touches directly.
 
 - **`mock` (default)** — `MockPlanningProvider` generates ~250 seeded, deterministic, realistic UK-style applications across the districts in `postcode_districts`, marked `is_demo_data`. Zero external dependency; this is what local dev and a fresh deploy run against out of the box.
 - **`plota`** — uses Plota's bearer-auth REST API with the current application fields (`description`, `address`, `planning_route`, `date_decided`, `commercial`) mapped into the normalized planning schema. List requests explicitly use a ten-row page, cursor pagination is followed, and `include_contact` is never set to `true` by default. The Demo key is capped at **500 requests total, not monthly**; use the targeted manual sync below for smoke-testing, not an unrestricted historical backfill. Scheduled Plota reads default to one ten-row page per run; set `PLOTA_MAX_PAGES_PER_RUN` only when you deliberately want to spend more calls. A plan-tier environment variable is not required for Demo operation.
@@ -180,7 +180,7 @@ Never point `DATABASE_URL` at a database with real customer data — the suite i
 
 ## Known gaps / manual setup still needed
 
-- `lib/planning-providers/` (an early Next.js-side draft, superseded by the Deno rewrite in `supabase/functions/_shared/planning-providers/`) is dead code left in the repo — safe to delete.
 - Demo territory activation is allow-listed by exact user email or auth UUID via `MYTRADEBOX_DEMO_USER_EMAILS` / `MYTRADEBOX_DEMO_USER_IDS`; it activates the real claim and matching triggers without creating a Stripe subscription.
 - No admin-invite flow exists in this MVP; the first `admin_users` grant is a direct SQL operation (`insert into admin_users (profile_id) values (...)`) against a real `auth.users` row, which is now audited via trigger regardless of how it happens.
 - Plota's webhook-based push ingestion (`application.match.created`) is implemented (HMAC verification, event dedup) but not wired as the primary ingestion path — polling via the endpoints in [Planning data provider](#planning-data-provider) already satisfies "incremental scheduled ingestion" on its own; the webhook path is a documented, tested-but-dormant latency optimization for later.
+- Production launch still needs reviewed Privacy/Terms/Contact pages, a verified Resend sending domain, and Supabase Auth's leaked-password protection enabled.
