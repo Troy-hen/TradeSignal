@@ -80,7 +80,7 @@ async function handleCoverageCheckoutCompleted(
   session: Stripe.Checkout.Session,
   coveragePlanId: string,
 ) {
-  const db = admin as any;
+  const db = admin;
   const subscriptionId = resolveRefId(session.subscription);
   const customerId = resolveRefId(session.customer);
   if (!subscriptionId || !customerId) return;
@@ -150,7 +150,7 @@ async function handleCoverageCheckoutCompleted(
 }
 
 async function handleCheckoutExpired(admin: AdminClient, session: Stripe.Checkout.Session) {
-  const db = admin as any;
+  const db = admin;
   const coveragePlanId = session.metadata?.coverage_plan_id;
   if (coveragePlanId) {
     const { data: items } = await db
@@ -266,7 +266,7 @@ async function handleCoverageSubscriptionUpdated(
   subscription: Stripe.Subscription,
   coveragePlanId: string,
 ) {
-  const db = admin as any;
+  const db = admin;
   const customerId = resolveRefId(subscription.customer);
   const item = subscription.items.data[0];
   const status = mapSubscriptionStatus(subscription.status);
@@ -314,7 +314,7 @@ async function handleCoverageSubscriptionUpdated(
 }
 
 async function handleSubscriptionDeleted(admin: AdminClient, subscription: Stripe.Subscription) {
-  const db = admin as any;
+  const db = admin;
   const { data: coverageSubscription } = await db
     .from("subscriptions")
     .select("coverage_plan_id")
@@ -376,7 +376,7 @@ async function handleInvoicePaymentFailed(admin: AdminClient, invoice: Stripe.In
   const subscriptionId = resolveInvoiceSubscriptionId(invoice);
   if (!subscriptionId) return;
 
-  const db = admin as any;
+  const db = admin;
   const { data: coverageSubscription } = await db
     .from("subscriptions")
     .select("coverage_plan_id, company_id")
@@ -435,7 +435,7 @@ async function handleInvoicePaymentSucceeded(admin: AdminClient, invoice: Stripe
   const subscriptionId = resolveInvoiceSubscriptionId(invoice);
   if (!subscriptionId) return;
 
-  const db = admin as any;
+  const db = admin;
   const { data: coverageSubscription } = await db
     .from("subscriptions")
     .select("coverage_plan_id")
