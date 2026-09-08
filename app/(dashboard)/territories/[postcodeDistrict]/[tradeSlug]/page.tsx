@@ -65,116 +65,129 @@ export default async function TerritoryDetailPage({
   const priceGbp = Math.round((stats.monthly_price_pence ?? trade.default_monthly_price_pence) / 100);
 
   return (
-    <div className="max-w-3xl">
-      <Link href="/territories" className="text-sm text-slate hover:text-charcoal">
+    <div className="max-w-5xl space-y-8">
+      <Link href="/territories" className="inline-flex items-center gap-2 text-sm font-semibold text-slate transition hover:text-charcoal">
         ← Territory Explorer
       </Link>
 
-      <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-charcoal">
-            {district} · {trade.name}
-          </h1>
-          <p className={`mt-1 text-sm font-medium ${status.className}`}>{status.label}</p>
+      <section className="rounded-3xl border border-light-grey bg-white p-6 sm:p-8">
+        <div className="flex flex-wrap items-start justify-between gap-5">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Exclusive territory</p>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">
+              {district} · {trade.name}
+            </h1>
+            <p className={`mt-3 inline-flex items-center gap-2 text-sm font-semibold ${status.className}`}>
+              <span className="h-2 w-2 rounded-full bg-current" />
+              {status.label}
+            </p>
+          </div>
+          <p className="text-3xl font-bold tracking-tight text-charcoal">
+            £{priceGbp}
+            <span className="text-sm font-normal text-slate">/month</span>
+          </p>
         </div>
-        <p className="text-2xl font-bold text-charcoal">
-          £{priceGbp}
-          <span className="text-sm font-normal text-slate">/month</span>
-        </p>
-      </div>
+      </section>
 
-      <dl className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <Kpi label="Opportunities (30d)" value={String(stats.applications_last_30d)} />
         <Kpi label="High priority" value={String(stats.high_priority_count)} />
         <Kpi label="Est. construction activity" value={formatGbp(stats.estimated_construction_activity_gbp)} />
         <Kpi label="Est. trade value" value={formatGbp(stats.estimated_trade_value_gbp)} />
       </dl>
 
-      <div className="mt-8">
+      <section>
         {isOwnClaim ? (
-          <div className="rounded-md border border-light-grey bg-white p-4">
-            <p className="text-sm font-medium text-charcoal">You hold this territory.</p>
-            <Link href="/dashboard" className="text-sm font-medium text-signal-orange hover:underline">
+          <div className="rounded-3xl border border-success/20 bg-success/5 p-6">
+            <p className="text-sm font-semibold text-charcoal">You hold this territory.</p>
+            <p className="mt-1 text-sm text-slate">Your opportunity feed is available from the dashboard.</p>
+            <Link href="/dashboard" className="mt-4 inline-flex text-sm font-semibold text-success hover:underline">
               Go to your dashboard →
             </Link>
           </div>
         ) : stats.territory_status === "available" ? (
-          <ClaimTerritoryButton postcodeDistrict={district} tradeCategoryId={trade.id} priceGbp={priceGbp} />
+          <div className="rounded-3xl border border-signal-orange/20 bg-signal-orange/5 p-6">
+            <p className="text-lg font-semibold text-charcoal">This territory is available.</p>
+            <p className="mt-1 text-sm text-slate">Claim it to unlock the full local opportunity feed for {trade.name}.</p>
+            <div className="mt-5">
+              <ClaimTerritoryButton postcodeDistrict={district} tradeCategoryId={trade.id} priceGbp={priceGbp} />
+            </div>
+          </div>
         ) : (
-          <div className="rounded-md border border-light-grey bg-white p-4">
-            <p className="text-sm font-medium text-charcoal">This territory is already claimed exclusively.</p>
+          <div className="rounded-3xl border border-light-grey bg-white p-6">
+            <p className="text-sm font-semibold text-charcoal">This territory is already claimed exclusively.</p>
             <p className="mt-1 text-sm text-slate">
               We&apos;ll email you the moment {district} {trade.name} becomes available again.
             </p>
-            <form action={joinTerritoryWaitlist.bind(null, district, trade.id, trade.slug)} className="mt-3">
+            <form action={joinTerritoryWaitlist.bind(null, district, trade.id, trade.slug)} className="mt-4">
               <SubmitButton
                 pendingText="Joining…"
-                className="rounded-md border border-signal-orange px-4 py-2 text-sm font-semibold text-signal-orange transition hover:bg-signal-orange hover:text-white disabled:opacity-60"
+                className="rounded-xl border border-signal-orange px-4 py-2.5 text-sm font-semibold text-signal-orange transition hover:bg-signal-orange hover:text-white disabled:opacity-60"
               >
                 Notify Me If Available
               </SubmitButton>
             </form>
           </div>
         )}
-      </div>
+      </section>
 
-      <div className="mt-10">
-        <h2 className="text-lg font-semibold text-charcoal">Recent opportunities</h2>
-        <p className="mb-4 text-sm text-slate">
-          A preview of what the {district} {trade.name} territory holder sees. Claim the territory to unlock
-          full addresses, AI scope analysis, and contact-timing recommendations.
-        </p>
+      <section>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Local signal</p>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight text-charcoal">Recent opportunities</h2>
+          </div>
+          <p className="max-w-xl text-sm leading-6 text-slate sm:text-right">
+            A preview of what the {district} {trade.name} territory holder sees. Claim the territory to unlock full addresses, AI scope analysis and contact timing.
+          </p>
+        </div>
+
         {!opportunities || opportunities.length === 0 ? (
-          <p className="rounded-md border border-dashed border-light-grey p-6 text-center text-sm text-slate">
+          <p className="mt-5 rounded-3xl border border-dashed border-light-grey bg-white p-8 text-center text-sm text-slate">
             No active opportunities detected here yet — new planning applications are checked continuously.
           </p>
         ) : (
-          <ul className="space-y-3">
+          <ul className="mt-5 space-y-3">
             {opportunities.map((opp) => (
               <li key={opp.id}>
                 <Link
                   href={`/opportunities/${opp.id}`}
-                  className="block rounded-md border border-light-grey bg-white p-4 transition hover:border-signal-orange"
+                  className="group block rounded-2xl border border-light-grey bg-white p-4 transition hover:-translate-y-0.5 hover:border-signal-orange/40 hover:shadow-[0_12px_32px_rgba(31,41,55,0.08)] sm:p-5"
                 >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <OpportunityBadge bucket={opp.opportunity_bucket} score={opp.opportunity_score} />
-                      <span className="font-medium text-charcoal">{opp.project_type ?? "Planning application"}</span>
+                  <div className="flex items-start gap-4">
+                    <OpportunityBadge bucket={opp.opportunity_bucket} score={opp.opportunity_score} variant="tile" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate">{trade.name} · {district}</p>
+                          <h3 className="mt-1 text-base font-semibold tracking-tight text-charcoal">{opp.project_type ?? "Planning application"}</h3>
+                        </div>
+                        <span className="text-xs font-medium text-slate">{opp.received_date ? new Date(opp.received_date).toLocaleDateString("en-GB") : "—"}</span>
+                      </div>
+                      <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-xs text-slate">
+                        <span>Est. project value: {formatGbpRange(opp.estimated_total_project_value_low, opp.estimated_total_project_value_high)}</span>
+                        <span>Est. trade value: {formatGbpRange(opp.estimated_trade_value_low, opp.estimated_trade_value_high)}</span>
+                      </div>
+                      <div className="locked-panel mt-4 rounded-xl bg-soft-surface p-3">
+                        <span className="relative z-10 text-xs font-medium text-white">Address, AI scope analysis &amp; contact timing — unlock with the territory</span>
+                      </div>
                     </div>
-                    <span className="text-sm text-slate">
-                      {opp.received_date ? new Date(opp.received_date).toLocaleDateString("en-GB") : "—"}
-                    </span>
-                  </div>
-                  <div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-slate">
-                    <span>
-                      Est. project value:{" "}
-                      {formatGbpRange(opp.estimated_total_project_value_low, opp.estimated_total_project_value_high)}
-                    </span>
-                    <span>
-                      Est. trade value:{" "}
-                      {formatGbpRange(opp.estimated_trade_value_low, opp.estimated_trade_value_high)}
-                    </span>
-                  </div>
-                  <div className="locked-panel mt-3 rounded-md bg-soft-surface p-3">
-                    <span className="relative z-10 text-xs font-medium text-white">
-                      Address, AI scope analysis &amp; contact timing — unlock with the territory
-                    </span>
                   </div>
                 </Link>
               </li>
             ))}
           </ul>
         )}
-      </div>
+      </section>
     </div>
   );
 }
 
 function Kpi({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-light-grey bg-white p-4">
-      <dt className="text-xs font-medium uppercase tracking-wide text-slate">{label}</dt>
-      <dd className="mt-1 text-xl font-semibold text-charcoal">{value}</dd>
+    <div className="rounded-2xl border border-light-grey bg-white p-5">
+      <dt className="text-[10px] font-semibold uppercase tracking-[0.11em] text-slate">{label}</dt>
+      <dd className="mt-2 text-xl font-bold tracking-tight text-charcoal">{value}</dd>
     </div>
   );
 }

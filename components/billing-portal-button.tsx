@@ -36,7 +36,7 @@ export function BillingPortalButton() {
         type="button"
         onClick={handleClick}
         disabled={isLoading}
-        className="rounded-md bg-signal-orange px-6 py-2.5 font-semibold text-white transition hover:brightness-95 disabled:opacity-60"
+        className="rounded-xl bg-signal-orange px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#e95f00] disabled:opacity-60"
       >
         {isLoading ? "Opening…" : "Manage billing"}
       </button>

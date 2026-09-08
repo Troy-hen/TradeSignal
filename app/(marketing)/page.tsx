@@ -378,15 +378,6 @@ function TrustPoint({ title, body }: { title: string; body: string }) {
   );
 }
 
-function MiniStat({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl border border-light-grey bg-white p-3">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate">{label}</p>
-      <p className="mt-1 text-sm font-bold text-charcoal">{value}</p>
-    </div>
-  );
-}
-
 function TerritoryMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -417,15 +408,6 @@ function CheckIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
       <path strokeLinecap="round" strokeLinejoin="round" d="m5 12 4.5 4.5L19 7" />
-    </svg>
-  );
-}
-
-function MapPinIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 21s7-5.25 7-11a7 7 0 1 0-14 0c0 5.75 7 11 7 11Z" />
-      <circle cx="12" cy="10" r="2.25" />
     </svg>
   );
 }

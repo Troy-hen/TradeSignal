@@ -21,8 +21,8 @@ export function NotificationPreferencesForm({
 
   return (
     <form action={formAction} className="max-w-md space-y-4">
-      <label className="flex items-center gap-2 text-sm text-charcoal">
-        <input type="checkbox" name="channelEmail" defaultChecked={channelEmail} className="h-4 w-4" />
+      <label className="flex items-center gap-3 rounded-xl bg-soft-surface p-4 text-sm font-medium text-charcoal">
+        <input type="checkbox" name="channelEmail" defaultChecked={channelEmail} className="h-4 w-4 accent-[#FF6A00]" />
         Email notifications
       </label>
 
@@ -34,7 +34,7 @@ export function NotificationPreferencesForm({
           id="digestFrequency"
           name="digestFrequency"
           defaultValue={digestFrequency}
-          className="w-full rounded-md border border-light-grey px-3 py-2 text-sm focus:border-signal-orange focus:outline-none"
+          className="w-full rounded-xl border border-light-grey px-4 py-3 text-sm focus:border-signal-orange focus:outline-none focus:ring-2 focus:ring-signal-orange/15"
         >
           <option value="instant">Instant</option>
           <option value="daily">Daily</option>
@@ -53,7 +53,7 @@ export function NotificationPreferencesForm({
           min={0}
           max={100}
           defaultValue={instantAlertMinScore}
-          className="w-full rounded-md border border-light-grey px-3 py-2 text-sm focus:border-signal-orange focus:outline-none"
+          className="w-full rounded-xl border border-light-grey px-4 py-3 text-sm focus:border-signal-orange focus:outline-none focus:ring-2 focus:ring-signal-orange/15"
         />
         <p className="mt-1 text-xs text-slate">Opportunities scoring at or above this get an email immediately.</p>
       </div>
@@ -69,13 +69,13 @@ export function NotificationPreferencesForm({
           min={0}
           max={100}
           defaultValue={digestMinScore}
-          className="w-full rounded-md border border-light-grey px-3 py-2 text-sm focus:border-signal-orange focus:outline-none"
+          className="w-full rounded-xl border border-light-grey px-4 py-3 text-sm focus:border-signal-orange focus:outline-none focus:ring-2 focus:ring-signal-orange/15"
         />
         <p className="mt-1 text-xs text-slate">Only matches at or above this score are included in your digest.</p>
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-charcoal">
-        <input type="checkbox" name="approvalAlertsEnabled" defaultChecked={approvalAlertsEnabled} className="h-4 w-4" />
+      <label className="flex items-center gap-3 rounded-xl bg-soft-surface p-4 text-sm font-medium text-charcoal">
+        <input type="checkbox" name="approvalAlertsEnabled" defaultChecked={approvalAlertsEnabled} className="h-4 w-4 accent-[#FF6A00]" />
         Always alert me instantly when a matched application is approved
       </label>
 
@@ -83,7 +83,7 @@ export function NotificationPreferencesForm({
       {state?.success && <p className="text-sm text-success">Saved.</p>}
       <SubmitButton
         pendingText="Saving…"
-        className="rounded-md bg-signal-orange px-4 py-2 text-sm font-semibold text-white transition hover:brightness-95 disabled:opacity-60"
+        className="rounded-xl bg-signal-orange px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#e95f00] disabled:opacity-60"
       >
         Save notification preferences
       </SubmitButton>

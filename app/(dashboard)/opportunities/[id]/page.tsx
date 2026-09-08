@@ -91,24 +91,31 @@ async function PaidBrief({ opportunity, companyId }: { opportunity: Opportunity;
   }
 
   return (
-    <div className="max-w-3xl">
-      <Link href="/opportunities" className="text-sm text-slate hover:text-charcoal">
+    <div className="max-w-5xl">
+      <Link href="/opportunities" className="inline-flex items-center gap-2 text-sm font-semibold text-slate transition hover:text-charcoal">
         ← Opportunities
       </Link>
 
-      <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <OpportunityBadge bucket={opportunity.opportunity_bucket} score={opportunity.opportunity_score} />
-            <h1 className="text-2xl font-semibold text-charcoal">{classification.project_type ?? "Planning application"}</h1>
+      <div className="mt-4 rounded-3xl border border-light-grey bg-white p-6 sm:p-8">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="flex flex-wrap items-center gap-3">
+              <OpportunityBadge bucket={opportunity.opportunity_bucket} score={opportunity.opportunity_score} variant="tile" />
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Opportunity brief</p>
+                <h1 className="mt-1 text-2xl font-bold tracking-tight text-charcoal sm:text-3xl">
+                  {classification.project_type ?? "Planning application"}
+                </h1>
+              </div>
+            </div>
+            <p className="mt-4 text-sm text-slate">
+              {application.postcode_district} · {trade?.name ?? "Trade"} · {STATUS_LABELS[application.status] ?? application.status}
+            </p>
           </div>
-          <p className="mt-1 text-sm text-slate">
-            {application.postcode_district} · {trade?.name ?? "Trade"} · {STATUS_LABELS[application.status] ?? application.status}
-          </p>
         </div>
-      </div>
 
-      {classification.summary && <p className="mt-4 text-charcoal">{classification.summary}</p>}
+        {classification.summary && <p className="mt-5 max-w-3xl text-base leading-7 text-charcoal">{classification.summary}</p>}
+      </div>
 
       <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <Kpi label="Est. total project value" value={formatGbpRange(classification.estimated_total_project_value_low, classification.estimated_total_project_value_high)} />
@@ -116,7 +123,7 @@ async function PaidBrief({ opportunity, companyId }: { opportunity: Opportunity;
         <Kpi label="Likely start" value={classification.likely_start_window ?? "—"} />
         <Kpi label="AI confidence" value={opportunity.ai_confidence !== null ? `${Math.round(opportunity.ai_confidence * 100)}%` : "—"} />
       </div>
-      <p className="mt-2 text-xs text-slate">Value estimates are indicative — not a formal valuation.</p>
+      <p className="mt-3 text-xs text-slate">Value estimates are indicative — not a formal valuation.</p>
 
       <Section title="Why this matched">
         {opportunity.match_reasons && opportunity.match_reasons.length > 0 ? (
@@ -208,18 +215,23 @@ function LockedBrief({ teaser }: { teaser: OpportunityTeaser }) {
   const isAvailable = teaser.territory_status === "available";
 
   return (
-    <div className="max-w-3xl">
-      <Link href="/territories" className="text-sm text-slate hover:text-charcoal">
+    <div className="max-w-5xl">
+      <Link href="/territories" className="inline-flex items-center gap-2 text-sm font-semibold text-slate transition hover:text-charcoal">
         ← Territory Explorer
       </Link>
 
-      <div className="mt-2 flex items-center gap-2">
-        <OpportunityBadge bucket={teaser.opportunity_bucket} score={teaser.opportunity_score} />
-        <h1 className="text-2xl font-semibold text-charcoal">{teaser.project_type ?? "Planning application"}</h1>
+      <div className="mt-4 rounded-3xl border border-light-grey bg-white p-6 sm:p-8">
+        <div className="flex flex-wrap items-center gap-3">
+          <OpportunityBadge bucket={teaser.opportunity_bucket} score={teaser.opportunity_score} variant="tile" />
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Opportunity preview</p>
+            <h1 className="mt-1 text-2xl font-bold tracking-tight text-charcoal sm:text-3xl">{teaser.project_type ?? "Planning application"}</h1>
+          </div>
+        </div>
+        <p className="mt-4 text-sm text-slate">
+          {teaser.postcode_district} · {teaser.trade_category_name} · {STATUS_LABELS[teaser.planning_status] ?? teaser.planning_status}
+        </p>
       </div>
-      <p className="mt-1 text-sm text-slate">
-        {teaser.postcode_district} · {teaser.trade_category_name} · {STATUS_LABELS[teaser.planning_status] ?? teaser.planning_status}
-      </p>
 
       <dl className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
         <Kpi
@@ -230,7 +242,7 @@ function LockedBrief({ teaser }: { teaser: OpportunityTeaser }) {
         <Kpi label="Received" value={teaser.received_date ?? "—"} />
       </dl>
 
-      <div className="locked-panel mt-8 rounded-lg p-8">
+      <div className="locked-panel mt-6 rounded-3xl bg-charcoal p-8 sm:p-12">
         <div className="relative z-10 text-center text-white">
           <p className="text-lg font-semibold">
             Claiming {teaser.postcode_district} unlocks the full address, planning reference, AI scope analysis,
@@ -251,10 +263,10 @@ function LockedBrief({ teaser }: { teaser: OpportunityTeaser }) {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="mt-8 border-t border-light-grey pt-6">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-slate">{title}</h2>
-      <div className="mt-3">{children}</div>
-    </div>
+    <section className="mt-5 rounded-2xl border border-light-grey bg-white p-5 sm:p-6">
+      <h2 className="text-sm font-semibold text-charcoal">{title}</h2>
+      <div className="mt-4">{children}</div>
+    </section>
   );
 }
 
@@ -269,9 +281,9 @@ function Detail({ label, value }: { label: string; value: string }) {
 
 function Kpi({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-light-grey bg-white p-4">
-      <dt className="text-xs font-medium uppercase tracking-wide text-slate">{label}</dt>
-      <dd className="mt-1 text-lg font-semibold text-charcoal">{value}</dd>
+    <div className="rounded-2xl border border-light-grey bg-white p-4">
+      <dt className="text-[10px] font-semibold uppercase tracking-[0.11em] text-slate">{label}</dt>
+      <dd className="mt-2 text-lg font-bold tracking-tight text-charcoal">{value}</dd>
     </div>
   );
 }
