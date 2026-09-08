@@ -2,9 +2,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { checkEdgeRateLimit } from "@/lib/rate-limit";
+import { normalisePostcodeDistrict } from "@/lib/postcode";
 
 const querySchema = z.object({
-  postcode: z.string().trim().min(2).max(5),
+  postcode: z.string().trim().min(2).max(8),
   trade: z.string().trim().min(1),
 });
 
@@ -27,6 +28,11 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
 
+  const postcodeDistrict = normalisePostcodeDistrict(parsed.data.postcode);
+  if (postcodeDistrict.length < 2 || postcodeDistrict.length > 5) {
+    return NextResponse.json({ error: "invalid_request" }, { status: 400 });
+  }
+
   const ip = request.headers.get("cf-connecting-ip") ?? request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
   const edgeAllowed = await checkEdgeRateLimit(ip);
   if (!edgeAllowed) {
@@ -35,7 +41,7 @@ export async function GET(request: Request) {
 
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("check_territory_availability", {
-    p_postcode_district: parsed.data.postcode,
+    p_postcode_district: postcodeDistrict,
     p_trade_slug: parsed.data.trade,
   });
 
