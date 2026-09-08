@@ -58,11 +58,12 @@ export function ClaimTerritoryButton({
         type="button"
         onClick={handleClaim}
         disabled={isLoading}
+        aria-busy={isLoading}
         className="rounded-md bg-signal-orange px-6 py-3 font-semibold text-white transition hover:brightness-95 disabled:opacity-60"
       >
         {isLoading ? "Starting checkout…" : `Claim ${postcodeDistrict} — £${priceGbp}/month`}
       </button>
-      {error && <p className="mt-2 text-sm text-danger">{error}</p>}
+      {error && <p role="alert" className="mt-2 text-sm text-danger">{error}</p>}
     </div>
   );
 }
