@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { LockedOpportunityPreview } from "@/components/locked-opportunity-preview";
+import { normalisePostcodeDistrict } from "@/lib/postcode";
+import { formatGbp } from "@/components/opportunity-badge";
 
 interface TradeOption {
   slug: string;
@@ -22,11 +24,6 @@ const FALLBACK_TRADE: TradeOption = {
   slug: "general-builder",
   name: "General Builder",
 };
-
-function formatGbp(value: number): string {
-  if (value >= 1000) return "£" + Math.round(value / 1000) + "k";
-  return "£" + Math.round(value);
-}
 
 function MapPinIcon() {
   return (
@@ -56,7 +53,7 @@ export function TerritoryCheckerWidget({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const cleaned = district.trim().toUpperCase();
+    const cleaned = normalisePostcodeDistrict(district);
     if (!cleaned || !tradeSlug) return;
 
     setIsLoading(true);
@@ -143,7 +140,7 @@ export function TerritoryCheckerWidget({
             aria-label="Postcode district"
             autoComplete="postal-code"
             required
-            maxLength={7}
+            maxLength={8}
             className="w-full rounded-xl border border-light-grey bg-white px-4 py-3 text-sm text-charcoal placeholder:text-slate/70 focus:border-signal-orange focus:outline-none focus:ring-2 focus:ring-signal-orange/15"
           />
         </label>
