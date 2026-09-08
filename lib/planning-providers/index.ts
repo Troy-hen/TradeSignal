@@ -17,7 +17,9 @@ export function getPlanningProvider(): PlanningDataProvider {
     if (!apiKey) {
       throw new Error("PLOTA_API_KEY is not configured but PLANNING_PROVIDER=plota");
     }
-    return new PlotaPlanningProvider(new PlotaClient(apiKey), process.env.PLOTA_PLAN_TIER ?? "starter");
+    // The live Edge Function runs against the Plota Demo-safe path. Do not
+    // read a plan-tier secret: the Demo key is intentionally self-contained.
+    return new PlotaPlanningProvider(new PlotaClient(apiKey), "demo");
   }
   return getMockPlanningProvider();
 }
