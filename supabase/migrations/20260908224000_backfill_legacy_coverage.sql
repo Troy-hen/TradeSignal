@@ -8,10 +8,10 @@ with legacy_claims as (
     tc.company_id,
     t.trade_category_id,
     tc.status::text as claim_status,
-    row_number() over (
+    (row_number() over (
       partition by tc.company_id, t.trade_category_id
       order by tc.created_at, tc.id
-    ) as position
+    ))::integer as position
   from public.territory_claims tc
   join public.territories t on t.id = tc.territory_id
   where tc.status in ('reserved', 'active', 'suspended')
