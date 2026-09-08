@@ -2,36 +2,109 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { TerritoryCheckerWidget } from "@/components/territory-checker-widget";
 import { LockedOpportunityPreview } from "@/components/locked-opportunity-preview";
+import { FaqSection } from "@/components/marketing/faq";
+import { FALLBACK_PRICING, PricingGrid, type PricingItem } from "@/components/marketing/pricing-grid";
 
-const FALLBACK_TRADES = [
-  { slug: "general-builder", name: "General Builder" },
-  { slug: "groundworks", name: "Groundworks" },
-  { slug: "roofing", name: "Roofing" },
-  { slug: "structural-steel", name: "Structural Steel" },
-  { slug: "windows-doors", name: "Windows & Doors" },
-  { slug: "landscaping", name: "Landscaping" },
-  { slug: "electrical", name: "Electrical" },
-  { slug: "plumbing-heating", name: "Plumbing & Heating" },
-  { slug: "brickwork", name: "Brickwork" },
-  { slug: "demolition", name: "Demolition" },
-  { slug: "loft-conversion", name: "Loft Conversion" },
-  { slug: "driveways", name: "Driveways" },
-  { slug: "renewables", name: "Renewables" },
+const FALLBACK_TRADES: PricingItem[] = [
+  {
+    "slug": "general-builder",
+    "name": "General Builder",
+    "description": "Extensions, conversions and whole-project builds",
+    "monthlyPricePence": 9900
+  },
+  {
+    "slug": "groundworks",
+    "name": "Groundworks",
+    "description": "Excavation, foundations, drainage and site preparation",
+    "monthlyPricePence": 7900
+  },
+  {
+    "slug": "roofing",
+    "name": "Roofing",
+    "description": "Re-roofing, roof extensions and roofline work",
+    "monthlyPricePence": 7900
+  },
+  {
+    "slug": "structural-steel",
+    "name": "Structural Steel",
+    "description": "Steel beams and structural alterations",
+    "monthlyPricePence": 6900
+  },
+  {
+    "slug": "windows-doors",
+    "name": "Windows & Doors",
+    "description": "Replacement and new windows, doors and glazing",
+    "monthlyPricePence": 6900
+  },
+  {
+    "slug": "landscaping",
+    "name": "Landscaping",
+    "description": "Gardens, patios, boundaries and external works",
+    "monthlyPricePence": 5900
+  },
+  {
+    "slug": "electrical",
+    "name": "Electrical",
+    "description": "Rewiring, consumer units, EV charging and new circuits",
+    "monthlyPricePence": 7900
+  },
+  {
+    "slug": "plumbing-heating",
+    "name": "Plumbing & Heating",
+    "description": "Boilers, heating systems, bathrooms and heat pumps",
+    "monthlyPricePence": 7900
+  },
+  {
+    "slug": "brickwork",
+    "name": "Brickwork",
+    "description": "Blockwork, brickwork and masonry",
+    "monthlyPricePence": 6900
+  },
+  {
+    "slug": "demolition",
+    "name": "Demolition",
+    "description": "Full or partial demolition and strip-out",
+    "monthlyPricePence": 5900
+  },
+  {
+    "slug": "loft-conversion",
+    "name": "Loft Conversion",
+    "description": "Loft conversions and roof-space development",
+    "monthlyPricePence": 6900
+  },
+  {
+    "slug": "driveways",
+    "name": "Driveways",
+    "description": "Driveways, hardstanding and parking areas",
+    "monthlyPricePence": 5900
+  },
+  {
+    "slug": "renewables",
+    "name": "Renewables",
+    "description": "Solar PV, heat pumps and renewable installations",
+    "monthlyPricePence": 6900
+  }
 ];
 
+
 export default async function LandingPage() {
-  let tradeOptions = FALLBACK_TRADES;
+  let tradeOptions: PricingItem[] = FALLBACK_PRICING;
 
   try {
     const supabase = await createClient();
     const { data: trades } = await supabase
       .from("trade_categories")
-      .select("slug, name")
+      .select("slug, name, description, default_monthly_price_pence")
       .eq("is_active", true)
       .order("display_order");
 
     if (trades && trades.length > 0) {
-      tradeOptions = trades.map((trade) => ({ slug: trade.slug, name: trade.name }));
+      tradeOptions = trades.map((trade) => ({
+        slug: trade.slug,
+        name: trade.name,
+        description: trade.description,
+        monthlyPricePence: trade.default_monthly_price_pence,
+      }));
     }
   } catch {
     // Keep the marketing page usable while the data service is unavailable.
@@ -255,6 +328,10 @@ export default async function LandingPage() {
           </div>
         </div>
       </section>
+
+      <PricingGrid items={tradeOptions} compact />
+
+      <FaqSection compact />
 
       <section className="bg-charcoal px-6 py-20 text-white sm:py-24">
         <div className="mx-auto flex max-w-7xl flex-col gap-8 lg:flex-row lg:items-end lg:justify-between lg:px-2">
