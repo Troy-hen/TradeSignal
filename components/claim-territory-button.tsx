@@ -3,10 +3,12 @@
 import { useState } from "react";
 
 const ERROR_COPY: Record<string, string> = {
+  unauthenticated: "Sign in or create a free account before claiming a territory.",
   territory_unavailable:
     "This territory was just claimed by another business. Refresh the page to see current availability.",
-  no_authorized_company: "Only a company owner or admin can claim a territory.",
+  no_authorized_company: "Finish setting up your company before claiming a territory.",
   unknown_territory: "We couldn't recognise that postcode district or trade.",
+  reservation_failed: "We couldn't reserve this territory. Please refresh and try again.",
   checkout_failed: "Something went wrong starting checkout. Please try again.",
   demo_activation_failed: "We could not activate the demo territory. Please try again.",
 };
