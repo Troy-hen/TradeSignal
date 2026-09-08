@@ -76,9 +76,11 @@ export function TerritoryCheckerWidget({
         setError(
           res.status === 429
             ? "Too many searches — please wait a moment and try again."
-            : body.error === "unknown_trade"
-              ? "We couldn't recognise that trade."
-              : "Something went wrong. Please try again.",
+            : body.error === "unknown_postcode_district"
+              ? "We don't cover that postcode district yet. Try NR15, IP22 or SW11."
+              : body.error === "unknown_trade"
+                ? "We couldn't recognise that trade."
+                : "Something went wrong. Please try again.",
         );
         return;
       }
@@ -233,10 +235,10 @@ export function TerritoryCheckerWidget({
               )}
             </div>
             <Link
-              href="/signup"
+              href={`/territories/${encodeURIComponent(checkedDistrict)}/${encodeURIComponent(tradeSlug)}`}
               className="inline-flex items-center rounded-xl bg-signal-orange px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#e95f00]"
             >
-              {isAvailable ? "Claim this territory" : "Sign up free"}
+              {isAvailable ? "View territory & claim" : "View territory"}
             </Link>
           </div>
         </div>
