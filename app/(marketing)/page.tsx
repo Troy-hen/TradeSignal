@@ -199,8 +199,8 @@ export default async function LandingPage() {
           <div className="rounded-3xl bg-charcoal p-5 text-white shadow-2xl shadow-charcoal/15 sm:p-7">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Territory preview</p>
-                <p className="mt-2 text-2xl font-semibold tracking-tight">NR15 · General Builder</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Live territory view</p>
+                <p className="mt-2 text-2xl font-semibold tracking-tight">Your area · Your trade</p>
               </div>
               <span className="inline-flex items-center gap-2 rounded-full bg-success/10 px-3 py-1.5 text-xs font-semibold text-success">
                 <span className="h-1.5 w-1.5 rounded-full bg-success" />
@@ -209,9 +209,9 @@ export default async function LandingPage() {
             </div>
 
             <div className="mt-8 grid grid-cols-3 gap-3">
-              <TerritoryMetric label="New matches" value="8" />
-              <TerritoryMetric label="High priority" value="3" />
-              <TerritoryMetric label="Pipeline value" value="£42k" />
+              <TerritoryMetric label="New matches" value="Live" />
+              <TerritoryMetric label="High priority" value="Live" />
+              <TerritoryMetric label="Pipeline value" value="Live" />
             </div>
 
             <div className="mt-6 flex items-start gap-3 border-t border-white/10 pt-5">
@@ -289,16 +289,16 @@ function OpportunityFeedPreview() {
       <div className="rounded-2xl bg-soft-surface p-4 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Example signal</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Live territory signal</p>
             <p className="mt-1 text-lg font-semibold text-charcoal">A clearer local pipeline</p>
           </div>
           <span className="rounded-full border border-light-grey bg-white px-3 py-1.5 text-xs font-semibold text-slate">Aggregate view</span>
         </div>
 
         <div className="mt-5 grid grid-cols-3 gap-3">
-          <Kpi label="New matches" value="8" />
-          <Kpi label="High priority" value="3" />
-          <Kpi label="Est. value" value="£42k" />
+          <Kpi label="New matches" value="Live" />
+          <Kpi label="High priority" value="Live" />
+          <Kpi label="Est. value" value="Live" />
         </div>
 
         <div className="mt-5">
