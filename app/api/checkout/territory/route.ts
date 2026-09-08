@@ -111,13 +111,14 @@ export async function POST(request: Request) {
   const claimIds = (planItems ?? []).map((item: { territory_claim_id: string }) => item.territory_claim_id);
   const firstDistrict = (planItems?.[0]?.postcode_district as string | undefined) ?? districts[0];
 
-  if (!plan || !company || !trade || claimIds.length === 0) {
-    throw new Error("Could not load coverage plan for checkout");
-  }
-
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
-  if (isConfiguredDemoUser(user)) {
+  try {
+    if (!plan || !company || !trade || claimIds.length === 0) {
+      throw new Error("coverage_plan_load_failed");
+    }
+
+    if (isConfiguredDemoUser(user)) {
     const now = new Date().toISOString();
     const { error: activationError } = await adminDb
       .from("territory_claims")
@@ -159,9 +160,9 @@ export async function POST(request: Request) {
         encodeURIComponent(reservation.first_territory_claim_id) +
         "&demo=1",
     });
-  }
 
-  try {
+    }
+
     const stripe = getStripeClient();
 
     let stripeCustomerId = company.stripe_customer_id;
