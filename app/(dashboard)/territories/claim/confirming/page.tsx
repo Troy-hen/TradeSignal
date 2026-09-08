@@ -102,7 +102,7 @@ function ConfirmingMessage({ isDemo }: { isDemo: boolean }) {
         {isDemo ? "Activating your demo territory…" : "Confirming your payment…"}
       </h1>
       <p className="mt-2 text-sm text-slate">
-        {isDemo ? "Your demo claim is being activated. Don&apos;t close this page." : "This usually takes a few seconds. Don&apos;t close this page."}
+        {isDemo ? "Your demo claim is being activated. Don’t close this page." : "This usually takes a few seconds. Don’t close this page."}
       </p>
     </>
   );

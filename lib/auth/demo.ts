@@ -7,7 +7,7 @@ import type { User } from "@supabase/supabase-js";
  * territory without payment.
  */
 export function isConfiguredDemoUser(user: Pick<User, "id" | "email">): boolean {
-  const allowedIds = parseList(process.env.MYTRADEBOX_DEMO_USER_IDS);
+  const allowedIds = new Set(parseList(process.env.MYTRADEBOX_DEMO_USER_IDS));
   const allowedEmails = parseList(process.env.MYTRADEBOX_DEMO_USER_EMAILS).map((value) => value.toLowerCase());
 
   return allowedIds.has(user.id) || (user.email ? allowedEmails.includes(user.email.toLowerCase()) : false);
