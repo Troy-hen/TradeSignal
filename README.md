@@ -109,16 +109,16 @@ Set `RESEND_API_KEY` and `RESEND_FROM_EMAIL` as Edge Function secrets (email sen
 - **`mock` (default)** — `MockPlanningProvider` generates ~250 seeded, deterministic, realistic UK-style applications across the districts in `postcode_districts`, marked `is_demo_data`. Zero external dependency; this is what local dev and a fresh deploy run against out of the box.
 - **`plota`** — uses Plota's bearer-auth REST API with the current application fields (`description`, `address`, `planning_route`, `date_decided`, `commercial`) mapped into the normalized planning schema. List requests explicitly use a ten-row page, cursor pagination is followed, and `include_contact` is never set to `true` by default. The Demo key is capped at **500 requests total, not monthly**; use the targeted manual sync below for smoke-testing, not an unrestricted historical backfill. Scheduled Plota reads default to one ten-row page per run; set `PLOTA_MAX_PAGES_PER_RUN` only when you deliberately want to spend more calls. A plan-tier environment variable is not required for Demo operation.
 
-For a bounded end-to-end smoke test, call the ingestion function with only the districts you want to inspect. This makes one Plota list request per district (maximum ten rows per request):
+For a bounded end-to-end smoke test, call the ingestion function once with the districts you want to inspect. One MyTradeBox sync request can fan out to up to 50 districts, follow Plota cursor pages, and read up to two ten-row pages per district by default. The hard manual budget is 100 Plota pages (up to 1,000 records). Each Plota page is a separate API request; the Demo key returns at most ten rows per request. Increase `max_pages_per_district` up to 20 only when you deliberately want to spend more of the Demo allowance:
 
 ```bash
 curl -X POST "https://<project-ref>.supabase.co/functions/v1/ingest-planning-applications" \
   -H "Authorization: Bearer $CRON_SECRET" \
   -H "Content-Type: application/json" \
-  -d '{"run_type":"manual_backfill","postcode_districts":["IP22","NR1","N2"]}'
+  -d '{"run_type":"manual_backfill","postcode_districts":["IP22","NR1","N2","SW11","E17","M1","B1","BS1","LS1","G1"],"max_pages_per_district":2}'
 ```
 
-The ingestion response reports fetched/created rows. The classifier then needs to run with a configured `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` and an active `application_enrichment` prompt before aggregate opportunity counts and AI-backed values can appear.
+The ingestion response reports fetched/created rows, `plotaApiCalls`, empty districts and any Plota `meta.hint` values. The classifier then needs to run with a configured `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` and an active `application_enrichment` prompt before aggregate opportunity counts and AI-backed values can appear.
 
 ## AI / LLM configuration
 
