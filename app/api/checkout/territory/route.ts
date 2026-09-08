@@ -44,9 +44,9 @@ export async function POST(request: Request) {
       .filter(Boolean),
   )];
 
-  const db = supabase as any;
+  const db = supabase;
   const admin = createAdminClient();
-  const adminDb = admin as any;
+  const adminDb = admin;
 
   const { data: reservationRows, error: reserveError } = await db.rpc("reserve_coverage_plan", {
     p_postcode_districts: districts,
