@@ -1677,6 +1677,28 @@ export type Database = {
           trade_category_slug: string
         }[]
       }
+      browse_territory_activity: {
+        Args: {
+          p_limit?: number
+          p_postcode_district: string
+          p_trade_category_id: string
+        }
+        Returns: {
+          ai_confidence: number | null
+          application_type: string | null
+          authority_name: string | null
+          classification_status: string
+          classification_summary: string | null
+          id: string
+          matched_to_trade: boolean
+          planning_status: Database["public"]["Enums"]["planning_application_status"]
+          project_type: string | null
+          proposal_description: string | null
+          provider: string
+          received_date: string | null
+          status_raw: string | null
+        }[]
+      }
       browse_territory_opportunities: {
         Args: {
           p_limit?: number
