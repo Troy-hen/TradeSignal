@@ -213,6 +213,14 @@ export function TerritoryCheckerWidget({
             />
           </div>
 
+          <div className="mt-5">
+            <LockedOpportunityPreview
+              compact
+              title="Opportunity details locked"
+              body="Preview the local signal for free. Claim the territory to reveal specific projects, addresses, AI interpretation and contact timing."
+            />
+          </div>
+
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-soft-surface p-4">
             <div>
               <p className="font-semibold text-charcoal">
