@@ -555,6 +555,222 @@ export type Database = {
           },
         ]
       }
+      coverage_area_postcodes: {
+        Row: {
+          coverage_area_id: string
+          created_at: string
+          postcode_district: string
+        }
+        Insert: {
+          coverage_area_id: string
+          created_at?: string
+          postcode_district: string
+        }
+        Update: {
+          coverage_area_id?: string
+          created_at?: string
+          postcode_district?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coverage_area_postcodes_coverage_area_id_fkey"
+            columns: ["coverage_area_id"]
+            isOneToOne: false
+            referencedRelation: "coverage_areas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coverage_area_postcodes_postcode_district_fkey"
+            columns: ["postcode_district"]
+            isOneToOne: false
+            referencedRelation: "postcode_districts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coverage_areas: {
+        Row: {
+          area_type: string
+          created_at: string
+          discount_percent: number
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          area_type?: string
+          created_at?: string
+          discount_percent?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          area_type?: string
+          created_at?: string
+          discount_percent?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      coverage_plan_items: {
+        Row: {
+          coverage_plan_id: string
+          created_at: string
+          effective_from: string
+          effective_until: string | null
+          id: string
+          postcode_district: string
+          status: Database["public"]["Enums"]["coverage_plan_item_status"]
+          territory_claim_id: string
+          unit_monthly_price_pence: number
+          updated_at: string
+        }
+        Insert: {
+          coverage_plan_id: string
+          created_at?: string
+          effective_from?: string
+          effective_until?: string | null
+          id?: string
+          postcode_district: string
+          status?: Database["public"]["Enums"]["coverage_plan_item_status"]
+          territory_claim_id: string
+          unit_monthly_price_pence: number
+          updated_at?: string
+        }
+        Update: {
+          coverage_plan_id?: string
+          created_at?: string
+          effective_from?: string
+          effective_until?: string | null
+          id?: string
+          postcode_district?: string
+          status?: Database["public"]["Enums"]["coverage_plan_item_status"]
+          territory_claim_id?: string
+          unit_monthly_price_pence?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coverage_plan_items_coverage_plan_id_fkey"
+            columns: ["coverage_plan_id"]
+            isOneToOne: false
+            referencedRelation: "coverage_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coverage_plan_items_postcode_district_fkey"
+            columns: ["postcode_district"]
+            isOneToOne: false
+            referencedRelation: "postcode_districts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coverage_plan_items_territory_claim_id_fkey"
+            columns: ["territory_claim_id"]
+            isOneToOne: true
+            referencedRelation: "territory_claims"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      coverage_plans: {
+        Row: {
+          billing_mode: Database["public"]["Enums"]["coverage_billing_mode"]
+          cancel_at_period_end: boolean
+          cancelled_at: string | null
+          company_id: string
+          coverage_area_id: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          monthly_price_pence: number
+          status: Database["public"]["Enums"]["coverage_plan_status"]
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          trade_category_id: string
+          updated_at: string
+        }
+        Insert: {
+          billing_mode?: Database["public"]["Enums"]["coverage_billing_mode"]
+          cancel_at_period_end?: boolean
+          cancelled_at?: string | null
+          company_id: string
+          coverage_area_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          monthly_price_pence: number
+          status?: Database["public"]["Enums"]["coverage_plan_status"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          trade_category_id: string
+          updated_at?: string
+        }
+        Update: {
+          billing_mode?: Database["public"]["Enums"]["coverage_billing_mode"]
+          cancel_at_period_end?: boolean
+          cancelled_at?: string | null
+          company_id?: string
+          coverage_area_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          monthly_price_pence?: number
+          status?: Database["public"]["Enums"]["coverage_plan_status"]
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          trade_category_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "coverage_plans_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coverage_plans_coverage_area_id_fkey"
+            columns: ["coverage_area_id"]
+            isOneToOne: false
+            referencedRelation: "coverage_areas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coverage_plans_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "coverage_plans_trade_category_id_fkey"
+            columns: ["trade_category_id"]
+            isOneToOne: false
+            referencedRelation: "trade_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ingestion_runs: {
         Row: {
           applications_created: number
@@ -1167,6 +1383,7 @@ export type Database = {
           cancel_at_period_end: boolean
           canceled_at: string | null
           company_id: string
+          coverage_plan_id: string | null
           created_at: string
           current_period_end: string | null
           current_period_start: string | null
@@ -1175,13 +1392,14 @@ export type Database = {
           stripe_customer_id: string
           stripe_price_id: string | null
           stripe_subscription_id: string
-          territory_claim_id: string
+          territory_claim_id: string | null
           updated_at: string
         }
         Insert: {
           cancel_at_period_end?: boolean
           canceled_at?: string | null
           company_id: string
+          coverage_plan_id?: string | null
           created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
@@ -1190,13 +1408,14 @@ export type Database = {
           stripe_customer_id: string
           stripe_price_id?: string | null
           stripe_subscription_id: string
-          territory_claim_id: string
+          territory_claim_id?: string | null
           updated_at?: string
         }
         Update: {
           cancel_at_period_end?: boolean
           canceled_at?: string | null
           company_id?: string
+          coverage_plan_id?: string | null
           created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
@@ -1205,7 +1424,7 @@ export type Database = {
           stripe_customer_id?: string
           stripe_price_id?: string | null
           stripe_subscription_id?: string
-          territory_claim_id?: string
+          territory_claim_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1214,6 +1433,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_coverage_plan_id_fkey"
+            columns: ["coverage_plan_id"]
+            isOneToOne: false
+            referencedRelation: "coverage_plans"
             referencedColumns: ["id"]
           },
           {
@@ -1668,6 +1894,14 @@ export type Database = {
           trade_category_slug: string
         }[]
       }
+      change_coverage_plan: {
+        Args: { p_coverage_plan_id: string; p_postcode_districts: string[] }
+        Returns: {
+          coverage_plan_id: string
+          monthly_price_pence: number
+          postcode_count: number
+        }[]
+      }
       check_territory_availability: {
         Args: { p_postcode_district: string; p_trade_slug: string }
         Returns: {
@@ -1703,6 +1937,15 @@ export type Database = {
           score: number
         }[]
       }
+      coverage_plan_price: {
+        Args: {
+          p_billing_mode?: Database["public"]["Enums"]["coverage_billing_mode"]
+          p_discount_percent?: number
+          p_postcode_count: number
+        }
+        Returns: number
+      }
+      coverage_unit_price: { Args: { p_position: number }; Returns: number }
       create_company_and_claim_ownership: {
         Args: { p_billing_email: string; p_trading_name: string }
         Returns: {
@@ -1953,6 +2196,20 @@ export type Database = {
         Returns: undefined
       }
       rescore_stale_opportunities: { Args: never; Returns: undefined }
+      reserve_coverage_plan: {
+        Args: {
+          p_billing_mode?: Database["public"]["Enums"]["coverage_billing_mode"]
+          p_coverage_area_id?: string
+          p_postcode_districts: string[]
+          p_trade_category_id: string
+        }
+        Returns: {
+          coverage_plan_id: string
+          first_territory_claim_id: string
+          monthly_price_pence: number
+          postcode_count: number
+        }[]
+      }
       reserve_territory: {
         Args: { p_postcode_district: string; p_trade_category_id: string }
         Returns: {
@@ -2623,6 +2880,20 @@ export type Database = {
         | "processing"
       company_member_role: "owner" | "admin" | "member"
       company_member_status: "invited" | "active" | "removed"
+      coverage_billing_mode: "custom" | "county"
+      coverage_plan_item_status:
+        | "active"
+        | "pending_add"
+        | "pending_remove"
+        | "removed"
+        | "expired"
+      coverage_plan_status:
+        | "reserved"
+        | "active"
+        | "pending_change"
+        | "suspended"
+        | "cancelled"
+        | "expired"
       lead_action_type:
         | "viewed"
         | "saved"
@@ -2807,6 +3078,22 @@ export const Constants = {
       ],
       company_member_role: ["owner", "admin", "member"],
       company_member_status: ["invited", "active", "removed"],
+      coverage_billing_mode: ["custom", "county"],
+      coverage_plan_item_status: [
+        "active",
+        "pending_add",
+        "pending_remove",
+        "removed",
+        "expired",
+      ],
+      coverage_plan_status: [
+        "reserved",
+        "active",
+        "pending_change",
+        "suspended",
+        "cancelled",
+        "expired",
+      ],
       lead_action_type: [
         "viewed",
         "saved",
