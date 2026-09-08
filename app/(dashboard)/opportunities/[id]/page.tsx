@@ -8,6 +8,7 @@ import { LockedOpportunityPreview } from "@/components/locked-opportunity-previe
 import { LeadActionPanel } from "@/components/lead-action-panel";
 import { OutreachAssistant } from "@/components/outreach-assistant";
 import type { Database } from "@/lib/types/database";
+import { formatMonthlyGbp } from "@/lib/coverage/pricing";
 
 type Opportunity = Database["public"]["Tables"]["application_trade_opportunities"]["Row"];
 type OpportunityTeaser = Database["public"]["Functions"]["browse_opportunity_teaser"]["Returns"][number];
@@ -315,7 +316,7 @@ function formatKeyFacts(value: unknown): string[] {
 }
 
 function LockedBrief({ teaser }: { teaser: OpportunityTeaser }) {
-  const priceGbp = Math.round((teaser.monthly_price_pence ?? 0) / 100);
+  const priceLabel = formatMonthlyGbp(teaser.monthly_price_pence ?? 0);
   const isAvailable = teaser.territory_status === "available";
 
   return (
@@ -343,12 +344,12 @@ function LockedBrief({ teaser }: { teaser: OpportunityTeaser }) {
         {isAvailable ? (
           <>
             <p className="font-semibold text-charcoal">Unlock {teaser.postcode_district} for {teaser.trade_category_name}</p>
-            <p className="mt-1 text-sm text-slate">One exclusive territory for your business, from £{priceGbp}/month.</p>
+            <p className="mt-1 text-sm text-slate">One exclusive territory for your business, from {priceLabel}/month.</p>
             <div className="mt-4">
               <ClaimTerritoryButton
                 postcodeDistrict={teaser.postcode_district}
                 tradeCategoryId={teaser.trade_category_id}
-                priceGbp={priceGbp}
+                priceLabel={priceLabel}
               />
             </div>
           </>
