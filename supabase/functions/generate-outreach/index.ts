@@ -26,7 +26,9 @@ import { zodTextFormat } from "npm:openai@7.10.0/helpers/zod";
  * already-deployed, verified function for limited benefit.
  */
 
-const OutreachSchema = z.object({
+// Exported so supabase/functions/_shared/ai/schemas.test.ts can validate
+// the real schema directly rather than a duplicated copy.
+export const OutreachSchema = z.object({
   intro_letter: z.string(),
   phone_opener: z.string(),
   doorstep_script: z.string(),
