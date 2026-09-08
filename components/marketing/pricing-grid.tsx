@@ -27,7 +27,8 @@ function formatMonthlyPrice(pence: number) {
   return new Intl.NumberFormat("en-GB", {
     style: "currency",
     currency: "GBP",
-    maximumFractionDigits: 0,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(pence / 100);
 }
 
@@ -41,10 +42,10 @@ export function PricingGrid({ items, compact = false }: { items: PricingItem[]; 
           <div className="max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Transparent pricing</p>
             <h2 className="mt-4 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">
-              One clear monthly price for your trade area.
+              Start at £29.99. Pay less as your coverage grows.
             </h2>
             <p className="mt-5 text-base leading-7 text-slate">
-              Current pricing is based on one trade category in one postcode district. The exact territory price is confirmed when you check an area.
+              Start with one trade in one postcode district for £29.99/month. Add districts around your service area and the unit price steps down automatically.
             </p>
           </div>
           {compact && (
@@ -67,7 +68,7 @@ export function PricingGrid({ items, compact = false }: { items: PricingItem[]; 
                 </p>
               </div>
               <div className="mt-5 border-t border-light-grey pt-4 text-xs leading-5 text-slate">
-                Exclusive to one business in the selected postcode district.
+                Exclusive to one business for this trade and postcode district.
               </div>
               <Link
                 href="/territories"
@@ -81,7 +82,7 @@ export function PricingGrid({ items, compact = false }: { items: PricingItem[]; 
 
         {compact && (
           <p className="mt-6 text-sm leading-6 text-slate">
-            Wider coverage is the next step: we will offer sensible packs of adjacent districts for businesses that cover a city or county, rather than forcing every builder to buy areas one at a time.
+            Coverage is flexible: £24.99 each for districts 2–3, £19.99 for 4–6, £14.99 for 7–10 and £9.99 from 11 onwards. Verified county bundles receive 20% off the tiered subtotal.
           </p>
         )}
       </div>
