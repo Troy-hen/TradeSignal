@@ -5,22 +5,29 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isConfiguredDemoUser } from "@/lib/auth/demo";
 import { getStripeClient } from "@/lib/stripe/client";
 
-const bodySchema = z.object({
-  postcode_district: z.string().trim().min(2).max(5),
-  trade_category_id: z.string().trim().uuid(),
-});
+const bodySchema = z
+  .object({
+    postcode_district: z.string().trim().min(2).max(8).optional(),
+    postcode_districts: z.array(z.string().trim().min(2).max(8)).min(1).max(500).optional(),
+    trade_category_id: z.string().trim().uuid(),
+    billing_mode: z.enum(["custom", "county"]).default("custom"),
+    coverage_area_id: z.string().trim().uuid().nullable().optional(),
+  })
+  .refine((body) => Boolean(body.postcode_districts?.length || body.postcode_district), {
+    message: "postcode_districts is required",
+  });
 
 /**
- * Receives ONLY { postcode_district, trade_category_id } from the client —
- * never a price or company id. reserve_territory() resolves the caller's
- * company and enforces exclusivity server-side; the price paid is always
- * read live from the territories row, never trusted from the request.
+ * Receives postcode districts and a trade only. Prices are calculated inside
+ * reserve_coverage_plan() from the server-side pricing function; the client
+ * never supplies a price or company id.
  */
 export async function POST(request: Request) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
   if (!user) {
     return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
   }
@@ -30,75 +37,127 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
-  const { postcode_district, trade_category_id } = parsed.data;
 
-  const { data: claim, error: reserveError } = await supabase.rpc("reserve_territory", {
-    p_postcode_district: postcode_district,
-    p_trade_category_id: trade_category_id,
+  const districts = [...new Set(
+    (parsed.data.postcode_districts ?? [parsed.data.postcode_district!])
+      .map((district) => district.trim().toUpperCase())
+      .filter(Boolean),
+  )];
+
+  const db = supabase as any;
+  const admin = createAdminClient();
+  const adminDb = admin as any;
+
+  const { data: reservationRows, error: reserveError } = await db.rpc("reserve_coverage_plan", {
+    p_postcode_districts: districts,
+    p_trade_category_id: parsed.data.trade_category_id,
+    p_billing_mode: parsed.data.billing_mode,
+    p_coverage_area_id: parsed.data.coverage_area_id ?? null,
   });
 
-  if (reserveError || !claim) {
+  if (reserveError || !reservationRows?.[0]) {
     const message = reserveError?.message ?? "";
     if (reserveError?.code === "23505" || message.includes("territory_unavailable")) {
       return NextResponse.json({ error: "territory_unavailable" }, { status: 409 });
     }
+    if (message.includes("coverage_plan_exists")) {
+      return NextResponse.json({ error: "coverage_plan_exists" }, { status: 409 });
+    }
+    if (
+      message.includes("unknown_postcode_district") ||
+      message.includes("unknown_trade") ||
+      message.includes("no_postcode_districts") ||
+      message.includes("too_many_postcode_districts")
+    ) {
+      return NextResponse.json({ error: "unknown_territory" }, { status: 400 });
+    }
+    if (
+      message.includes("coverage_area_required") ||
+      message.includes("coverage_area_unavailable") ||
+      message.includes("county_requires_complete_selection") ||
+      message.includes("coverage_area_not_allowed")
+    ) {
+      return NextResponse.json({ error: "invalid_coverage_area" }, { status: 400 });
+    }
     if (message.includes("no_authorized_company")) {
       return NextResponse.json({ error: "no_authorized_company" }, { status: 403 });
-    }
-    if (message.includes("unknown_postcode_district") || message.includes("unknown_trade")) {
-      return NextResponse.json({ error: "unknown_territory" }, { status: 400 });
     }
     return NextResponse.json({ error: "reservation_failed" }, { status: 400 });
   }
 
-  const admin = createAdminClient();
+  const reservation = reservationRows[0] as {
+    coverage_plan_id: string;
+    first_territory_claim_id: string;
+    monthly_price_pence: number;
+    postcode_count: number;
+  };
+
+  const { data: plan } = await adminDb
+    .from("coverage_plans")
+    .select("id, company_id")
+    .eq("id", reservation.coverage_plan_id)
+    .maybeSingle();
+
+  const [{ data: company }, { data: trade }, { data: planItems }] = await Promise.all([
+    supabase.from("companies").select("id, trading_name, billing_email, stripe_customer_id").eq("id", plan?.company_id).single(),
+    supabase.from("trade_categories").select("name, slug").eq("id", parsed.data.trade_category_id).single(),
+    adminDb
+      .from("coverage_plan_items")
+      .select("territory_claim_id, postcode_district")
+      .eq("coverage_plan_id", reservation.coverage_plan_id)
+      .order("postcode_district"),
+  ]);
+
+  const claimIds = (planItems ?? []).map((item: { territory_claim_id: string }) => item.territory_claim_id);
+  const firstDistrict = (planItems?.[0]?.postcode_district as string | undefined) ?? districts[0];
+
+  if (!plan || !company || !trade || claimIds.length === 0) {
+    throw new Error("Could not load coverage plan for checkout");
+  }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
+  // Demo access is explicit and server-side. It activates every claim in the
+  // coverage plan, so matching triggers and RLS behave exactly like paid access.
+  if (isConfiguredDemoUser(user)) {
+    const now = new Date().toISOString();
+    const { error: activationError } = await adminDb
+      .from("territory_claims")
+      .update({
+        status: "active",
+        activated_at: now,
+        reserved_expires_at: null,
+        stripe_checkout_session_id: null,
+        stripe_subscription_id: null,
+      })
+      .in("id", claimIds)
+      .eq("company_id", company.id)
+      .eq("status", "reserved");
+
+    if (activationError) {
+      throw new Error("demo_activation_failed");
+    }
+
+    const { error: planActivationError } = await adminDb
+      .from("coverage_plans")
+      .update({ status: "active", current_period_start: now })
+      .eq("id", reservation.coverage_plan_id)
+      .eq("company_id", company.id)
+      .eq("status", "reserved");
+
+    if (planActivationError) {
+      throw new Error("demo_activation_failed");
+    }
+
+    return NextResponse.json({
+      demo: true,
+      plan: reservation.coverage_plan_id,
+      claim: reservation.first_territory_claim_id,
+      url: \`\${appUrl}/territories/claim/confirming?plan=\${reservation.coverage_plan_id}&claim=\${reservation.first_territory_claim_id}&demo=1\`,
+    });
+  }
 
   try {
-    const [{ data: company }, { data: territory }, { data: trade }] = await Promise.all([
-      supabase
-        .from("companies")
-        .select("id, trading_name, billing_email, stripe_customer_id")
-        .eq("id", claim.company_id)
-        .single(),
-      supabase.from("territories").select("monthly_price_pence, postcode_district").eq("id", claim.territory_id).single(),
-      supabase.from("trade_categories").select("name, slug").eq("id", trade_category_id).single(),
-    ]);
-
-    if (!company || !territory || !trade) {
-      throw new Error("Could not load company/territory/trade for checkout");
-    }
-
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-
-    // Demo access is explicit and server-side. It still reserves through the
-    // normal RPC, then activates the real claim so DB matching triggers,
-    // dashboard access and RLS behave exactly like a paid territory.
-    if (isConfiguredDemoUser(user)) {
-      const { data: activatedClaim, error: activationError } = await admin
-        .from("territory_claims")
-        .update({
-          status: "active",
-          activated_at: new Date().toISOString(),
-          reserved_expires_at: null,
-          stripe_checkout_session_id: null,
-          stripe_subscription_id: null,
-        })
-        .eq("id", claim.id)
-        .eq("company_id", claim.company_id)
-        .eq("status", "reserved")
-        .select("id")
-        .maybeSingle();
-
-      if (activationError || !activatedClaim) {
-        throw new Error("demo_activation_failed");
-      }
-
-      return NextResponse.json({
-        demo: true,
-        url: `${appUrl}/territories/claim/confirming?claim=${claim.id}&demo=1`,
-      });
-    }
-
     const stripe = getStripeClient();
 
     let stripeCustomerId = company.stripe_customer_id;
@@ -113,8 +172,8 @@ export async function POST(request: Request) {
     }
 
     const metadata = {
-      territory_claim_id: claim.id,
-      territory_id: claim.territory_id,
+      coverage_plan_id: reservation.coverage_plan_id,
+      territory_claim_id: reservation.first_territory_claim_id,
       company_id: company.id,
     };
 
@@ -125,34 +184,45 @@ export async function POST(request: Request) {
         {
           price_data: {
             currency: "gbp",
-            unit_amount: territory.monthly_price_pence,
+            unit_amount: reservation.monthly_price_pence,
             recurring: { interval: "month" },
             product_data: {
-              name: `${territory.postcode_district} ${trade.name} territory`,
-              description: "Exclusive MyTradeBox local territory subscription",
+              name: \`\${reservation.postcode_count} postcode \${trade.name} coverage\`,
+              description: \`Exclusive MyTradeBox coverage across \${reservation.postcode_count} postcode district\${reservation.postcode_count === 1 ? "" : "s"}\`,
             },
           },
           quantity: 1,
         },
       ],
-      success_url: `${appUrl}/territories/claim/confirming?claim=${claim.id}`,
-      cancel_url: `${appUrl}/territories/${territory.postcode_district}/${trade.slug}`,
+      success_url: \`\${appUrl}/territories/claim/confirming?plan=\${reservation.coverage_plan_id}&claim=\${reservation.first_territory_claim_id}\`,
+      cancel_url: \`\${appUrl}/territories/\${firstDistrict}/\${trade.slug}\`,
       metadata,
-      // Session-level metadata does not propagate to the Subscription object —
-      // only subscription_data.metadata does, and subscription-lifecycle
-      // webhooks carry the Subscription, not the Session.
       subscription_data: { metadata },
     });
 
-    await admin.from("territory_claims").update({ stripe_checkout_session_id: session.id }).eq("id", claim.id);
+    await adminDb
+      .from("territory_claims")
+      .update({ stripe_checkout_session_id: session.id })
+      .in("id", claimIds)
+      .eq("company_id", company.id)
+      .eq("status", "reserved");
 
-    return NextResponse.json({ url: session.url });
+    return NextResponse.json({
+      url: session.url,
+      plan: reservation.coverage_plan_id,
+      claim: reservation.first_territory_claim_id,
+    });
   } catch (err) {
-    console.error("checkout/territory failed after reservation", err);
-    await admin
+    console.error("checkout/territory failed after coverage reservation", err);
+    await adminDb
       .from("territory_claims")
       .update({ status: "expired" })
-      .eq("id", claim.id)
+      .in("id", claimIds)
+      .eq("status", "reserved");
+    await adminDb
+      .from("coverage_plans")
+      .update({ status: "expired" })
+      .eq("id", reservation.coverage_plan_id)
       .eq("status", "reserved");
 
     const error = err instanceof Error && err.message === "demo_activation_failed" ? "demo_activation_failed" : "checkout_failed";
