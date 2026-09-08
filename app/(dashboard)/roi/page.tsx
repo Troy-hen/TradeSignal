@@ -46,21 +46,31 @@ export default async function RoiPage() {
   const roi = monthlySpendGbp > 0 ? totalWon / monthlySpendGbp : null;
 
   return (
-    <div>
-      <h1 className="text-2xl font-semibold text-charcoal">ROI</h1>
-      <p className="mt-2 text-slate">A simple view of what TradeSignal is worth to your business.</p>
+    <div className="max-w-5xl space-y-8">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Business case</p>
+        <h1 className="mt-3 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">Your return on signal.</h1>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate sm:text-base">A simple view of what MyTradeBox is worth to {company.trading_name}.</p>
+      </div>
 
-      <dl className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <Kpi label="Pipeline value" value={formatGbp(totalPipeline)} />
+      <section className="rounded-3xl bg-charcoal p-6 text-white sm:p-8">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Estimated pipeline</p>
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <p className="text-5xl font-bold tracking-tight">{formatGbp(totalPipeline)}</p>
+          <p className="text-sm text-white/55">Open opportunity value across your active territories</p>
+        </div>
+      </section>
+
+      <dl className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         <Kpi label="Quoted" value={formatGbp(totalQuoted)} />
         <Kpi label="Won" value={formatGbp(totalWon)} />
         <Kpi label="Monthly spend" value={formatGbp(monthlySpendGbp)} />
         <Kpi label="Estimated ROI" value={roi !== null ? `${roi.toFixed(1)}×` : "—"} />
       </dl>
-      <p className="mt-4 text-sm text-slate">
-        Won figures use the contract value you record when marking an opportunity Won, falling back to its
-        indicative estimate if no value was entered. Pipeline/quoted/won totals are estimates, not accounting
-        records.
+
+      <p className="max-w-3xl text-sm leading-6 text-slate">
+        Won figures use the contract value you record when marking an opportunity Won, falling back to its indicative
+        estimate if no value was entered. Pipeline, quoted and won totals are estimates, not accounting records.
       </p>
     </div>
   );
@@ -68,9 +78,9 @@ export default async function RoiPage() {
 
 function Kpi({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-md border border-light-grey bg-white p-4">
-      <dt className="text-xs font-medium uppercase tracking-wide text-slate">{label}</dt>
-      <dd className="mt-1 text-xl font-semibold text-charcoal">{value}</dd>
+    <div className="rounded-2xl border border-light-grey bg-white p-5">
+      <dt className="text-[10px] font-semibold uppercase tracking-[0.11em] text-slate">{label}</dt>
+      <dd className="mt-3 text-2xl font-bold tracking-tight text-charcoal">{value}</dd>
     </div>
   );
 }

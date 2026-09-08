@@ -11,7 +11,7 @@ export default function LoginPage() {
   return (
     <>
       <h1 className="mb-1 text-xl font-semibold text-charcoal">Welcome back</h1>
-      <p className="mb-6 text-sm text-slate">Sign in to your TradeSignal account</p>
+      <p className="mb-6 text-sm text-slate">Sign in to your MyTradeBox account</p>
       <form action={formAction} className="space-y-4">
         <div>
           <label htmlFor="email" className="mb-1 block text-sm font-medium text-charcoal">
@@ -48,7 +48,7 @@ export default function LoginPage() {
         <SubmitButton pendingText="Signing in…">Sign in</SubmitButton>
       </form>
       <p className="mt-6 text-center text-sm text-slate">
-        New to TradeSignal?{" "}
+        New to MyTradeBox?{" "}
         <Link href="/signup" className="font-medium text-signal-orange hover:underline">
           Create a free account
         </Link>

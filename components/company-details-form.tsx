@@ -19,7 +19,7 @@ export function CompanyDetailsForm({ tradingName, billingEmail }: { tradingName:
           type="text"
           required
           defaultValue={tradingName}
-          className="w-full rounded-md border border-light-grey px-3 py-2 text-sm focus:border-signal-orange focus:outline-none"
+          className="w-full rounded-xl border border-light-grey px-4 py-3 text-sm focus:border-signal-orange focus:outline-none focus:ring-2 focus:ring-signal-orange/15"
         />
       </div>
       <div>
@@ -32,14 +32,14 @@ export function CompanyDetailsForm({ tradingName, billingEmail }: { tradingName:
           type="email"
           required
           defaultValue={billingEmail}
-          className="w-full rounded-md border border-light-grey px-3 py-2 text-sm focus:border-signal-orange focus:outline-none"
+          className="w-full rounded-xl border border-light-grey px-4 py-3 text-sm focus:border-signal-orange focus:outline-none focus:ring-2 focus:ring-signal-orange/15"
         />
       </div>
       {state?.error && <p className="text-sm text-danger">{state.error}</p>}
       {state?.success && <p className="text-sm text-success">Saved.</p>}
       <SubmitButton
         pendingText="Saving…"
-        className="rounded-md bg-signal-orange px-4 py-2 text-sm font-semibold text-white transition hover:brightness-95 disabled:opacity-60"
+        className="rounded-xl bg-signal-orange px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#e95f00] disabled:opacity-60"
       >
         Save company details
       </SubmitButton>

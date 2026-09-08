@@ -1,41 +1,73 @@
-/**
- * Placeholder recreation of Troy's supplied brand mark (angular "T"/"S" monogram)
- * using the exact brand colors. Swap for the real exported SVG/PNG in public/
- * once file upload access is available — see README "Branding" section.
- */
-export function LogoMark({ className, dark = true }: { className?: string; dark?: boolean }) {
-  const tColor = dark ? "#FFFFFF" : "#1F2937";
+import Image from "next/image";
+
+type LogoTone = "dark" | "light";
+
+const iconSrc = "/brand/mytradebox-icon.png";
+const darkWordmarkSrc = "/brand/mytradebox-wordmark-dark.png";
+
+export function LogoMark({
+  className,
+  tone = "dark",
+}: {
+  className?: string;
+  tone?: LogoTone;
+}) {
   return (
-    <svg
-      viewBox="0 0 64 64"
-      className={className}
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden="true"
+    <span
+      className={
+        "inline-flex items-center justify-center overflow-hidden rounded-xl " +
+        (tone === "light" ? "bg-white/10" : "bg-charcoal") +
+        " " +
+        (className ?? "")
+      }
     >
-      {dark && <rect width="64" height="64" rx="14" fill="#1F2937" />}
-      {/* T - angular chevron top bar + stem */}
-      <path d="M10 21 L24 21 L18 27 L10 27 Z" fill={tColor} />
-      <path d="M24 21 L30 21 L30 43 L24 43 Z" fill={tColor} />
-      {/* S - two interlocking chevrons */}
-      <path d="M32 27 L48 27 L42 33 L30 33 A6 6 0 0 0 30 39 L46 39 L40 45 L28 45 A6 6 0 0 1 32 27 Z" fill="#FF6A00" />
-    </svg>
+      <Image
+        src={iconSrc}
+        alt=""
+        width={1254}
+        height={1254}
+        className="h-full w-full object-contain"
+      />
+    </span>
   );
 }
 
 export function Logo({
   className,
   wordmarkClassName,
+  tone = "dark",
 }: {
   className?: string;
   wordmarkClassName?: string;
+  tone?: LogoTone;
 }) {
+  if (tone === "light") {
+    return (
+      <span className={"inline-flex items-center " + (className ?? "")}>
+        <Image
+          src={darkWordmarkSrc}
+          alt="MyTradeBox"
+          width={2048}
+          height={682}
+          priority
+          className="h-12 w-auto object-contain sm:h-14"
+        />
+      </span>
+    );
+  }
+
   return (
-    <span className={`inline-flex items-center gap-2.5 ${className ?? ""}`}>
-      <LogoMark className="h-8 w-8 shrink-0" />
-      <span className={`font-bold tracking-tight ${wordmarkClassName ?? "text-xl"}`}>
-        <span className="text-charcoal">Trade</span>
-        <span className="text-signal-orange">Signal</span>
+    <span className={"inline-flex items-center gap-3 " + (className ?? "")}>
+      <LogoMark className="h-9 w-9 shrink-0" tone="dark" />
+      <span className="h-6 w-px bg-light-grey" />
+      <span
+        className={
+          "font-sans text-xl font-semibold tracking-[-0.03em] " +
+          (wordmarkClassName ?? "text-charcoal")
+        }
+      >
+        <span>MyTrade</span>
+        <span className="text-signal-orange">Box</span>
       </span>
     </span>
   );

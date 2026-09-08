@@ -98,7 +98,7 @@ export async function POST(request: Request) {
             recurring: { interval: "month" },
             product_data: {
               name: `${territory.postcode_district} ${trade.name} territory`,
-              description: "Exclusive TradeSignal local territory subscription",
+              description: "Exclusive MyTradeBox local territory subscription",
             },
           },
           quantity: 1,

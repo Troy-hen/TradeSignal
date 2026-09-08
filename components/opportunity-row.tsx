@@ -11,27 +11,51 @@ const ACTION_LABELS: Record<string, string> = {
   lost: "Lost",
 };
 
+function formatStatus(status: string): string {
+  return status.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 export function OpportunityRow({ item }: { item: OpportunityListItem }) {
   return (
     <Link
       href={`/opportunities/${item.opportunityId}`}
-      className="block rounded-md border border-light-grey bg-white p-4 transition hover:border-signal-orange"
+      className="group block rounded-2xl border border-light-grey bg-white p-4 transition hover:-translate-y-0.5 hover:border-signal-orange/40 hover:shadow-[0_12px_32px_rgba(31,41,55,0.08)] sm:p-5"
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <OpportunityBadge bucket={item.bucket} score={item.score} />
-          <span className="font-medium text-charcoal">{item.projectType ?? "Planning application"}</span>
+      <div className="flex items-start gap-4">
+        <OpportunityBadge bucket={item.bucket} score={item.score} variant="tile" />
+
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate">
+                {item.tradeName} · {item.district}
+              </p>
+              <h3 className="mt-1 truncate text-base font-semibold tracking-tight text-charcoal sm:text-lg">
+                {item.projectType ?? "Planning application"}
+              </h3>
+            </div>
+            <span
+              className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] ${
+                item.currentAction ? "bg-soft-surface text-slate" : "bg-signal-orange/10 text-signal-orange"
+              }`}
+            >
+              {item.currentAction ? ACTION_LABELS[item.currentAction] ?? item.currentAction : "New"}
+            </span>
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-slate">
+            <span>{formatStatus(item.planningStatus)}</span>
+            {item.receivedDate && <span>Received {item.receivedDate}</span>}
+            <span>Matched to your territory</span>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-light-grey pt-3">
+            <span className="text-xs text-slate">
+              Est. trade value <strong className="ml-1 text-sm text-charcoal">{formatGbpRange(item.valueLow, item.valueHigh)}</strong>
+            </span>
+            <span className="text-xs font-semibold text-signal-orange transition group-hover:text-[#e95f00]">Open brief →</span>
+          </div>
         </div>
-        <span className="text-xs font-medium uppercase tracking-wide text-slate">
-          {item.currentAction ? (ACTION_LABELS[item.currentAction] ?? item.currentAction) : "New"}
-        </span>
-      </div>
-      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate">
-        <span>
-          {item.district} · {item.tradeName}
-        </span>
-        <span>Est. trade value: {formatGbpRange(item.valueLow, item.valueHigh)}</span>
-        <span className="capitalize">{item.planningStatus.replace(/_/g, " ")}</span>
       </div>
     </Link>
   );

@@ -14,25 +14,32 @@ export default async function SettingsPage() {
   ]);
 
   return (
-    <div className="max-w-2xl">
-      <h1 className="text-2xl font-semibold text-charcoal">Settings</h1>
+    <div className="max-w-4xl space-y-8">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Account</p>
+        <h1 className="mt-3 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">Settings.</h1>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate sm:text-base">Keep your company details and opportunity alerts up to date.</p>
+      </div>
 
-      <section className="mt-8">
-        <h2 className="text-lg font-semibold text-charcoal">Company details</h2>
+      <section className="rounded-3xl border border-light-grey bg-white p-6 sm:p-8">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Company profile</p>
+        <h2 className="mt-2 text-xl font-semibold tracking-tight text-charcoal">Business details</h2>
+        <p className="mt-2 text-sm leading-6 text-slate">These details are used for billing and account communications.</p>
         {canEdit ? (
-          <div className="mt-4">
+          <div className="mt-6">
             <CompanyDetailsForm tradingName={companyRow?.trading_name ?? ""} billingEmail={companyRow?.billing_email ?? ""} />
           </div>
         ) : (
-          <p className="mt-2 text-sm text-slate">Only company owners/admins can edit these details.</p>
+          <p className="mt-5 rounded-xl bg-soft-surface p-4 text-sm text-slate">Only company owners and admins can edit these details.</p>
         )}
       </section>
 
-      <section className="mt-10 border-t border-light-grey pt-8">
-        <h2 className="text-lg font-semibold text-charcoal">Notification preferences</h2>
-        <p className="mt-1 text-sm text-slate">Applies company-wide unless a team member sets their own preference.</p>
+      <section className="rounded-3xl border border-light-grey bg-white p-6 sm:p-8">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Opportunity alerts</p>
+        <h2 className="mt-2 text-xl font-semibold tracking-tight text-charcoal">Notification preferences</h2>
+        <p className="mt-2 text-sm leading-6 text-slate">Choose how quickly MyTradeBox should bring new signals to you.</p>
         {canEdit ? (
-          <div className="mt-4">
+          <div className="mt-6">
             <NotificationPreferencesForm
               channelEmail={prefs?.channel_email ?? true}
               digestFrequency={prefs?.digest_frequency ?? "daily"}
@@ -42,7 +49,7 @@ export default async function SettingsPage() {
             />
           </div>
         ) : (
-          <p className="mt-2 text-sm text-slate">Only company owners/admins can edit these preferences.</p>
+          <p className="mt-5 rounded-xl bg-soft-surface p-4 text-sm text-slate">Only company owners and admins can edit these preferences.</p>
         )}
       </section>
     </div>

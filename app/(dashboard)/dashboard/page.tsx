@@ -25,7 +25,6 @@ export default async function DashboardPage() {
   }
 
   const opportunities = await getCompanyOpportunities(company.id);
-
   const newCount = opportunities.filter((o) => o.currentAction === null).length;
   const hotCount = opportunities.filter((o) => o.bucket === "hot").length;
   const sevenDaysAgo = dateDaysAgo(7);
@@ -35,70 +34,180 @@ export default async function DashboardPage() {
   const pipelineValue = opportunities
     .filter((o) => o.currentAction !== "won" && o.currentAction !== "lost")
     .reduce((sum, o) => sum + (o.valueHigh ?? 0), 0);
-
-  const recent = opportunities.slice(0, 8);
+  const recent = opportunities.slice(0, 6);
 
   return (
-    <div>
-      <h1 className="text-2xl font-semibold text-charcoal">Welcome back, {company.trading_name}</h1>
-
-      <dl className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <Kpi label="New opportunities" value={String(newCount)} />
-        <Kpi label="High priority" value={String(hotCount)} />
-        <Kpi label="Approved this week" value={String(approvedThisWeek)} />
-        <Kpi label="Est. pipeline value" value={formatGbp(pipelineValue)} />
-      </dl>
-
-      <div className="mt-10 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-charcoal">Recent opportunities</h2>
-        <Link href="/opportunities" className="text-sm font-medium text-signal-orange hover:underline">
-          View all →
-        </Link>
+    <div className="space-y-8">
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Overview</p>
+          <h1 className="mt-3 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">
+            Good to see you, {company.trading_name}
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate sm:text-base">
+            Here is the latest signal from the territories you own. Start with the highest-scoring opportunities,
+            then move through the rest when you have time.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            href="/territories"
+            className="inline-flex items-center justify-center rounded-xl border border-light-grey bg-white px-4 py-2.5 text-sm font-semibold text-charcoal transition hover:border-signal-orange/40"
+          >
+            Find a territory
+          </Link>
+          <Link
+            href="/opportunities"
+            className="inline-flex items-center justify-center rounded-xl bg-signal-orange px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#e95f00]"
+          >
+            View opportunities <span className="ml-2">→</span>
+          </Link>
+        </div>
       </div>
 
-      {recent.length === 0 ? (
-        <p className="mt-4 rounded-md border border-dashed border-light-grey p-6 text-center text-sm text-slate">
-          No opportunities yet — new planning applications in your territories are checked continuously.
-        </p>
-      ) : (
-        <ul className="mt-4 space-y-3">
-          {recent.map((item) => (
-            <li key={item.leadMatchId}>
-              <OpportunityRow item={item} />
-            </li>
-          ))}
-        </ul>
-      )}
+      <dl className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+        <Kpi label="New opportunities" value={String(newCount)} detail="Ready for your first look" tone="orange" />
+        <Kpi label="High priority" value={String(hotCount)} detail="Score 90 or above" tone="green" />
+        <Kpi label="Approved this week" value={String(approvedThisWeek)} detail="Recent planning decisions" tone="blue" />
+        <Kpi label="Est. pipeline value" value={formatGbp(pipelineValue)} detail="Open opportunities only" tone="charcoal" />
+      </dl>
+
+      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <section className="overflow-hidden rounded-3xl border border-light-grey bg-white">
+          <div className="flex flex-col gap-3 border-b border-light-grey px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Your opportunity feed</p>
+              <h2 className="mt-1 text-xl font-semibold tracking-tight text-charcoal">Recent opportunities</h2>
+            </div>
+            <Link href="/opportunities" className="text-sm font-semibold text-signal-orange hover:text-[#e95f00]">
+              View all →
+            </Link>
+          </div>
+
+          {recent.length === 0 ? (
+            <p className="m-5 rounded-2xl border border-dashed border-light-grey bg-soft-surface p-8 text-center text-sm text-slate sm:m-6">
+              No opportunities yet — new planning applications in your territories are checked continuously.
+            </p>
+          ) : (
+            <ul className="space-y-3 p-4 sm:p-5">
+              {recent.map((item) => (
+                <li key={item.leadMatchId}>
+                  <OpportunityRow item={item} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <aside className="rounded-3xl bg-charcoal p-6 text-white shadow-xl shadow-charcoal/10">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Next best move</p>
+          <h2 className="mt-4 text-2xl font-bold tracking-tight">Work the signal, not the spreadsheet.</h2>
+          <p className="mt-4 text-sm leading-6 text-white/65">
+            Open a high-scoring opportunity, review the recommended timing and record what happens next. Your feed
+            gets more useful as you move opportunities through the pipeline.
+          </p>
+          <div className="mt-7 space-y-3 border-t border-white/10 pt-5 text-sm">
+            <QuickTip label="Start with" value="Hot opportunities" />
+            <QuickTip label="Then check" value="Recommended action" />
+            <QuickTip label="Keep updated" value="Contact and outcome" />
+          </div>
+          <Link href="/opportunities?bucket=hot" className="mt-7 inline-flex items-center text-sm font-semibold text-signal-orange hover:text-white">
+            Show high-priority work <span className="ml-2">→</span>
+          </Link>
+        </aside>
+      </div>
     </div>
   );
 }
 
-function Kpi({ label, value }: { label: string; value: string }) {
+function Kpi({
+  label,
+  value,
+  detail,
+  tone,
+}: {
+  label: string;
+  value: string;
+  detail: string;
+  tone: "orange" | "green" | "blue" | "charcoal";
+}) {
+  const dotClass = {
+    orange: "bg-signal-orange",
+    green: "bg-success",
+    blue: "bg-slate",
+    charcoal: "bg-charcoal",
+  }[tone];
+
   return (
-    <div className="rounded-md border border-light-grey bg-white p-4">
-      <dt className="text-xs font-medium uppercase tracking-wide text-slate">{label}</dt>
-      <dd className="mt-1 text-xl font-semibold text-charcoal">{value}</dd>
+    <div className="rounded-2xl border border-light-grey bg-white p-5">
+      <div className="flex items-center gap-2">
+        <span className={`h-2 w-2 rounded-full ${dotClass}`} />
+        <dt className="text-xs font-semibold uppercase tracking-[0.11em] text-slate">{label}</dt>
+      </div>
+      <dd className="mt-4 text-3xl font-bold tracking-tight text-charcoal">{value}</dd>
+      <p className="mt-1 text-xs text-slate">{detail}</p>
+    </div>
+  );
+}
+
+function QuickTip({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-white/50">{label}</span>
+      <span className="font-semibold text-white">{value}</span>
     </div>
   );
 }
 
 function FreeState({ companyName }: { companyName: string }) {
   return (
-    <div>
-      <h1 className="text-2xl font-semibold text-charcoal">Welcome, {companyName}</h1>
-      <div className="mt-6 rounded-lg border border-light-grey bg-white p-8 text-center">
-        <p className="text-lg font-semibold text-charcoal">You haven&apos;t claimed a territory yet</p>
-        <p className="mx-auto mt-2 max-w-md text-sm text-slate">
-          Claim an exclusive postcode district + trade combination to start receiving planning opportunities in
-          your area — full addresses, AI scope analysis, contact timing, and alerts the moment something new is
-          detected.
+    <div className="space-y-8">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Welcome to MyTradeBox</p>
+        <h1 className="mt-3 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">Your local pipeline starts here.</h1>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate sm:text-base">
+          {companyName}, choose a territory and trade to start seeing the planning opportunities worth your time.
         </p>
-        <Link
-          href="/territories"
-          className="mt-6 inline-block rounded-md bg-signal-orange px-6 py-2.5 font-semibold text-white transition hover:brightness-95"
-        >
-          Browse the Territory Explorer
-        </Link>
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(300px,0.75fr)]">
+        <section className="rounded-3xl bg-charcoal p-7 text-white sm:p-9">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Start with one patch</p>
+          <h2 className="mt-4 max-w-xl text-3xl font-bold tracking-tight">Own the signal in the areas you already know.</h2>
+          <p className="mt-4 max-w-xl text-sm leading-6 text-white/65 sm:text-base">
+            Claim an exclusive postcode district and trade combination to unlock matched planning applications,
+            estimated trade value, contact timing and practical next actions.
+          </p>
+          <Link
+            href="/territories"
+            className="mt-7 inline-flex items-center rounded-xl bg-signal-orange px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#e95f00]"
+          >
+            Browse territories <span className="ml-2">→</span>
+          </Link>
+        </section>
+
+        <div className="rounded-3xl border border-light-grey bg-white p-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">What happens next</p>
+          <div className="mt-6 space-y-5">
+            <OnboardingStep number="01" title="Choose your area" body="Search a postcode district and trade." />
+            <OnboardingStep number="02" title="Check the signal" body="See activity, value and availability." />
+            <OnboardingStep number="03" title="Make the move" body="Claim the patch and work the feed." />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function OnboardingStep({ number, title, body }: { number: string; title: string; body: string }) {
+  return (
+    <div className="flex gap-3">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-signal-orange/10 text-xs font-bold text-signal-orange">
+        {number}
+      </span>
+      <div>
+        <p className="text-sm font-semibold text-charcoal">{title}</p>
+        <p className="mt-1 text-xs leading-5 text-slate">{body}</p>
       </div>
     </div>
   );
