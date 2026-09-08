@@ -132,17 +132,41 @@ async function handleSubscriptionUpdated(admin: AdminClient, subscription: Strip
   }
 
   if (status === "past_due" || status === "unpaid") {
-    await admin
+    const { data: claim } = await admin
       .from("territory_claims")
       .update({ status: "suspended", suspended_at: new Date().toISOString() })
       .eq("stripe_subscription_id", subscription.id)
-      .eq("status", "active");
+      .eq("status", "active")
+      .select("id")
+      .maybeSingle();
+
+    if (claim) {
+      await admin.from("audit_logs").insert({
+        actor_type: "webhook",
+        action: "subscription.suspended",
+        entity_type: "territory_claim",
+        entity_id: claim.id,
+        after_state: { status: "suspended", stripe_status: subscription.status },
+      });
+    }
   } else if (status === "active") {
-    await admin
+    const { data: claim } = await admin
       .from("territory_claims")
       .update({ status: "active" })
       .eq("stripe_subscription_id", subscription.id)
-      .eq("status", "suspended");
+      .eq("status", "suspended")
+      .select("id")
+      .maybeSingle();
+
+    if (claim) {
+      await admin.from("audit_logs").insert({
+        actor_type: "webhook",
+        action: "subscription.reactivated",
+        entity_type: "territory_claim",
+        entity_id: claim.id,
+        after_state: { status: "active", stripe_status: subscription.status },
+      });
+    }
   }
 }
 
@@ -152,11 +176,26 @@ async function handleSubscriptionDeleted(admin: AdminClient, subscription: Strip
     .update({ status: "canceled", canceled_at: new Date().toISOString() })
     .eq("stripe_subscription_id", subscription.id);
 
-  await admin
+  // Frees the territory_claims exclusivity slot (uq_territory_claims_locking
+  // only blocks reserved/active/suspended) — the single most important
+  // state transition on this table to have an audit trail for.
+  const { data: claim } = await admin
     .from("territory_claims")
     .update({ status: "cancelled", cancelled_at: new Date().toISOString() })
     .eq("stripe_subscription_id", subscription.id)
-    .in("status", ["active", "suspended"]);
+    .in("status", ["active", "suspended"])
+    .select("id, territory_id, company_id")
+    .maybeSingle();
+
+  if (claim) {
+    await admin.from("audit_logs").insert({
+      actor_type: "webhook",
+      action: "territory.cancelled",
+      entity_type: "territory_claim",
+      entity_id: claim.id,
+      after_state: { status: "cancelled", territory_id: claim.territory_id, company_id: claim.company_id },
+    });
+  }
 }
 
 function resolveInvoiceSubscriptionId(invoice: Stripe.Invoice): string | null {
@@ -178,14 +217,23 @@ async function handleInvoicePaymentFailed(admin: AdminClient, invoice: Stripe.In
     .select("id, company_id")
     .maybeSingle();
 
-  // Actual sending happens in the notify-leads cron (not built yet) — this
-  // just queues the row so the handler can return fast.
+  // Actual sending happens in the notify-leads cron — this just queues the
+  // row (processQueuedNotifications drains notification_log) so the
+  // handler can return fast.
   if (claim) {
     await admin.from("notification_log").insert({
       company_id: claim.company_id,
       notification_type: "payment_failed",
       status: "queued",
       subject: "Action needed: your TradeSignal payment failed",
+    });
+
+    await admin.from("audit_logs").insert({
+      actor_type: "webhook",
+      action: "subscription.suspended",
+      entity_type: "territory_claim",
+      entity_id: claim.id,
+      after_state: { status: "suspended", reason: "invoice.payment_failed" },
     });
   }
 }
@@ -196,9 +244,21 @@ async function handleInvoicePaymentSucceeded(admin: AdminClient, invoice: Stripe
 
   await admin.from("subscriptions").update({ status: "active" }).eq("stripe_subscription_id", subscriptionId);
 
-  await admin
+  const { data: claim } = await admin
     .from("territory_claims")
     .update({ status: "active" })
     .eq("stripe_subscription_id", subscriptionId)
-    .eq("status", "suspended");
+    .eq("status", "suspended")
+    .select("id")
+    .maybeSingle();
+
+  if (claim) {
+    await admin.from("audit_logs").insert({
+      actor_type: "webhook",
+      action: "subscription.reactivated",
+      entity_type: "territory_claim",
+      entity_id: claim.id,
+      after_state: { status: "active", reason: "invoice.payment_succeeded" },
+    });
+  }
 }
