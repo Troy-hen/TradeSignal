@@ -46,8 +46,14 @@ export function OpportunityBadge({
 
 export function formatGbp(value: number | null | undefined): string {
   if (value === null || value === undefined) return "—";
-  if (value >= 1000) return `£${Math.round(value / 1000)}k`;
+  if (value >= 1_000_000) return `£${formatCompact(value / 1_000_000)}m`;
+  if (value >= 1000) return `£${formatCompact(value / 1000)}k`;
   return `£${Math.round(value)}`;
+}
+
+function formatCompact(value: number): string {
+  const rounded = Math.round(value * 10) / 10;
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
 }
 
 export function formatGbpRange(low: number | null | undefined, high: number | null | undefined): string {
