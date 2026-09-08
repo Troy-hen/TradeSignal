@@ -91,7 +91,7 @@ export interface PlanningDataProvider {
   fetchNewApplications(params: { since?: string; cursor?: string }): AsyncGenerator<RawApplication[]>;
   fetchUpdatedApplications(params: { since: string; cursor?: string }): AsyncGenerator<RawApplication[]>;
   getApplication(providerId: string): Promise<RawApplication | null>;
-  searchByPostcode(postcodeOrDistrict: string, opts?: { radius?: number }): Promise<RawApplication[]>;
+  searchByPostcode(postcodeOrDistrict: string, opts?: { radius?: number; maxPages?: number }): Promise<RawApplication[]>;
   searchByDate(dateFrom: string, dateTo: string): Promise<RawApplication[]>;
   normaliseApplication(raw: RawApplication): Promise<NormalisedApplication>;
 }
