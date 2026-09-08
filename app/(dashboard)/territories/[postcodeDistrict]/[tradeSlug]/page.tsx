@@ -224,16 +224,6 @@ export default async function TerritoryDetailPage({
           </ul>
         )}
       </section>
-    </div>
-  );
-}
-
-function Kpi({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-light-grey bg-white p-5">
-      <dt className="text-[10px] font-semibold uppercase tracking-[0.11em] text-slate">{label}</dt>
-      <dd className="mt-2 text-xl font-bold tracking-tight text-charcoal">{value}</dd>
-
       <section>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -311,6 +301,16 @@ function Kpi({ label, value }: { label: string; value: string }) {
           </ul>
         )}
       </section>
+    </div>
+  );
+}
+
+function Kpi({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-light-grey bg-white p-5">
+      <dt className="text-[10px] font-semibold uppercase tracking-[0.11em] text-slate">{label}</dt>
+      <dd className="mt-2 text-xl font-bold tracking-tight text-charcoal">{value}</dd>
+
     </div>
   );
 }
