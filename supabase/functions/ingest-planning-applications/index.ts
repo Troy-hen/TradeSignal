@@ -16,12 +16,16 @@ const UNDECIDED_STATUSES = ["submitted", "validated", "under_consideration", "de
 const PENDING_ROTATION_BATCH_SIZE = 20;
 const DEFAULT_LOOKBACK_DAYS = 90;
 const DEFAULT_PLOTA_MAX_PAGES_PER_RUN = 1;
-const MAX_TARGET_DISTRICTS = 10;
+const DEFAULT_PLOTA_MANUAL_PAGES_PER_DISTRICT = 2;
+const MAX_PLOTA_MANUAL_PAGES_PER_DISTRICT = 20;
+const MAX_PLOTA_MANUAL_PAGES_PER_RUN = 100;
+const MAX_TARGET_DISTRICTS = 50;
 const DISTRICT_PATTERN = /^[A-Z]{1,2}\d{1,2}[A-Z]?$/;
 
 interface IngestBody {
   run_type?: RunType;
   postcode_districts?: unknown;
+  max_pages_per_district?: unknown;
 }
 
 interface RunStats {
@@ -38,13 +42,18 @@ function defaultSince(): string {
   return date.toISOString().slice(0, 10);
 }
 
+function boundedInteger(input: unknown, fallback: number, min: number, max: number): number {
+  const configured = Number(input ?? fallback);
+  return Number.isInteger(configured) && configured >= min && configured <= max ? configured : fallback;
+}
+
 function plotaPageCap(): number {
-  const configured = Number(
-    Deno.env.get("PLOTA_MAX_PAGES_PER_RUN") ?? DEFAULT_PLOTA_MAX_PAGES_PER_RUN,
+  return boundedInteger(
+    Deno.env.get("PLOTA_MAX_PAGES_PER_RUN"),
+    DEFAULT_PLOTA_MAX_PAGES_PER_RUN,
+    1,
+    100,
   );
-  return Number.isInteger(configured) && configured >= 1 && configured <= 100
-    ? configured
-    : DEFAULT_PLOTA_MAX_PAGES_PER_RUN;
 }
 
 function normaliseDistricts(input: unknown): string[] {
@@ -105,6 +114,15 @@ Deno.serve(async (req: Request) => {
     auth: { persistSession: false },
   });
   const providerName = Deno.env.get("PLANNING_PROVIDER") ?? "mock";
+  const manualPagesPerDistrict =
+    runType === "manual_backfill" && providerName === "plota"
+      ? boundedInteger(
+          requestBody.max_pages_per_district,
+          DEFAULT_PLOTA_MANUAL_PAGES_PER_DISTRICT,
+          1,
+          MAX_PLOTA_MANUAL_PAGES_PER_DISTRICT,
+        )
+      : 1;
   const automaticPageCap =
     providerName === "plota" && runType !== "manual_backfill" ? plotaPageCap() : null;
   const maxPagesPerRun = automaticPageCap ?? Number.POSITIVE_INFINITY;
@@ -141,12 +159,16 @@ Deno.serve(async (req: Request) => {
   let latestChangedAt = since ?? defaultSince();
   let fellBackToPendingRotation = false;
   let pagesRead = 0;
+  let manualBudgetExhausted = false;
+  const emptyDistricts: string[] = [];
+  const plotaHints: Record<string, string> = {};
+  let provider: PlanningDataProvider | null = null;
 
   try {
     // The provider is created after the run row so a missing/invalid provider
     // secret is visible in the admin health table instead of becoming a
     // silent function-level 500 before a run is recorded.
-    const provider: PlanningDataProvider = getPlanningProvider();
+    provider = getPlanningProvider();
 
     async function processRaw(raw: RawApplication | null) {
       if (!raw) return;
@@ -197,8 +219,24 @@ Deno.serve(async (req: Request) => {
       // One request per requested district, one ten-row page per request.
       // This is intentionally bounded for Plota's 500-call demo key.
       for (const district of targetDistricts) {
-        const rows = await provider.searchByPostcode(district);
-        pagesRead++;
+        const remainingBudget = MAX_PLOTA_MANUAL_PAGES_PER_RUN - pagesRead;
+        if (providerName === "plota" && remainingBudget <= 0) {
+          manualBudgetExhausted = true;
+          break;
+        }
+        const pagesForDistrict =
+          providerName === "plota"
+            ? Math.min(manualPagesPerDistrict, remainingBudget)
+            : manualPagesPerDistrict;
+        const rows = await provider.searchByPostcode(district, { maxPages: pagesForDistrict });
+        const providerPageCount = provider instanceof PlotaPlanningProvider ? provider.lastPageCount : 1;
+        pagesRead += Math.max(1, providerPageCount);
+        if (rows.length === 0) {
+          emptyDistricts.push(district);
+          if (provider instanceof PlotaPlanningProvider && provider.lastMeta?.hint) {
+            plotaHints[district] = provider.lastMeta.hint;
+          }
+        }
         for (const raw of rows) await processRaw(raw);
       }
     } else {
@@ -230,6 +268,11 @@ Deno.serve(async (req: Request) => {
         cursor_to: {
           since: runType === "scheduled_updated" ? latestChangedAt : latestReceivedDate,
           postcode_districts: targetDistricts.length > 0 ? targetDistricts : null,
+          manualPagesPerDistrict: runType === "manual_backfill" ? manualPagesPerDistrict : null,
+          emptyDistricts,
+          plotaHints,
+          plotaApiCalls: provider instanceof PlotaPlanningProvider ? provider.apiRequestCount : null,
+          manualBudgetExhausted,
           fellBackToPendingRotation,
         },
       })
@@ -241,6 +284,11 @@ Deno.serve(async (req: Request) => {
       runType,
       postcodeDistricts: targetDistricts,
       pagesRead,
+      manualPagesPerDistrict: runType === "manual_backfill" ? manualPagesPerDistrict : null,
+      plotaApiCalls: provider instanceof PlotaPlanningProvider ? provider.apiRequestCount : null,
+      emptyDistricts,
+      plotaHints,
+      manualBudgetExhausted,
       automaticPageCap,
       stats,
       fellBackToPendingRotation,
