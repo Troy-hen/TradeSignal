@@ -15,12 +15,15 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
           </Link>
 
           <nav aria-label="Primary navigation" className="flex items-center gap-3 sm:gap-6">
-            <div className="hidden items-center gap-6 md:flex">
-              <Link
-                href="/#how-it-works"
-                className="text-sm font-medium text-white/70 transition hover:text-white"
-              >
+            <div className="hidden items-center gap-5 md:flex">
+              <Link href="/#how-it-works" className="text-sm font-medium text-white/70 transition hover:text-white">
                 How it works
+              </Link>
+              <Link href="/pricing" className="text-sm font-medium text-white/70 transition hover:text-white">
+                Pricing
+              </Link>
+              <Link href="/faq" className="text-sm font-medium text-white/70 transition hover:text-white">
+                FAQ
               </Link>
             </div>
             <Link
@@ -43,17 +46,25 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
 
       <footer className="bg-charcoal text-white">
         <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8">
-          <div className="flex flex-col gap-10 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex flex-col gap-10 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <Logo tone="light" />
               <p className="mt-4 max-w-sm text-sm leading-6 text-white/60">
                 Planning intelligence that helps trade businesses find the local jobs worth chasing.
               </p>
             </div>
-            <div className="text-left text-sm text-white/50 sm:text-right">
-              <p>Built for UK trade businesses.</p>
-              <p className="mt-2">© {currentYear()} MyTradeBox. All rights reserved.</p>
+            <div className="grid grid-cols-2 gap-x-10 gap-y-3 text-sm sm:text-right">
+              <Link href="/pricing" className="text-white/60 transition hover:text-white">Pricing</Link>
+              <Link href="/faq" className="text-white/60 transition hover:text-white">FAQ</Link>
+              <Link href="/contact" className="text-white/60 transition hover:text-white">Contact</Link>
+              <Link href="/privacy" className="text-white/60 transition hover:text-white">Privacy</Link>
+              <Link href="/terms" className="text-white/60 transition hover:text-white">Terms</Link>
+              <Link href="/login" className="text-white/60 transition hover:text-white">Log in</Link>
             </div>
+          </div>
+          <div className="mt-10 border-t border-white/10 pt-5 text-sm text-white/50 sm:flex sm:items-center sm:justify-between">
+            <p>Built for UK trade businesses.</p>
+            <p className="mt-2 sm:mt-0">© {currentYear()} MyTradeBox. All rights reserved.</p>
           </div>
         </div>
       </footer>
