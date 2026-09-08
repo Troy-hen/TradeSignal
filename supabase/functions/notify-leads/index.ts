@@ -12,8 +12,8 @@ import {
 
 /**
  * Triggered by pg_cron on three schedules with a { cadence } body: instant
- * (*/10 * * * *), daily (0 7 * * *), weekly (0 7 * * 1). Also handles
- * approval alerts and any notification_log row a webhook/trigger queued
+ * (every 10 minutes), daily (07:00 UTC), weekly (Mondays 07:00 UTC). Also
+ * handles approval alerts and any notification_log row a webhook/trigger queued
  * (payment_failed, territory_available) on every invocation regardless of
  * cadence — both are idempotent (guarded by triggered_notification /
  * status='queued'), so running them more often than strictly necessary is
