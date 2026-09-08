@@ -37,7 +37,13 @@ function MapPinIcon() {
 }
 
 
-export function TerritoryCheckerWidget({ trades }: { trades: TradeOption[] }) {
+export function TerritoryCheckerWidget({
+  trades,
+  compact = false,
+}: {
+  trades: TradeOption[];
+  compact?: boolean;
+}) {
   const options = trades.length > 0 ? trades : [FALLBACK_TRADE];
   const [district, setDistrict] = useState("");
   const [tradeSlug, setTradeSlug] = useState(options[0]?.slug ?? FALLBACK_TRADE.slug);
@@ -90,30 +96,51 @@ export function TerritoryCheckerWidget({ trades }: { trades: TradeOption[] }) {
   const isAvailable = result?.territory_status === "available";
 
   return (
-    <div className="rounded-3xl border border-light-grey bg-white p-5 shadow-[0_18px_50px_rgba(31,41,55,0.08)] sm:p-7">
+    <div
+      className={
+        compact
+          ? "rounded-2xl border border-light-grey bg-white p-4 shadow-[0_18px_50px_rgba(31,41,55,0.12)] sm:p-5"
+          : "rounded-3xl border border-light-grey bg-white p-5 shadow-[0_18px_50px_rgba(31,41,55,0.08)] sm:p-7"
+      }
+    >
       <div className="flex items-start gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-signal-orange/10 text-signal-orange">
+        <div
+          className={
+            compact
+              ? "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-signal-orange/10 text-signal-orange"
+              : "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-signal-orange/10 text-signal-orange"
+          }
+        >
           <MapPinIcon />
         </div>
         <div>
           <p className="font-semibold text-charcoal">Check your area</p>
           <p className="mt-1 text-sm leading-6 text-slate">
-            See whether your trade already has an exclusive territory in your postcode district.
+            {compact
+              ? "Preview recent planning activity, estimated value and territory availability."
+              : "See whether your trade already has an exclusive territory in your postcode district."}
           </p>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="mt-6 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
+      <form
+        onSubmit={handleSubmit}
+        className={
+          compact
+            ? "mt-4 grid gap-2.5 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+            : "mt-6 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+        }
+      >
         <label className="block">
           <span className="sr-only">Postcode district</span>
           <input
             value={district}
             onChange={(e) => setDistrict(e.target.value)}
-            placeholder="Postcode district"
+            placeholder="e.g. NR15"
             aria-label="Postcode district"
             autoComplete="postal-code"
             required
-            maxLength={5}
+            maxLength={7}
             className="w-full rounded-xl border border-light-grey bg-white px-4 py-3 text-sm text-charcoal placeholder:text-slate/70 focus:border-signal-orange focus:outline-none focus:ring-2 focus:ring-signal-orange/15"
           />
         </label>
@@ -137,14 +164,14 @@ export function TerritoryCheckerWidget({ trades }: { trades: TradeOption[] }) {
         <button
           type="submit"
           disabled={isLoading}
-          className="inline-flex items-center justify-center rounded-xl bg-signal-orange px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#e95f00] disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center justify-center rounded-xl bg-signal-orange px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#e95f00] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isLoading ? "Checking…" : "Check availability"}
+          {isLoading ? "Checking…" : compact ? "Check My Area" : "Check availability"}
         </button>
       </form>
 
       <p className="mt-3 text-xs text-slate">
-        Try a district such as NR15, IP22 or SW11.
+        {compact ? "No account needed to preview the local signal." : "Try a district such as NR15, IP22 or SW11."}
       </p>
 
       {error && (

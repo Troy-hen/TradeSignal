@@ -9,7 +9,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-50 border-b border-white/10 bg-charcoal">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 sm:py-5 lg:px-8">
           <Link href="/" aria-label="MyTradeBox home">
             <Logo tone="light" />
           </Link>
@@ -36,10 +36,10 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
               Log in
             </Link>
             <Link
-              href="/signup"
+              href="/#territory-checker"
               className="inline-flex items-center rounded-xl bg-signal-orange px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#e95f00]"
             >
-              Get started
+              Check your area
             </Link>
           </nav>
         </div>

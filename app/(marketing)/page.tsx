@@ -42,7 +42,7 @@ export default async function LandingPage() {
         <div className="pointer-events-none absolute -right-24 top-16 h-72 w-72 rounded-full border border-signal-orange/20" />
         <div className="pointer-events-none absolute -bottom-40 left-1/3 h-80 w-80 rounded-full border border-white/10" />
 
-        <div className="relative mx-auto grid max-w-7xl gap-14 px-6 py-16 sm:py-20 lg:grid-cols-[minmax(0,1fr)_minmax(420px,0.92fr)] lg:items-center lg:gap-16 lg:px-8 lg:py-24">
+        <div className="relative mx-auto grid max-w-7xl gap-12 px-6 py-14 sm:py-16 lg:grid-cols-[minmax(0,1fr)_minmax(440px,0.96fr)] lg:items-center lg:gap-14 lg:px-8 lg:py-20">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-semibold tracking-wide text-white/80">
               <span className="h-1.5 w-1.5 rounded-full bg-signal-orange" />
@@ -55,34 +55,21 @@ export default async function LandingPage() {
             </h1>
 
             <p className="mt-6 max-w-xl text-base leading-7 text-white/70 sm:text-lg">
-              MyTradeBox turns planning applications into qualified opportunities for your trade, your area and
-              your next job — before the competition gets there first.
+              MyTradeBox turns planning applications into qualified opportunities for your trade and your local area. See the signal, estimate the value and make the next move before the competition gets there first.
             </p>
 
-            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
-              <Link
-                href="#territory-checker"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-signal-orange px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-[#e95f00]"
-              >
-                Check your area
-                <ArrowUpRight />
-              </Link>
-              <Link
-                href="#how-it-works"
-                className="inline-flex items-center justify-center rounded-xl border border-white/20 px-5 py-3.5 text-sm font-semibold text-white transition hover:border-white/40 hover:bg-white/5"
-              >
-                See how it works
-              </Link>
+            <div id="territory-checker" className="mt-8 scroll-mt-28">
+              <TerritoryCheckerWidget trades={tradeOptions} compact />
             </div>
 
-            <div className="mt-9 flex flex-wrap gap-x-6 gap-y-3 text-sm text-white/65">
+            <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-xs font-medium text-white/60">
               <span className="inline-flex items-center gap-2">
                 <CheckIcon />
-                Exclusive territories
+                No signup to preview
               </span>
               <span className="inline-flex items-center gap-2">
                 <CheckIcon />
-                Trade-specific scoring
+                One business per territory
               </span>
               <span className="inline-flex items-center gap-2">
                 <CheckIcon />
@@ -168,26 +155,63 @@ export default async function LandingPage() {
         </div>
       </section>
 
-      <section id="territory-checker" className="bg-soft-surface px-6 py-24 sm:py-28">
-        <div className="mx-auto grid max-w-7xl items-start gap-12 lg:grid-cols-[0.78fr_1.22fr] lg:px-2">
+      <section className="bg-soft-surface px-6 py-24 sm:py-28">
+        <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[0.86fr_1.14fr] lg:px-2">
           <div className="max-w-xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Check availability</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Territory ownership</p>
             <h2 className="mt-4 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">
-              See what is happening in your area.
+              Build a local patch you can actually own.
             </h2>
             <p className="mt-5 text-base leading-7 text-slate sm:text-lg">
-              Enter a postcode district and trade to see recent planning activity, the potential value in the area
-              and whether an exclusive territory is still available.
+              MyTradeBox is built around focused, exclusive territories — so the opportunities you see are useful,
+              actionable and yours to pursue.
             </p>
 
-            <div className="mt-8 space-y-4">
+            <ul className="mt-8 space-y-4">
               <FeatureLine>One business per trade and postcode district</FeatureLine>
-              <FeatureLine>Clear monthly pricing before you commit</FeatureLine>
-              <FeatureLine>Start with the areas and trades you understand</FeatureLine>
-            </div>
+              <FeatureLine>No shared leads or race to the bottom</FeatureLine>
+              <FeatureLine>Clear territory pricing before you commit</FeatureLine>
+            </ul>
+
+            <Link
+              href="#territory-checker"
+              className="mt-9 inline-flex items-center gap-2 text-sm font-semibold text-signal-orange transition hover:text-[#e95f00]"
+            >
+              Check availability
+              <ArrowUpRight />
+            </Link>
           </div>
 
-          <TerritoryCheckerWidget trades={tradeOptions} />
+          <div className="rounded-3xl bg-charcoal p-5 text-white shadow-2xl shadow-charcoal/15 sm:p-7">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Territory preview</p>
+                <p className="mt-2 text-2xl font-semibold tracking-tight">NR15 · General Builder</p>
+              </div>
+              <span className="inline-flex items-center gap-2 rounded-full bg-success/10 px-3 py-1.5 text-xs font-semibold text-success">
+                <span className="h-1.5 w-1.5 rounded-full bg-success" />
+                Exclusive
+              </span>
+            </div>
+
+            <div className="mt-8 grid grid-cols-3 gap-3">
+              <TerritoryMetric label="New matches" value="8" />
+              <TerritoryMetric label="High priority" value="3" />
+              <TerritoryMetric label="Pipeline value" value="£42k" />
+            </div>
+
+            <div className="mt-6 flex items-start gap-3 border-t border-white/10 pt-5">
+              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-success/10 text-success">
+                <CheckIcon />
+              </span>
+              <div>
+                <p className="font-semibold">Your local opportunity feed</p>
+                <p className="mt-1 text-sm leading-6 text-white/60">
+                  See the projects worth pursuing without competing against a shared pool of businesses.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -420,6 +444,15 @@ function MiniStat({ label, value }: { label: string; value: string }) {
     <div className="rounded-xl border border-light-grey bg-white p-3">
       <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate">{label}</p>
       <p className="mt-1 text-sm font-bold text-charcoal">{value}</p>
+    </div>
+  );
+}
+
+function TerritoryMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/55">{label}</p>
+      <p className="mt-2 text-2xl font-bold tracking-tight text-white">{value}</p>
     </div>
   );
 }

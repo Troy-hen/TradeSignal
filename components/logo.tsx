@@ -50,7 +50,7 @@ export function Logo({
           width={2048}
           height={682}
           priority
-          className="h-9 w-auto object-contain"
+          className="h-12 w-auto object-contain sm:h-14"
         />
       </span>
     );
