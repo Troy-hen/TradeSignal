@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { TerritoryCheckerWidget } from "@/components/territory-checker-widget";
 import { LockedOpportunityPreview } from "@/components/locked-opportunity-preview";
 import { FaqSection } from "@/components/marketing/faq";
-import { FALLBACK_PRICING, PricingGrid, type PricingItem } from "@/components/marketing/pricing-grid";
+import { PricingGrid, type PricingItem } from "@/components/marketing/pricing-grid";
 
 const FALLBACK_TRADES: PricingItem[] = [
   {
@@ -88,7 +88,7 @@ const FALLBACK_TRADES: PricingItem[] = [
 
 
 export default async function LandingPage() {
-  let tradeOptions: PricingItem[] = FALLBACK_PRICING;
+  let tradeOptions: PricingItem[] = FALLBACK_TRADES;
 
   try {
     const supabase = await createClient();
