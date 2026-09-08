@@ -44,7 +44,7 @@ export default async function PricingPage() {
             Pay for the local signal you can act on.
           </h1>
           <p className="mt-6 max-w-2xl text-base leading-7 text-white/70 sm:text-lg">
-            No credit packs and no shared lead auction. Choose a trade, check a postcode district and see the monthly price before you claim it.
+            No credit packs and no shared lead auction. Start at £29.99 for one postcode district, add coverage around your service area and see the exact monthly total before checkout.
           </p>
         </div>
       </section>
@@ -53,8 +53,8 @@ export default async function PricingPage() {
 
       <section className="bg-white px-6 py-20 sm:py-24">
         <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-3 lg:px-2">
-          <InfoCard title="What is included" body="Exclusive access to your trade-specific opportunity feed, live aggregate totals, planning context, indicative value and the tools to decide what to pursue." />
-          <InfoCard title="How coverage works" body="The live product starts with one trade × one postcode district. Adjacent district packs are planned for firms whose service area is larger than a single postcode." />
+          <InfoCard title="What is included" body="Exclusive access to your trade-specific opportunity feed, live aggregate totals, planning context, indicative value, source links and practical next actions." />
+          <InfoCard title="How coverage works" body="Each trade has its own coverage plan. The first district is £29.99/month, additional districts are discounted by volume, and you can add or remove districts to fit your service area." />
           <InfoCard title="What is not promised" body="Planning applications can change, estimates are indicative and a signal is not a guaranteed enquiry. MyTradeBox helps you find and prioritise opportunities earlier." />
         </div>
       </section>
