@@ -19,7 +19,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   }
 
   if (planId) {
-    const db = supabase as any;
+    const db = supabase;
     const { data: plan } = await db.from("coverage_plans").select("status").eq("id", planId).maybeSingle();
     if (!plan) {
       return NextResponse.json({ error: "not_found" }, { status: 404 });
