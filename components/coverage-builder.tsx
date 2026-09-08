@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { coveragePriceBreakdown, formatMonthlyGbp } from "@/lib/coverage/pricing";
 
 export type CoverageTradeOption = {
@@ -52,13 +52,6 @@ export function CoverageBuilder({ trades, districts, existingTradeIds, countyAre
   const [query, setQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (!availableTrades.some((trade) => trade.id === tradeId)) {
-      setTradeId(availableTrades[0]?.id ?? "");
-      setSelected([]);
-    }
-  }, [availableTrades, tradeId]);
 
   const breakdown = selected.length > 0 ? coveragePriceBreakdown(selected.length, "custom") : null;
 
