@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireCurrentCompany } from "@/lib/auth/get-current-company";
 import { createClient } from "@/lib/supabase/server";
+import { formatMonthlyGbp } from "@/lib/coverage/pricing";
 
 const STATUS_COPY: Record<string, { label: string; className: string; dot: string }> = {
   reserved: { label: "Payment pending", className: "text-warning", dot: "bg-warning" },
@@ -63,7 +64,7 @@ export default async function MyTerritoriesPage() {
           const territory = territoryById.get(claim.territory_id);
           const trade = territory ? tradeById.get(territory.trade_category_id) : null;
           const status = STATUS_COPY[claim.status] ?? STATUS_COPY.expired;
-          const priceGbp = territory ? Math.round(territory.monthly_price_pence / 100) : null;
+          const priceLabel = territory ? formatMonthlyGbp(territory.monthly_price_pence) : null;
 
           return (
             <li key={claim.id} className="rounded-3xl border border-light-grey bg-white p-5 sm:p-6">
@@ -82,7 +83,7 @@ export default async function MyTerritoriesPage() {
               </div>
 
               <div className="mt-6 grid grid-cols-2 gap-3">
-                <Metric label="Monthly access" value={priceGbp !== null ? `£${priceGbp}` : "—"} />
+                <Metric label="Monthly access" value={priceLabel ?? "—"} />
                 <Metric label="Trade" value={trade?.name ?? "—"} />
               </div>
 
@@ -111,7 +112,7 @@ function PageIntro() {
     <div>
       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Territory management</p>
       <h1 className="mt-3 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">My territories.</h1>
-      <p className="mt-3 max-w-2xl text-sm leading-6 text-slate sm:text-base">The postcode districts and trades your business currently owns.</p>
+      <p className="mt-3 max-w-2xl text-sm leading-6 text-slate sm:text-base">The postcode districts and trades your business currently owns. Adjust the shape of each trade plan from Coverage.</p>
     </div>
   );
 }
