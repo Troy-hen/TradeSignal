@@ -69,6 +69,7 @@ Open [http://localhost:3000](http://localhost:3000). With `PLANNING_PROVIDER=moc
    | `RESEND_API_KEY`, `RESEND_FROM_EMAIL` | Email sending. |
    | `PLANNING_PROVIDER` | `mock` (default) or `plota`. |
    | `PLOTA_API_KEY` | Only read when `PLANNING_PROVIDER=plota`. Demo operation does not require a plan-tier variable. |
+   | `PLOTA_MAX_PAGES_PER_RUN` | Optional scheduled-ingestion cap; defaults to one ten-row page per Plota run. |
    | `NEXT_PUBLIC_APP_URL` | Used to build links inside emails. |
 
    `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` are auto-injected by the platform — never set these manually.
@@ -106,7 +107,7 @@ Set `RESEND_API_KEY` and `RESEND_FROM_EMAIL` as Edge Function secrets (email sen
 `lib/planning-providers` from an earlier iteration of this codebase has been superseded — the real, active implementation lives in `supabase/functions/_shared/planning-providers/` (Deno), since ingestion is an autonomous Edge Function concern, not something the Next.js app touches directly.
 
 - **`mock` (default)** — `MockPlanningProvider` generates ~250 seeded, deterministic, realistic UK-style applications across the districts in `postcode_districts`, marked `is_demo_data`. Zero external dependency; this is what local dev and a fresh deploy run against out of the box.
-- **`plota`** — uses Plota's bearer-auth REST API with the current application fields (`description`, `address`, `planning_route`, `date_decided`, `commercial`) mapped into the normalized planning schema. List requests explicitly use a ten-row page, cursor pagination is followed, and `include_contact` is never set to `true` by default. The Demo key is capped at **500 requests total, not monthly**; use the targeted manual sync below for smoke-testing, not an unrestricted historical backfill. A plan-tier environment variable is not required for Demo operation.
+- **`plota`** — uses Plota's bearer-auth REST API with the current application fields (`description`, `address`, `planning_route`, `date_decided`, `commercial`) mapped into the normalized planning schema. List requests explicitly use a ten-row page, cursor pagination is followed, and `include_contact` is never set to `true` by default. The Demo key is capped at **500 requests total, not monthly**; use the targeted manual sync below for smoke-testing, not an unrestricted historical backfill. Scheduled Plota reads default to one ten-row page per run; set `PLOTA_MAX_PAGES_PER_RUN` only when you deliberately want to spend more calls. A plan-tier environment variable is not required for Demo operation.
 
 For a bounded end-to-end smoke test, call the ingestion function with only the districts you want to inspect. This makes one Plota list request per district (maximum ten rows per request):
 
