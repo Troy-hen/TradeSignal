@@ -53,7 +53,9 @@ const PURCHASED_STATUSES = new Set(["active", "suspended"]);
 
 export default async function AdminOverviewPage() {
   const supabase = createAdminClient();
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const thirtyDaysAgoDate = new Date();
+  thirtyDaysAgoDate.setUTCDate(thirtyDaysAgoDate.getUTCDate() - 30);
+  const thirtyDaysAgo = thirtyDaysAgoDate.toISOString();
 
   const [
     { data: companiesData },
