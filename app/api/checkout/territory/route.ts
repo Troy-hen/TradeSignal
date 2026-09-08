@@ -52,7 +52,7 @@ export async function POST(request: Request) {
     p_postcode_districts: districts,
     p_trade_category_id: parsed.data.trade_category_id,
     p_billing_mode: parsed.data.billing_mode,
-    p_coverage_area_id: parsed.data.coverage_area_id ?? null,
+    p_coverage_area_id: parsed.data.coverage_area_id ?? undefined,
   });
 
   if (reserveError || !reservationRows?.[0]) {
@@ -99,7 +99,7 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   const [{ data: company }, { data: trade }, { data: planItems }] = await Promise.all([
-    supabase.from("companies").select("id, trading_name, billing_email, stripe_customer_id").eq("id", plan?.company_id).single(),
+    supabase.from("companies").select("id, trading_name, billing_email, stripe_customer_id").eq("id", plan?.company_id ?? "").single(),
     supabase.from("trade_categories").select("name, slug").eq("id", parsed.data.trade_category_id).single(),
     adminDb
       .from("coverage_plan_items")
