@@ -7,7 +7,7 @@ const NAV_ITEMS = [
   { href: "/dashboard", label: "Overview", icon: "overview" },
   { href: "/opportunities", label: "Opportunities", icon: "opportunities" },
   { href: "/territories", label: "Territory Explorer", icon: "territories" },
-  { href: "/my-territories", label: "My Territories", icon: "claimed" },
+  { href: "/coverage", label: "Coverage", icon: "claimed" },
   { href: "/roi", label: "ROI", icon: "roi" },
   { href: "/billing", label: "Billing", icon: "billing" },
   { href: "/settings", label: "Settings", icon: "settings" },
