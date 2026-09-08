@@ -25,7 +25,7 @@ function shell(preheader: string, bodyHtml: string): string {
             ${bodyHtml}
           </td></tr>
           <tr><td style="padding:16px 32px;border-top:1px solid ${LIGHT_GREY};color:${SLATE};font-size:12px;">
-            TradeSignal — UK planning opportunity intelligence for trade businesses.
+            MyTradeBox — UK planning opportunity intelligence for trade businesses.
           </td></tr>
         </table>
       </td></tr>
@@ -88,7 +88,7 @@ export function newLeadInstantEmail(params: { companyName: string; matches: Matc
 
   const body = `
     <p>Hi ${params.companyName},</p>
-    <p>TradeSignal just detected ${params.matches.length === 1 ? "a high-priority opportunity" : `${params.matches.length} high-priority opportunities`} in your territory:</p>
+    <p>MyTradeBox just detected ${params.matches.length === 1 ? "a high-priority opportunity" : `${params.matches.length} high-priority opportunities`} in your territory:</p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${params.matches.map(matchRow).join("")}</table>
     <p style="color:${SLATE};font-size:13px;margin-top:16px;">All estimates are indicative — not a formal valuation.</p>
   `;
@@ -104,7 +104,7 @@ export function digestEmail(params: {
   const subject = `${params.matches.length} new opportunit${params.matches.length === 1 ? "y" : "ies"} ${params.periodLabel}`;
   const body = `
     <p>Hi ${params.companyName},</p>
-    <p>Here's your ${params.periodLabel === "today" ? "daily" : "weekly"} TradeSignal summary — ${params.matches.length} new opportunit${params.matches.length === 1 ? "y" : "ies"} matched to your territories ${params.periodLabel}:</p>
+    <p>Here's your ${params.periodLabel === "today" ? "daily" : "weekly"} MyTradeBox summary — ${params.matches.length} new opportunit${params.matches.length === 1 ? "y" : "ies"} matched to your territories ${params.periodLabel}:</p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${params.matches.map(matchRow).join("")}</table>
     ${button("Open your dashboard", params.dashboardUrl)}
     <p style="color:${SLATE};font-size:13px;margin-top:16px;">All estimates are indicative — not a formal valuation.</p>
@@ -129,10 +129,10 @@ export function approvalAlertEmail(params: {
 }
 
 export function paymentFailedEmail(params: { companyName: string; billingPortalUrl: string }): { subject: string; html: string } {
-  const subject = "Action needed: your TradeSignal payment failed";
+  const subject = "Action needed: your MyTradeBox payment failed";
   const body = `
     <p>Hi ${params.companyName},</p>
-    <p>We weren't able to process your latest TradeSignal subscription payment. Your territory access will be suspended until this is resolved.</p>
+    <p>We weren't able to process your latest MyTradeBox subscription payment. Your territory access will be suspended until this is resolved.</p>
     ${button("Update payment details", params.billingPortalUrl)}
   `;
   return { subject, html: shell(subject, body) };

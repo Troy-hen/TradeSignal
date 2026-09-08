@@ -49,6 +49,21 @@ export function OpportunityRow({ item }: { item: OpportunityListItem }) {
             <span>Matched to your territory</span>
           </div>
 
+          {item.summary && (
+            <div className="mt-3 flex gap-2 rounded-xl bg-soft-surface px-3 py-2.5">
+              <span className="mt-0.5 text-signal-orange" aria-hidden="true">✦</span>
+              <p className="line-clamp-2 text-xs leading-5 text-slate">
+                <span className="font-semibold text-charcoal">AI read: </span>{item.summary}
+              </p>
+            </div>
+          )}
+
+          {item.recommendedAction && (
+            <p className="mt-3 truncate text-xs text-slate">
+              <span className="font-semibold text-charcoal">Recommended next move: </span>{item.recommendedAction}
+            </p>
+          )}
+
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-light-grey pt-3">
             <span className="text-xs text-slate">
               Est. trade value <strong className="ml-1 text-sm text-charcoal">{formatGbpRange(item.valueLow, item.valueHigh)}</strong>

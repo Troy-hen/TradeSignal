@@ -19,6 +19,16 @@ export interface OpportunityListItem {
   decisionDate: string | null;
   currentAction: string | null;
   matchedAt: string;
+  summary: string | null;
+  likelyStartWindow: string | null;
+  opportunityTiming: string | null;
+  projectSizeCategory: string | null;
+  classificationStatus: string | null;
+  fitScore: number | null;
+  aiConfidence: number | null;
+  recommendedAction: string | null;
+  recommendedContactTiming: string | null;
+  riskFlags: string[] | null;
 }
 
 /**
@@ -50,7 +60,7 @@ export async function getCompanyOpportunities(
   let oppQuery = supabase
     .from("application_trade_opportunities")
     .select(
-      "id, opportunity_score, opportunity_bucket, postcode_district, trade_category_id, application_classification_id, estimated_trade_value_low, estimated_trade_value_high, planning_application_id",
+      "id, opportunity_score, opportunity_bucket, postcode_district, trade_category_id, application_classification_id, estimated_trade_value_low, estimated_trade_value_high, fit_score, ai_confidence, likely_scope, recommended_action, recommended_contact_timing, risk_flags, planning_application_id",
     )
     .in("id", oppIds);
   if (opts?.bucket) oppQuery = oppQuery.eq("opportunity_bucket", opts.bucket);
@@ -65,7 +75,10 @@ export async function getCompanyOpportunities(
 
   const [{ data: trades }, { data: classifications }, { data: applications }] = await Promise.all([
     supabase.from("trade_categories").select("id, name").in("id", tradeIds),
-    supabase.from("application_classifications").select("id, project_type").in("id", classIds),
+    supabase
+      .from("application_classifications")
+      .select("id, project_type, summary, likely_start_window, opportunity_timing, project_size_category, ai_confidence, classification_status")
+      .in("id", classIds),
     supabase.from("planning_applications").select("id, status, received_date, decision_date").in("id", appIds),
   ]);
 
@@ -89,6 +102,16 @@ export async function getCompanyOpportunities(
       score: opp.opportunity_score,
       bucket: opp.opportunity_bucket,
       projectType: cls?.project_type ?? null,
+      summary: cls?.summary ?? null,
+      likelyStartWindow: cls?.likely_start_window ?? null,
+      opportunityTiming: cls?.opportunity_timing ?? null,
+      projectSizeCategory: cls?.project_size_category ?? null,
+      classificationStatus: cls?.classification_status ?? null,
+      fitScore: opp.fit_score ?? null,
+      aiConfidence: opp.ai_confidence ?? null,
+      recommendedAction: opp.recommended_action ?? null,
+      recommendedContactTiming: opp.recommended_contact_timing ?? null,
+      riskFlags: opp.risk_flags ?? null,
       district: opp.postcode_district,
       tradeName: trade?.name ?? "Trade",
       planningStatus: app?.status ?? "unknown",

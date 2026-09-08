@@ -96,7 +96,7 @@ async function processNewLeadMatches(admin: any, appUrl: string, cadence: Cadenc
 
   const { data: prefs } = await admin
     .from("notification_preferences")
-    .select("company_id, instant_alert_min_score, digest_min_score, digest_frequency")
+    .select("company_id, channel_email, instant_alert_min_score, digest_min_score, digest_frequency")
     .in("company_id", companyIds)
     .is("user_id", null);
   const prefByCompany = new Map((prefs ?? []).map((p: { company_id: string }) => [p.company_id, p]));
@@ -108,6 +108,8 @@ async function processNewLeadMatches(admin: any, appUrl: string, cadence: Cadenc
     if (!opp) continue;
 
     const pref = prefByCompany.get(m.company_id);
+    if (pref?.channel_email === false) continue;
+
     const instantMin = pref?.instant_alert_min_score ?? DEFAULT_INSTANT_MIN_SCORE;
     const digestMin = pref?.digest_min_score ?? DEFAULT_DIGEST_MIN_SCORE;
     const digestFrequency = pref?.digest_frequency ?? DEFAULT_DIGEST_FREQUENCY;
@@ -205,11 +207,11 @@ async function processApprovalAlerts(admin: any, appUrl: string, results: Record
       for (const match of matches ?? []) {
         const { data: pref } = await admin
           .from("notification_preferences")
-          .select("approval_alerts_enabled")
+          .select("approval_alerts_enabled, channel_email")
           .eq("company_id", match.company_id)
           .is("user_id", null)
           .maybeSingle();
-        if (pref?.approval_alerts_enabled === false) continue; // explicit opt-out only
+        if (pref?.approval_alerts_enabled === false || pref?.channel_email === false) continue; // explicit opt-out only
 
         const { data: company } = await admin
           .from("companies")
