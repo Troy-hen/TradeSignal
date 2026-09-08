@@ -7,6 +7,7 @@ import { ClaimTerritoryButton } from "@/components/claim-territory-button";
 import { LockedOpportunityPreview } from "@/components/locked-opportunity-preview";
 import { SubmitButton } from "@/components/submit-button";
 import { formatGbp } from "@/components/opportunity-badge";
+import { formatMonthlyGbp } from "@/lib/coverage/pricing";
 
 const STATUS_COPY: Record<string, { label: string; className: string }> = {
   available: { label: "Available", className: "text-success" },
@@ -58,7 +59,7 @@ export default async function TerritoryDetailPage({
   }
 
   const status = STATUS_COPY[stats.territory_status] ?? STATUS_COPY.available;
-  const priceGbp = Math.round((stats.monthly_price_pence ?? trade.default_monthly_price_pence) / 100);
+  const priceLabel = formatMonthlyGbp(stats.monthly_price_pence ?? trade.default_monthly_price_pence);
 
   return (
     <div className="max-w-5xl space-y-8">
@@ -79,7 +80,7 @@ export default async function TerritoryDetailPage({
             </p>
           </div>
           <p className="text-3xl font-bold tracking-tight text-charcoal">
-            £{priceGbp}
+            {priceLabel}
             <span className="text-sm font-normal text-slate">/month</span>
           </p>
         </div>
@@ -106,7 +107,7 @@ export default async function TerritoryDetailPage({
             <p className="text-lg font-semibold text-charcoal">This territory is available.</p>
             <p className="mt-1 text-sm text-slate">Claim it to unlock the full local opportunity feed for {trade.name}.</p>
             <div className="mt-5">
-              <ClaimTerritoryButton postcodeDistrict={district} tradeCategoryId={trade.id} priceGbp={priceGbp} />
+              <ClaimTerritoryButton postcodeDistrict={district} tradeCategoryId={trade.id} priceLabel={priceLabel} />
             </div>
           </div>
         ) : (
