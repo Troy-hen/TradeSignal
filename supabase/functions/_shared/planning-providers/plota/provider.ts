@@ -12,39 +12,47 @@ export class PlotaTierLimitationError extends Error {
 
 const PRO_PLUS_TIERS = new Set(["pro", "business", "enterprise"]);
 
-// Plota's documented application object has no distinct free-text address
-// field in the verified contract (only postcode + lat/lng) — address_text
-// stays null rather than guessing at an undocumented field name.
 function toRawApplication(app: PlotaApplication): RawApplication {
+  const appealStatus =
+    app.appeal_status ??
+    (typeof app.appeal === "string" ? app.appeal : app.appeal?.status ?? app.appeal?.outcome ?? null);
+
+  const commercial =
+    typeof app.commercial === "boolean"
+      ? app.commercial
+      : typeof app.commercial_work === "boolean"
+        ? app.commercial_work
+        : null;
+
   return {
     provider: "plota",
     providerId: app.id,
-    reference: app.reference,
+    reference: app.reference || app.id,
     authorityName: app.authority?.name ?? null,
     authorityCode: app.authority?.slug ?? null,
-    addressText: null,
+    addressText: app.address ?? null,
     postcode: app.postcode ?? null,
     latitude: app.location?.lat ?? null,
     longitude: app.location?.lng ?? null,
-    applicationType: app.category?.label ?? null,
-    proposalDescription: app.proposal ?? null,
+    applicationType: app.planning_route ?? app.category?.label ?? app.procedure ?? null,
+    proposalDescription: app.description ?? app.proposal ?? null,
     stage: app.stage ?? null,
     statusRaw: app.status ?? null,
     decisionOutcomeRaw: app.decision?.outcome ?? null,
     receivedDate: app.date_received ?? null,
     validatedDate: app.date_validated ?? null,
     decisionDueDate: app.key_dates?.target_decision ?? null,
-    decisionDate: app.decision?.issued_date ?? null,
-    appealStatus: app.appeal_status ?? null,
+    decisionDate: app.date_decided ?? app.decision?.issued_date ?? null,
+    appealStatus,
     dwellingCount: app.dwelling_count ?? null,
-    isCommercial: app.commercial_work ?? null,
+    isCommercial: commercial,
     floorspaceSqm: app.floorspace_sqm ?? null,
     // include_contact is never requested as true, so these are always
     // absent in practice — GDPR minimisation by not asking, not by filtering.
     applicantName: app.applicant_name ?? null,
     agentCompany: app.agent_company ?? null,
-    // Plota's contract doesn't supply a factual project value (rare/absent
-    // by design) — distinct from the AI's own estimates computed later.
+    // Plota's contract doesn't supply a factual project value — distinct
+    // from the AI's own estimates computed later.
     estimatedValueGbp: null,
     sourceUrl: app.links?.council ?? app.links?.plota ?? null,
     changedAt: app.changed_at ?? null,
@@ -53,15 +61,14 @@ function toRawApplication(app: PlotaApplication): RawApplication {
 }
 
 /**
- * Built against the verified Plota API contract (base URL, auth, endpoints,
- * pagination, rate limits, error shape, field mapping — see plan section
- * 8.2). Not the active default; PLANNING_PROVIDER=mock is, until
- * PLOTA_API_KEY is set.
+ * Uses Plota's Demo-safe read path: bearer auth, ten-row pages and cursor
+ * pagination. The optional plan tier is intentionally not required for Demo
+ * operation; it only controls whether the change-feed path is attempted.
  */
 export class PlotaPlanningProvider implements PlanningDataProvider {
   constructor(
     private readonly client: PlotaClient,
-    private readonly planTier: string,
+    private readonly planTier = "demo",
   ) {}
 
   async *fetchNewApplications({ since, cursor }: { since?: string; cursor?: string }): AsyncGenerator<RawApplication[]> {
@@ -71,18 +78,13 @@ export class PlotaPlanningProvider implements PlanningDataProvider {
   }
 
   /**
-   * changed_at/changed_since are Pro+ only. On Starter/Demo this throws
-   * rather than silently returning nothing — the caller (the ingestion
-   * function, which knows which of OUR rows are still undecided) is
-   * responsible for the documented fallback: re-check individual pending
-   * applications on a rotation via getApplication(). That rotation logic
-   * belongs there, not here — this provider has no knowledge of our schema.
+   * changed_since is Pro+ only. On the Demo key this throws immediately and
+   * the ingestion function falls back to rotating individual pending rows.
    */
   async *fetchUpdatedApplications({ since, cursor }: { since: string; cursor?: string }): AsyncGenerator<RawApplication[]> {
     if (!PRO_PLUS_TIERS.has(this.planTier)) {
       throw new PlotaTierLimitationError(
-        `changed_since is not available on the Plota "${this.planTier}" plan — fall back to re-checking ` +
-          "individual undecided applications via getApplication() instead.",
+        \`changed_since is not available on the Plota "\${this.planTier}" plan — fall back to re-checking individual undecided applications via getApplication().\`,
       );
     }
     for await (const page of this.client.paginate("/applications", { changed_since: since, cursor })) {

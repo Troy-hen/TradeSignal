@@ -26,10 +26,8 @@ export async function computeContentHash(raw: RawApplication): Promise<string> {
 }
 
 /**
- * Conservative by design: an ambiguous stage maps to 'unknown' rather than
- * guessing, since council wording for `stage`/`status` varies too much to
- * infer confidently. Shared by every provider so status semantics never
- * drift between Mock and Plota.
+ * Conservative by design: an ambiguous stage maps to unknown rather than
+ * guessing, since council wording for stage/status varies too much to infer confidently.
  */
 export function mapStatus(raw: RawApplication): PlanningApplicationStatus {
   const stage = (raw.stage ?? "").toLowerCase();
@@ -37,6 +35,9 @@ export function mapStatus(raw: RawApplication): PlanningApplicationStatus {
 
   if (stage === "withdrawn" || outcome.includes("withdrawn")) return "withdrawn";
   if (raw.appealStatus) return "appeal_lodged";
+
+  if (stage === "approved" || stage === "permitted" || stage === "granted") return "approved";
+  if (stage === "refused" || stage === "rejected" || stage === "dismissed") return "rejected";
 
   if (stage === "decided" || raw.decisionDate) {
     if (outcome.includes("approv") || outcome.includes("grant") || outcome.includes("permit")) return "approved";

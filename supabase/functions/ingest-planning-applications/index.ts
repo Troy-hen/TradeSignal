@@ -1,29 +1,27 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { getPlanningProvider } from "../_shared/planning-providers/index.ts";
+import { PlotaApiError } from "../_shared/planning-providers/plota/client.ts";
 import { PlotaTierLimitationError } from "../_shared/planning-providers/plota/provider.ts";
-import type { NormalisedApplication, RawApplication } from "../_shared/planning-providers/types.ts";
+import type { NormalisedApplication, PlanningDataProvider, RawApplication } from "../_shared/planning-providers/types.ts";
 
 /**
- * Triggered by pg_cron via pg_net (see the two schedules created in the
- * companion migration) with Authorization: Bearer <CRON_SECRET> — a
- * dedicated Vault secret, distinct from service_role, so a leaked value
- * only lets someone trigger ingestion rather than bypass RLS entirely.
- * verify_jwt is disabled on this function for exactly that reason: pg_net's
- * call carries this custom bearer token, not a Supabase JWT.
- *
- * classification_status IS the queue between this function and Task 8's
- * classifier: ingestion's job is done the moment a planning_applications
- * row exists with a 'pending'/'stale' classification row attached
- * (guaranteed by a DB trigger — see 20260907170100_ingestion_upsert.sql) —
- * durable regardless of whether AI classification ever runs.
+ * Triggered by pg_cron via pg_net with Authorization: Bearer <CRON_SECRET>.
+ * The Edge Function deliberately uses a custom bearer check rather than a
+ * Supabase JWT because cron jobs do not carry a user session.
  */
 
 type RunType = "scheduled_new" | "scheduled_updated" | "manual_backfill";
-
 const UNDECIDED_STATUSES = ["submitted", "validated", "under_consideration", "decision_expected", "unknown"];
 const PENDING_ROTATION_BATCH_SIZE = 20;
-const DEFAULT_SINCE = "2020-01-01";
+const DEFAULT_LOOKBACK_DAYS = 90;
+const MAX_TARGET_DISTRICTS = 10;
+const DISTRICT_PATTERN = /^[A-Z]{1,2}\d{1,2}[A-Z]?$/;
+
+interface IngestBody {
+  run_type?: RunType;
+  postcode_districts?: unknown;
+}
 
 interface RunStats {
   fetched: number;
@@ -33,30 +31,70 @@ interface RunStats {
   errors: number;
 }
 
+function defaultSince(): string {
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() - DEFAULT_LOOKBACK_DAYS);
+  return date.toISOString().slice(0, 10);
+}
+
+function normaliseDistricts(input: unknown): string[] {
+  if (!Array.isArray(input)) return [];
+  return Array.from(
+    new Set(
+      input
+        .filter((value): value is string => typeof value === "string")
+        .map((value) => value.trim().toUpperCase())
+        .filter((value) => DISTRICT_PATTERN.test(value)),
+    ),
+  ).slice(0, MAX_TARGET_DISTRICTS);
+}
+
+function serialiseError(err: unknown): Record<string, unknown> {
+  if (err instanceof PlotaApiError) {
+    return {
+      message: err.message,
+      type: err.type,
+      status: err.status,
+      requestId: err.requestId ?? null,
+    };
+  }
+  return { message: err instanceof Error ? err.message : String(err) };
+}
+
 Deno.serve(async (req: Request) => {
   const cronSecret = Deno.env.get("CRON_SECRET");
   const authHeader = req.headers.get("Authorization");
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
+  if (!cronSecret || authHeader !== \`Bearer \${cronSecret}\`) {
     return json({ error: "unauthorized" }, 401);
   }
 
-  let runType: RunType = "scheduled_new";
+  let requestBody: IngestBody = {};
   try {
-    const body = await req.json();
-    if (body?.run_type === "scheduled_updated" || body?.run_type === "manual_backfill") {
-      runType = body.run_type;
-    }
+    requestBody = (await req.json()) as IngestBody;
   } catch {
-    // No/invalid JSON body -> default to scheduled_new (the cron schedules
-    // always send a body, but a manual test call without one shouldn't 500).
+    // No/invalid JSON body -> default to the scheduled new path.
+  }
+
+  let runType: RunType = "scheduled_new";
+  if (requestBody.run_type === "scheduled_updated" || requestBody.run_type === "manual_backfill") {
+    runType = requestBody.run_type;
+  }
+
+  const targetDistricts = runType === "manual_backfill" ? normaliseDistricts(requestBody.postcode_districts) : [];
+  if (runType === "manual_backfill" && targetDistricts.length === 0) {
+    return json(
+      {
+        error: "postcode_districts_required",
+        message: "Manual backfill requires postcode_districts, for example [\"IP22\", \"NR1\", \"N2\"].",
+      },
+      400,
+    );
   }
 
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
     auth: { persistSession: false },
   });
-
   const providerName = Deno.env.get("PLANNING_PROVIDER") ?? "mock";
-  const provider = getPlanningProvider();
 
   const { data: lastRun } = await admin
     .from("ingestion_runs")
@@ -68,11 +106,15 @@ Deno.serve(async (req: Request) => {
     .maybeSingle();
 
   const cursorTo = lastRun?.cursor_to as { since?: string } | null;
-  const since = runType === "manual_backfill" ? undefined : (cursorTo?.since ?? DEFAULT_SINCE);
+  const since = runType === "manual_backfill" ? undefined : (cursorTo?.since ?? defaultSince());
 
   const { data: runRow, error: runInsertError } = await admin
     .from("ingestion_runs")
-    .insert({ provider: providerName, run_type: runType, cursor_from: { since: since ?? null } })
+    .insert({
+      provider: providerName,
+      run_type: runType,
+      cursor_from: { since: since ?? null, postcode_districts: targetDistricts.length > 0 ? targetDistricts : null },
+    })
     .select("id")
     .single();
 
@@ -82,42 +124,43 @@ Deno.serve(async (req: Request) => {
 
   const stats: RunStats = { fetched: 0, created: 0, updated: 0, unchanged: 0, errors: 0 };
   const errorDetails: Record<string, unknown>[] = [];
-  let latestReceivedDate = since ?? DEFAULT_SINCE;
-  let latestChangedAt = since ?? DEFAULT_SINCE;
+  let latestReceivedDate = since ?? defaultSince();
+  let latestChangedAt = since ?? defaultSince();
   let fellBackToPendingRotation = false;
 
-  async function processRaw(raw: RawApplication | null) {
-    if (!raw) return;
-    stats.fetched++;
-    try {
-      const normalised: NormalisedApplication = await provider.normaliseApplication(raw);
-      const { data, error } = await admin.rpc("upsert_planning_application", { p_application: normalised });
-      if (error) throw error;
-      const result = Array.isArray(data) ? data[0] : data;
-      if (result?.is_new) stats.created++;
-      else if (result?.is_changed) stats.updated++;
-      else stats.unchanged++;
-
-      if (raw.receivedDate && raw.receivedDate > latestReceivedDate) latestReceivedDate = raw.receivedDate;
-      if (raw.changedAt && raw.changedAt > latestChangedAt) latestChangedAt = raw.changedAt;
-    } catch (err) {
-      stats.errors++;
-      errorDetails.push({ providerId: raw.providerId, message: err instanceof Error ? err.message : String(err) });
-    }
-  }
-
   try {
+    // The provider is created after the run row so a missing/invalid provider
+    // secret is visible in the admin health table instead of becoming a
+    // silent function-level 500 before a run is recorded.
+    const provider: PlanningDataProvider = getPlanningProvider();
+
+    async function processRaw(raw: RawApplication | null) {
+      if (!raw) return;
+      stats.fetched++;
+      try {
+        const normalised: NormalisedApplication = await provider.normaliseApplication(raw);
+        const { data, error } = await admin.rpc("upsert_planning_application", { p_application: normalised });
+        if (error) throw error;
+        const result = Array.isArray(data) ? data[0] : data;
+        if (result?.is_new) stats.created++;
+        else if (result?.is_changed) stats.updated++;
+        else stats.unchanged++;
+
+        if (raw.receivedDate && raw.receivedDate > latestReceivedDate) latestReceivedDate = raw.receivedDate;
+        if (raw.changedAt && raw.changedAt > latestChangedAt) latestChangedAt = raw.changedAt;
+      } catch (err) {
+        stats.errors++;
+        errorDetails.push({ providerId: raw.providerId, ...serialiseError(err) });
+      }
+    }
+
     if (runType === "scheduled_updated") {
       try {
-        for await (const page of provider.fetchUpdatedApplications({ since: since ?? DEFAULT_SINCE })) {
+        for await (const page of provider.fetchUpdatedApplications({ since: since ?? defaultSince() })) {
           for (const raw of page) await processRaw(raw);
         }
       } catch (err) {
         if (err instanceof PlotaTierLimitationError) {
-          // Starter/Demo Plota tier: no changed_since access. Fall back to
-          // re-checking a rotation of OUR OWN currently-undecided
-          // applications via getApplication() — this provider has no
-          // knowledge of our schema, so that rotation lives here, not in it.
           fellBackToPendingRotation = true;
           const { data: pendingRows } = await admin
             .from("planning_applications")
@@ -133,6 +176,13 @@ Deno.serve(async (req: Request) => {
         } else {
           throw err;
         }
+      }
+    } else if (runType === "manual_backfill") {
+      // One request per requested district, one ten-row page per request.
+      // This is intentionally bounded for Plota's 500-call demo key.
+      for (const district of targetDistricts) {
+        const rows = await provider.searchByPostcode(district);
+        for (const raw of rows) await processRaw(raw);
       }
     } else {
       for await (const page of provider.fetchNewApplications({ since })) {
@@ -158,13 +208,17 @@ Deno.serve(async (req: Request) => {
         applications_unchanged: stats.unchanged,
         errors_count: stats.errors,
         error_details: errorDetails.length > 0 ? errorDetails : null,
-        cursor_to: { since: runType === "scheduled_updated" ? latestChangedAt : latestReceivedDate, fellBackToPendingRotation },
+        cursor_to: {
+          since: runType === "scheduled_updated" ? latestChangedAt : latestReceivedDate,
+          postcode_districts: targetDistricts.length > 0 ? targetDistricts : null,
+          fellBackToPendingRotation,
+        },
       })
       .eq("id", runRow.id);
 
-    return json({ ok: true, runId: runRow.id, runType, stats, fellBackToPendingRotation });
+    return json({ ok: true, runId: runRow.id, runType, postcodeDistricts: targetDistricts, stats, fellBackToPendingRotation });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+    const detail = serialiseError(err);
     await admin
       .from("ingestion_runs")
       .update({
@@ -175,11 +229,11 @@ Deno.serve(async (req: Request) => {
         applications_updated: stats.updated,
         applications_unchanged: stats.unchanged,
         errors_count: stats.errors + 1,
-        error_details: [...errorDetails, { message }],
+        error_details: [...errorDetails, detail],
       })
       .eq("id", runRow.id);
 
-    return json({ error: "ingestion_failed", message }, 500);
+    return json({ error: "ingestion_failed", message: detail.message, details: detail }, 500);
   }
 });
 
