@@ -1,9 +1,12 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { deriveContactStrategy, type ContactStrategy } from "@/lib/contact-intelligence/strategy";
 
 export type OpportunityRelationshipIntelligence = {
   applicantName: string | null;
   agentCompany: string | null;
+  projectAddress: string | null;
+  contactStrategy: ContactStrategy;
   organisation: {
     name: string;
     visibleProjects: number;
@@ -37,10 +40,30 @@ export async function getOpportunityRelationshipIntelligence(input: {
   const supabase = await createClient();
   const organisationName = input.agentCompany?.trim() || null;
 
+  const { data: currentApplication } = await supabase
+    .from("planning_applications")
+    .select("address_text, is_commercial, application_type, proposal_description")
+    .eq("id", input.planningApplicationId)
+    .maybeSingle();
+
+  const contactStrategy = deriveContactStrategy({
+    applicantName: input.applicantName,
+    agentCompany: input.agentCompany,
+    isCommercial: currentApplication?.is_commercial ?? null,
+    applicationType: currentApplication?.application_type ?? null,
+    proposalDescription: currentApplication?.proposal_description ?? null,
+  });
+
+  const base = {
+    applicantName: input.applicantName,
+    agentCompany: input.agentCompany,
+    projectAddress: currentApplication?.address_text ?? null,
+    contactStrategy,
+  };
+
   if (!organisationName) {
     return {
-      applicantName: input.applicantName,
-      agentCompany: input.agentCompany,
+      ...base,
       organisation: null,
       relatedOpportunities: [],
     };
@@ -57,8 +80,7 @@ export async function getOpportunityRelationshipIntelligence(input: {
   const visibleApplications = applications ?? [];
   if (visibleApplications.length === 0) {
     return {
-      applicantName: input.applicantName,
-      agentCompany: input.agentCompany,
+      ...base,
       organisation: {
         name: organisationName,
         visibleProjects: 1,
@@ -118,8 +140,7 @@ export async function getOpportunityRelationshipIntelligence(input: {
   const approvedProjects = visibleApplications.filter((row) => row.status === "approved").length;
 
   return {
-    applicantName: input.applicantName,
-    agentCompany: input.agentCompany,
+    ...base,
     organisation: {
       name: organisationName,
       visibleProjects: visibleApplications.length + 1,
