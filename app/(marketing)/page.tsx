@@ -381,7 +381,7 @@ function OpportunityFeedPreview() {
         <div className="mt-5">
           <LockedOpportunityPreview
             compact
-            title="Specific opportunities stay private"
+            title="See the signal before you claim"
             body="Check a postcode district to see the signal. Claim the territory to reveal the projects worth chasing."
           />
         </div>
