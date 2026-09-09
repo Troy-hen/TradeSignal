@@ -1,355 +1,125 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
-type CompanyRow = {
-  id: string;
-  trading_name: string;
-  billing_email: string;
-  verified: boolean;
-  created_at: string;
-  deleted_at: string | null;
-};
-
-type MembershipRow = {
-  company_id: string;
-  status: string;
-  created_at: string;
-};
-
-type CategoryRow = {
-  id: string;
-  name: string;
-  slug: string;
-};
-
-type TerritoryRow = {
-  id: string;
-  postcode_district: string;
-  trade_category_id: string;
-  monthly_price_pence: number;
-  currency: string;
-  is_active: boolean;
-};
-
-type ClaimRow = {
-  id: string;
-  territory_id: string;
-  company_id: string;
-  status: string;
-  activated_at: string | null;
-  created_at: string;
-  stripe_subscription_id: string | null;
-  stripe_checkout_session_id: string | null;
-};
-
-type ClassificationRow = {
-  classification_status: string;
-};
-
-type NotificationRow = {
-  status: string;
-};
-
-const PURCHASED_STATUSES = new Set(["active", "suspended"]);
+type CompanyRow = { id: string; trading_name: string; billing_email: string; verified: boolean; created_at: string; deleted_at: string | null };
+type ContactRow = { id: string; name: string; email: string; company_name: string | null; request_type: string; postcode_district: string | null; status: string; created_at: string };
+type IngestionRow = { id: string; provider: string; run_type: string; started_at: string; finished_at: string | null; status: string; applications_fetched: number; applications_created: number; applications_updated: number; errors_count: number };
+type NotificationRow = { id: string; notification_type: string; status: string; subject: string | null; error_message: string | null; created_at: string };
+type SubscriptionRow = { id: string; company_id: string; status: string; current_period_end: string | null; created_at: string };
+type ProductEventRow = { event_name: string; source: string | null; created_at: string };
+type ClaimRow = { id: string; company_id: string; status: string };
 
 export default async function AdminOverviewPage() {
-  const supabase = createAdminClient();
-  const thirtyDaysAgoDate = new Date();
-  thirtyDaysAgoDate.setUTCDate(thirtyDaysAgoDate.getUTCDate() - 30);
-  const thirtyDaysAgo = thirtyDaysAgoDate.toISOString();
+  const typed = createAdminClient();
+  const db = typed as unknown as SupabaseClient;
+  const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
   const [
-    { data: companiesData },
-    { data: membershipsData },
-    { data: categoriesData },
-    { data: territoriesData },
-    { data: claimsData },
-    { data: classificationData },
-    { data: notificationData },
-    { count: applicationCount },
-    { count: newApplicationCount },
-    { count: activeOpportunityCount },
-    { count: leadMatchCount },
-    { count: recentLeadMatchCount },
+    { data: companiesData }, { data: contactsData }, { data: ingestionData }, { data: notificationData },
+    { data: subscriptionsData }, { data: eventsData }, { data: claimsData },
+    { count: applications }, { count: opportunities }, { count: matches },
   ] = await Promise.all([
-    supabase
-      .from("companies")
-      .select("id, trading_name, billing_email, verified, created_at, deleted_at")
-      .order("created_at", { ascending: false })
-      .limit(200),
-    supabase.from("company_memberships").select("company_id, status, created_at"),
-    supabase.from("trade_categories").select("id, name, slug"),
-    supabase
-      .from("territories")
-      .select("id, postcode_district, trade_category_id, monthly_price_pence, currency, is_active"),
-    supabase
-      .from("territory_claims")
-      .select("id, territory_id, company_id, status, activated_at, created_at, stripe_subscription_id, stripe_checkout_session_id")
-      .order("created_at", { ascending: false })
-      .limit(200),
-    supabase.from("application_classifications").select("classification_status"),
-    supabase.from("notification_log").select("status"),
-    supabase.from("planning_applications").select("id", { count: "exact", head: true }),
-    supabase
-      .from("planning_applications")
-      .select("id", { count: "exact", head: true })
-      .gte("created_at", thirtyDaysAgo),
-    supabase
-      .from("application_trade_opportunities")
-      .select("id", { count: "exact", head: true })
-      .eq("is_active", true),
-    supabase.from("lead_matches").select("id", { count: "exact", head: true }),
-    supabase
-      .from("lead_matches")
-      .select("id", { count: "exact", head: true })
-      .gte("matched_at", thirtyDaysAgo),
+    db.from("companies").select("id, trading_name, billing_email, verified, created_at, deleted_at").order("created_at", { ascending: false }).limit(200),
+    db.from("contact_requests").select("id, name, email, company_name, request_type, postcode_district, status, created_at").order("created_at", { ascending: false }).limit(30),
+    db.from("ingestion_runs").select("id, provider, run_type, started_at, finished_at, status, applications_fetched, applications_created, applications_updated, errors_count").order("started_at", { ascending: false }).limit(20),
+    db.from("notification_log").select("id, notification_type, status, subject, error_message, created_at").order("created_at", { ascending: false }).limit(100),
+    db.from("subscriptions").select("id, company_id, status, current_period_end, created_at").order("created_at", { ascending: false }).limit(200),
+    db.from("product_events").select("event_name, source, created_at").gte("created_at", monthAgo).order("created_at", { ascending: false }).limit(5000),
+    db.from("territory_claims").select("id, company_id, status").limit(5000),
+    db.from("planning_applications").select("id", { count: "exact", head: true }),
+    db.from("application_trade_opportunities").select("id", { count: "exact", head: true }).eq("is_active", true),
+    db.from("lead_matches").select("id", { count: "exact", head: true }),
   ]);
 
   const companies = (companiesData ?? []) as CompanyRow[];
-  const memberships = (membershipsData ?? []) as MembershipRow[];
-  const categories = (categoriesData ?? []) as CategoryRow[];
-  const territories = (territoriesData ?? []) as TerritoryRow[];
-  const claims = (claimsData ?? []) as ClaimRow[];
-  const classifications = (classificationData ?? []) as ClassificationRow[];
+  const contacts = (contactsData ?? []) as ContactRow[];
+  const ingestion = (ingestionData ?? []) as IngestionRow[];
   const notifications = (notificationData ?? []) as NotificationRow[];
+  const subscriptions = (subscriptionsData ?? []) as SubscriptionRow[];
+  const events = (eventsData ?? []) as ProductEventRow[];
+  const claims = (claimsData ?? []) as ClaimRow[];
+  const activeCompanies = companies.filter((row) => !row.deleted_at);
+  const companyById = new Map(companies.map((row) => [row.id, row]));
 
-  const companyById = new Map(companies.map((company) => [company.id, company]));
-  const categoryById = new Map(categories.map((category) => [category.id, category]));
-  const territoryById = new Map(territories.map((territory) => [territory.id, territory]));
-  const membershipCountByCompany = memberships.reduce<Record<string, number>>((counts, membership) => {
-    if (membership.status === "active") {
-      counts[membership.company_id] = (counts[membership.company_id] ?? 0) + 1;
-    }
-    return counts;
-  }, {});
+  const failedNotifications24h = notifications.filter((row) => row.status === "failed" && row.created_at >= dayAgo);
+  const openContacts = contacts.filter((row) => !["closed", "resolved"].includes(row.status));
+  const unhealthyRuns = ingestion.filter((row) => row.status === "failed" || row.errors_count > 0);
+  const activeSubscriptions = subscriptions.filter((row) => row.status === "active" || row.status === "trialing");
+  const pastDueSubscriptions = subscriptions.filter((row) => row.status === "past_due" || row.status === "unpaid");
+  const activeClaims = claims.filter((row) => row.status === "active");
 
-  const purchasedClaims = claims.filter((claim) => PURCHASED_STATUSES.has(claim.status));
-  const activeClaims = claims.filter((claim) => claim.status === "active");
-  const mrrPence = activeClaims.reduce(
-    (total, claim) => total + (territoryById.get(claim.territory_id)?.monthly_price_pence ?? 0),
-    0,
-  );
-
-  const claimsByCompany = purchasedClaims.reduce<Record<string, number>>((counts, claim) => {
-    counts[claim.company_id] = (counts[claim.company_id] ?? 0) + 1;
-    return counts;
-  }, {});
-
-  const classificationCounts = classifications.reduce<Record<string, number>>((counts, row) => {
-    counts[row.classification_status] = (counts[row.classification_status] ?? 0) + 1;
-    return counts;
-  }, {});
-
-  const notificationCounts = notifications.reduce<Record<string, number>>((counts, row) => {
-    counts[row.status] = (counts[row.status] ?? 0) + 1;
-    return counts;
-  }, {});
-
-  const visibleCompanies = companies.filter((company) => !company.deleted_at);
-  const currency = "GBP";
+  const funnel = countEvents(events);
+  const previewed = funnel.territory_previewed ?? 0;
+  const checkoutStarted = funnel.checkout_started ?? 0;
+  const checkoutCompleted = funnel.checkout_completed ?? 0;
+  const notificationClicks = funnel.notification_cta_clicked ?? 0;
 
   return (
-    <div>
+    <div className="space-y-10">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Platform overview</p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-charcoal">Customers, territories and growth.</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate">
-            A compact view of the commercial surface. Pipeline operations stay in Supabase logs and Edge Function monitoring.
-          </p>
-        </div>
+        <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Operations console</p><h1 className="mt-2 text-3xl font-bold tracking-tight text-charcoal">Platform health, customers and conversion.</h1><p className="mt-3 max-w-3xl text-sm leading-6 text-slate">One place to watch acquisition, ingestion, customer coverage, notification delivery and the territory purchase funnel.</p></div>
         <p className="text-xs text-slate">Updated {formatDate(new Date().toISOString())}</p>
       </div>
 
-      <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-6">
-        <StatCard label="Customers" value={formatNumber(visibleCompanies.length)} note="Active companies" />
-        <StatCard label="Territories" value={formatNumber(activeClaims.length)} note="Active now" />
-        <StatCard label="MRR" value={formatMoney(mrrPence, currency)} note="Active claims" />
-        <StatCard label="Applications" value={formatNumber(applicationCount ?? 0)} note={formatNumber(newApplicationCount ?? 0) + " in 30 days"} />
-        <StatCard label="Opportunities" value={formatNumber(activeOpportunityCount ?? 0)} note="Active matches" />
-        <StatCard label="Lead matches" value={formatNumber(leadMatchCount ?? 0)} note={formatNumber(recentLeadMatchCount ?? 0) + " in 30 days"} />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-8">
+        <Stat label="Customers" value={activeCompanies.length} note="active companies" />
+        <Stat label="Territories" value={activeClaims.length} note="active claims" />
+        <Stat label="Applications" value={applications ?? 0} note="ingested" />
+        <Stat label="Opportunities" value={opportunities ?? 0} note="active" />
+        <Stat label="Lead matches" value={matches ?? 0} note="all time" />
+        <Stat label="Open requests" value={openContacts.length} note="needs attention" tone={openContacts.length ? "warning" : "neutral"} />
+        <Stat label="Failed emails" value={failedNotifications24h.length} note="last 24h" tone={failedNotifications24h.length ? "warning" : "neutral"} />
+        <Stat label="Past due" value={pastDueSubscriptions.length} note="subscriptions" tone={pastDueSubscriptions.length ? "warning" : "neutral"} />
       </div>
 
-      <Section title="Customers" eyebrow="Accounts">
-        {visibleCompanies.length === 0 ? (
-          <EmptyNote text="No customer companies yet." />
-        ) : (
-          <div className="overflow-x-auto rounded-2xl border border-light-grey bg-white">
-            <table className="w-full min-w-[760px] text-left text-sm">
-              <thead className="bg-soft-surface text-xs uppercase tracking-wide text-slate">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">Business</th>
-                  <th className="px-4 py-3 font-semibold">Billing email</th>
-                  <th className="px-4 py-3 font-semibold">Team</th>
-                  <th className="px-4 py-3 font-semibold">Territories</th>
-                  <th className="px-4 py-3 font-semibold">Joined</th>
-                  <th className="px-4 py-3 font-semibold">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {visibleCompanies.map((company) => (
-                  <tr key={company.id} className="border-t border-light-grey">
-                    <td className="px-4 py-4">
-                      <p className="font-semibold text-charcoal">{company.trading_name}</p>
-                      <p className="mt-1 text-xs text-slate">{company.verified ? "Verified business" : "Unverified"}</p>
-                    </td>
-                    <td className="px-4 py-4 text-slate">{company.billing_email}</td>
-                    <td className="px-4 py-4 text-charcoal">{membershipCountByCompany[company.id] ?? 0}</td>
-                    <td className="px-4 py-4 text-charcoal">{claimsByCompany[company.id] ?? 0}</td>
-                    <td className="px-4 py-4 text-slate">{formatDate(company.created_at)}</td>
-                    <td className="px-4 py-4"><StatusPill label="Active" tone="success" /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Section>
-
-      <Section title="Purchased territories" eyebrow="Coverage">
-        {purchasedClaims.length === 0 ? (
-          <EmptyNote text="No purchased territories yet." />
-        ) : (
-          <div className="overflow-x-auto rounded-2xl border border-light-grey bg-white">
-            <table className="w-full min-w-[860px] text-left text-sm">
-              <thead className="bg-soft-surface text-xs uppercase tracking-wide text-slate">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">Area</th>
-                  <th className="px-4 py-3 font-semibold">Trade</th>
-                  <th className="px-4 py-3 font-semibold">Customer</th>
-                  <th className="px-4 py-3 font-semibold">Monthly</th>
-                  <th className="px-4 py-3 font-semibold">Access</th>
-                  <th className="px-4 py-3 font-semibold">Status</th>
-                  <th className="px-4 py-3 font-semibold">Activated</th>
-                </tr>
-              </thead>
-              <tbody>
-                {purchasedClaims.map((claim) => {
-                  const territory = territoryById.get(claim.territory_id);
-                  const category = territory ? categoryById.get(territory.trade_category_id) : undefined;
-                  const company = companyById.get(claim.company_id);
-                  const isPaid = Boolean(claim.stripe_subscription_id || claim.stripe_checkout_session_id);
-
-                  return (
-                    <tr key={claim.id} className="border-t border-light-grey">
-                      <td className="px-4 py-4 font-semibold text-charcoal">{territory?.postcode_district ?? "—"}</td>
-                      <td className="px-4 py-4 text-charcoal">{category?.name ?? "—"}</td>
-                      <td className="px-4 py-4 text-slate">{company?.trading_name ?? "Unknown company"}</td>
-                      <td className="px-4 py-4 font-semibold text-charcoal">
-                        {formatMoney(territory?.monthly_price_pence ?? 0, territory?.currency ?? "GBP")}/mo
-                      </td>
-                      <td className="px-4 py-4"><StatusPill label={isPaid ? "Paid" : "Demo"} tone={isPaid ? "success" : "warning"} /></td>
-                      <td className="px-4 py-4"><StatusPill label={claim.status} tone={claim.status === "active" ? "success" : "warning"} /></td>
-                      <td className="px-4 py-4 text-slate">{formatDate(claim.activated_at ?? claim.created_at)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Section>
-
-      <Section title="General analytics" eyebrow="Product activity">
-        <div className="grid gap-4 lg:grid-cols-3">
-          <AnalyticsCard
-            title="Classification"
-            rows={[
-              ["Completed", classificationCounts.completed ?? 0],
-              ["Pending / stale", (classificationCounts.pending ?? 0) + (classificationCounts.stale ?? 0)],
-              ["Failed", classificationCounts.failed ?? 0],
-            ]}
-          />
-          <AnalyticsCard
-            title="Notifications"
-            rows={[
-              ["Sent", notificationCounts.sent ?? 0],
-              ["Queued", notificationCounts.queued ?? 0],
-              ["Failed", notificationCounts.failed ?? 0],
-            ]}
-          />
-          <AnalyticsCard
-            title="Coverage"
-            rows={[
-              ["Available territory records", territories.filter((territory) => territory.is_active).length],
-              ["Purchased territories", purchasedClaims.length],
-              ["Paid subscriptions", purchasedClaims.filter((claim) => Boolean(claim.stripe_subscription_id)).length],
-            ]}
-          />
+      <Section eyebrow="Commercial funnel" title="Explore → checkout → active coverage">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <FunnelCard label="Territory previews" value={previewed} detail="Authenticated explorer searches" />
+          <FunnelCard label="Checkout started" value={checkoutStarted} detail={conversion(checkoutStarted, previewed) + " of previews"} />
+          <FunnelCard label="Checkout completed" value={checkoutCompleted} detail={conversion(checkoutCompleted, checkoutStarted) + " of checkout starts"} />
+          <FunnelCard label="Notification CTAs" value={notificationClicks} detail="Clicks from the in-app news rail" />
         </div>
       </Section>
-    </div>
-  );
-}
 
-function Section({ title, eyebrow, children }: { title: string; eyebrow: string; children: React.ReactNode }) {
-  return (
-    <section className="mt-10">
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate">{eyebrow}</p>
-          <h2 className="mt-2 text-xl font-bold tracking-tight text-charcoal">{title}</h2>
-        </div>
+      <div className="grid gap-6 xl:grid-cols-2">
+        <Section eyebrow="Inbox" title="Recent contact requests" compact>
+          {contacts.length === 0 ? <Empty text="No contact requests yet." /> : <div className="overflow-hidden rounded-2xl border border-light-grey bg-white"><ul className="divide-y divide-light-grey">{contacts.slice(0, 12).map((row) => <li key={row.id} className="p-4"><div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"><div className="min-w-0"><p className="font-semibold text-charcoal">{row.company_name || row.name}</p><p className="mt-1 break-all text-xs text-slate">{row.email} · {label(row.request_type)}{row.postcode_district ? " · " + row.postcode_district : ""}</p></div><Status value={row.status} /></div><p className="mt-2 text-xs text-slate">Received {formatDate(row.created_at)}</p></li>)}</ul></div>}
+        </Section>
+
+        <Section eyebrow="Data pipeline" title="Recent ingestion runs" compact>
+          {ingestion.length === 0 ? <Empty text="No ingestion runs recorded yet." /> : <div className="overflow-hidden rounded-2xl border border-light-grey bg-white"><ul className="divide-y divide-light-grey">{ingestion.slice(0, 12).map((row) => <li key={row.id} className="p-4"><div className="flex items-start justify-between gap-3"><div><p className="font-semibold text-charcoal">{row.provider} · {label(row.run_type)}</p><p className="mt-1 text-xs text-slate">Fetched {row.applications_fetched} · created {row.applications_created} · updated {row.applications_updated}</p></div><Status value={row.status} /></div><p className={"mt-2 text-xs " + (row.errors_count ? "text-danger" : "text-slate")}>{row.errors_count ? row.errors_count + " errors · " : ""}{formatDate(row.started_at)}</p></li>)}</ul></div>}
+        </Section>
       </div>
-      <div className="mt-4">{children}</div>
-    </section>
-  );
-}
 
-function StatCard({ label, value, note }: { label: string; value: string; note: string }) {
-  return (
-    <div className="rounded-2xl border border-light-grey bg-white p-4">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate">{label}</p>
-      <p className="mt-2 text-2xl font-bold tracking-tight text-charcoal">{value}</p>
-      <p className="mt-1 text-xs text-slate">{note}</p>
+      <div className="grid gap-6 xl:grid-cols-2">
+        <Section eyebrow="Delivery health" title="Notification failures" compact>
+          {failedNotifications24h.length === 0 ? <Empty text="No failed notification deliveries in the last 24 hours." success /> : <div className="rounded-2xl border border-danger/20 bg-danger/[0.03] p-4"><ul className="space-y-3">{failedNotifications24h.slice(0, 10).map((row) => <li key={row.id} className="rounded-xl bg-white p-3"><p className="text-sm font-semibold text-charcoal">{row.subject || label(row.notification_type)}</p><p className="mt-1 text-xs leading-5 text-danger">{row.error_message || "Delivery failed"}</p></li>)}</ul></div>}
+        </Section>
+
+        <Section eyebrow="Billing health" title="Subscriptions" compact>
+          <div className="grid grid-cols-2 gap-3"><FunnelCard label="Active" value={activeSubscriptions.length} detail="Active or trialing" /><FunnelCard label="Past due" value={pastDueSubscriptions.length} detail="Needs payment attention" /></div>
+          {pastDueSubscriptions.length > 0 && <ul className="mt-4 space-y-2">{pastDueSubscriptions.slice(0, 8).map((row) => <li key={row.id} className="flex items-center justify-between gap-3 rounded-xl border border-warning/20 bg-warning/[0.04] p-3 text-sm"><span className="truncate font-semibold text-charcoal">{companyById.get(row.company_id)?.trading_name ?? "Unknown company"}</span><Status value={row.status} /></li>)}</ul>}
+        </Section>
+      </div>
+
+      <Section eyebrow="Customers" title="Customer overview">
+        <div className="overflow-x-auto rounded-2xl border border-light-grey bg-white"><table className="w-full min-w-[720px] text-left text-sm"><thead className="bg-soft-surface text-xs uppercase tracking-wide text-slate"><tr><th className="px-4 py-3">Business</th><th className="px-4 py-3">Email</th><th className="px-4 py-3">Verified</th><th className="px-4 py-3">Joined</th></tr></thead><tbody>{activeCompanies.map((row) => <tr key={row.id} className="border-t border-light-grey"><td className="px-4 py-4 font-semibold text-charcoal">{row.trading_name}</td><td className="px-4 py-4 text-slate">{row.billing_email}</td><td className="px-4 py-4"><Status value={row.verified ? "verified" : "unverified"} /></td><td className="px-4 py-4 text-slate">{formatDate(row.created_at)}</td></tr>)}</tbody></table></div>
+      </Section>
+
+      {unhealthyRuns.length > 0 && <p className="rounded-2xl border border-warning/20 bg-warning/[0.04] p-4 text-sm text-warning">{unhealthyRuns.length} recent ingestion run{unhealthyRuns.length === 1 ? " has" : "s have"} errors or failed status. Review the run details in Supabase before expanding coverage.</p>}
     </div>
   );
 }
 
-function AnalyticsCard({ title, rows }: { title: string; rows: Array<[string, number]> }) {
-  return (
-    <div className="rounded-2xl border border-light-grey bg-white p-5">
-      <h3 className="text-sm font-semibold text-charcoal">{title}</h3>
-      <dl className="mt-4 space-y-3">
-        {rows.map(([label, value]) => (
-          <div key={label} className="flex items-center justify-between gap-4 text-sm">
-            <dt className="text-slate">{label}</dt>
-            <dd className="font-semibold text-charcoal">{formatNumber(value)}</dd>
-          </div>
-        ))}
-      </dl>
-    </div>
-  );
-}
-
-function StatusPill({ label, tone }: { label: string; tone: "success" | "warning" | "neutral" }) {
-  const classes =
-    tone === "success"
-      ? "bg-success/10 text-success"
-      : tone === "warning"
-        ? "bg-warning/10 text-warning"
-        : "bg-soft-surface text-slate";
-
-  return <span className={"inline-flex rounded-full px-2.5 py-1 text-xs font-semibold capitalize " + classes}>{label}</span>;
-}
-
-function EmptyNote({ text }: { text: string }) {
-  return <p className="rounded-2xl border border-dashed border-light-grey bg-white p-5 text-sm text-slate">{text}</p>;
-}
-
-function formatNumber(value: number) {
-  return new Intl.NumberFormat("en-GB").format(value);
-}
-
-function formatMoney(pence: number, currency: string) {
-  return new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-  }).format(pence / 100);
-}
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
-}
+function countEvents(rows: ProductEventRow[]) { return rows.reduce<Record<string, number>>((out, row) => { out[row.event_name] = (out[row.event_name] ?? 0) + 1; return out; }, {}); }
+function conversion(value: number, base: number) { return base > 0 ? Math.round((value / base) * 100) + "%" : "—"; }
+function label(value: string) { return value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()); }
+function formatDate(value: string) { return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value)); }
+function Section({ eyebrow, title, children, compact = false }: { eyebrow: string; title: string; children: React.ReactNode; compact?: boolean }) { return <section className={compact ? "" : "mt-2"}><p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate">{eyebrow}</p><h2 className="mt-2 text-xl font-bold tracking-tight text-charcoal">{title}</h2><div className="mt-4">{children}</div></section>; }
+function Stat({ label, value, note, tone = "neutral" }: { label: string; value: number; note: string; tone?: "neutral" | "warning" }) { return <div className={"rounded-2xl border p-4 " + (tone === "warning" ? "border-warning/20 bg-warning/[0.04]" : "border-light-grey bg-white")}><p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate">{label}</p><p className="mt-2 text-2xl font-bold text-charcoal">{new Intl.NumberFormat("en-GB").format(value)}</p><p className="mt-1 text-xs text-slate">{note}</p></div>; }
+function FunnelCard({ label, value, detail }: { label: string; value: number; detail: string }) { return <div className="rounded-2xl border border-light-grey bg-white p-5"><p className="text-xs font-semibold uppercase tracking-[0.11em] text-slate">{label}</p><p className="mt-3 text-3xl font-bold tracking-tight text-charcoal">{new Intl.NumberFormat("en-GB").format(value)}</p><p className="mt-1 text-xs text-slate">{detail}</p></div>; }
+function Status({ value }: { value: string }) { const good = ["active","trialing","sent","completed","verified","resolved","closed"].includes(value); const bad = ["failed","past_due","unpaid"].includes(value); return <span className={"inline-flex rounded-full px-2.5 py-1 text-xs font-semibold capitalize " + (good ? "bg-success/10 text-success" : bad ? "bg-danger/10 text-danger" : "bg-warning/10 text-warning")}>{label(value)}</span>; }
+function Empty({ text, success = false }: { text: string; success?: boolean }) { return <p className={"rounded-2xl border border-dashed p-5 text-sm " + (success ? "border-success/20 bg-success/[0.03] text-success" : "border-light-grey bg-white text-slate")}>{text}</p>; }
