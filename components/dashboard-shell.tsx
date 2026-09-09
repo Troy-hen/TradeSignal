@@ -31,6 +31,12 @@ export function DashboardShell({
     .toUpperCase();
 
   useEffect(() => {
+    const storedTheme = window.localStorage.getItem("mytradebox-theme");
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const useDarkTheme = storedTheme === "dark" || (!storedTheme && prefersDark);
+    document.documentElement.classList.toggle("dark", useDarkTheme);
+    document.documentElement.style.colorScheme = useDarkTheme ? "dark" : "light";
+
     const preferenceFrame = window.requestAnimationFrame(() => {
       setCollapsed(window.localStorage.getItem("mytradebox-sidebar") === "collapsed");
     });
