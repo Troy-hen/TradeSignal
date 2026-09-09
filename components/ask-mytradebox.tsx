@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
@@ -39,6 +40,7 @@ const STARTERS = [
 ];
 
 export function AskMyTradeBox({ notificationBarVisible = false }: { notificationBarVisible?: boolean }) {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [opportunities, setOpportunities] = useState<OpportunityResult[]>([]);
@@ -65,7 +67,7 @@ export function AskMyTradeBox({ notificationBarVisible = false }: { notification
       const response = await fetch("/api/assistant", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text, history: messages.slice(-10) }),
+        body: JSON.stringify({ message: text, history: messages.slice(-10), contextPath: pathname }),
       });
       const data = (await response.json().catch(() => ({}))) as AssistantResponse;
       if (!response.ok) {
@@ -115,7 +117,7 @@ export function AskMyTradeBox({ notificationBarVisible = false }: { notification
                 <div>
                   <div className="rounded-3xl bg-charcoal p-5 text-white">
                     <p className="text-sm font-semibold">Ask about your market, opportunities or how MyTradeBox works.</p>
-                    <p className="mt-2 text-sm leading-6 text-white/60">Live searches use actual MyTradeBox data. Outside your owned territories, I only surface the same teaser-safe information available elsewhere in the product.</p>
+                    <p className="mt-2 text-sm leading-6 text-white/60">Live searches use actual MyTradeBox data. On an unlocked opportunity, I can also use that page&apos;s planning, commercial and saved property intelligence as context.</p>
                   </div>
                   <div className="mt-5 grid gap-2">
                     {STARTERS.map((starter) => (
