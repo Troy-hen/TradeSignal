@@ -33,9 +33,9 @@ type AssistantResponse = {
 
 const STARTERS = [
   "Show me opportunities in Norwich",
-  "Which opportunities should I focus on first?",
+  "Show me approved roofing opportunities in Norwich",
   "How does opportunity scoring work?",
-  "Where should I expand my coverage?",
+  "What is the difference between Explore territories and My coverage?",
 ];
 
 export function AskMyTradeBox({ notificationBarVisible = false }: { notificationBarVisible?: boolean }) {
@@ -129,7 +129,7 @@ export function AskMyTradeBox({ notificationBarVisible = false }: { notification
                 <div className="space-y-4">
                   {messages.map((message, index) => (
                     <div key={index} className={message.role === "user" ? "flex justify-end" : "flex justify-start"}>
-                      <div className={message.role === "user" ? "max-w-[88%] rounded-2xl rounded-br-md bg-charcoal px-4 py-3 text-sm leading-6 text-white" : "max-w-[94%] rounded-2xl rounded-bl-md bg-soft-surface px-4 py-3 text-sm leading-6 text-charcoal"}>
+                      <div className={message.role === "user" ? "max-w-[88%] rounded-2xl rounded-br-md bg-charcoal px-4 py-3 text-sm leading-6 text-white" : "max-w-[94%] whitespace-pre-wrap rounded-2xl rounded-bl-md bg-soft-surface px-4 py-3 text-sm leading-6 text-charcoal"}>
                         {message.content}
                       </div>
                     </div>
