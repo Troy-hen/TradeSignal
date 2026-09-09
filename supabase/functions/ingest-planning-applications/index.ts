@@ -21,11 +21,16 @@ const MAX_PLOTA_MANUAL_PAGES_PER_DISTRICT = 20;
 const MAX_PLOTA_MANUAL_PAGES_PER_RUN = 100;
 const MAX_TARGET_DISTRICTS = 50;
 const DISTRICT_PATTERN = /^[A-Z]{1,2}\d{1,2}[A-Z]?$/;
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 interface IngestBody {
   run_type?: RunType;
   postcode_districts?: unknown;
+  date_from?: unknown;
+  date_to?: unknown;
+  cursor?: unknown;
   max_pages_per_district?: unknown;
+  max_pages_per_run?: unknown;
 }
 
 interface RunStats {
@@ -66,6 +71,10 @@ function normaliseDistricts(input: unknown): string[] {
         .filter((value) => DISTRICT_PATTERN.test(value)),
     ),
   ).slice(0, MAX_TARGET_DISTRICTS);
+}
+
+function normaliseDate(input: unknown): string | null {
+  return typeof input === "string" && DATE_PATTERN.test(input) ? input : null;
 }
 
 function serialiseError(err: unknown): Record<string, unknown> {
@@ -118,14 +127,40 @@ Deno.serve(async (req: Request) => {
   }
 
   const targetDistricts = runType === "manual_backfill" ? normaliseDistricts(requestBody.postcode_districts) : [];
-  if (runType === "manual_backfill" && targetDistricts.length === 0) {
+  const requestedDateFrom = typeof requestBody.date_from === "string" ? requestBody.date_from.trim() : null;
+  const requestedDateTo = typeof requestBody.date_to === "string" ? requestBody.date_to.trim() : null;
+  const manualDateFrom =
+    runType === "manual_backfill" && requestedDateFrom !== null ? normaliseDate(requestedDateFrom) : null;
+  const manualDateTo =
+    runType === "manual_backfill" && requestedDateTo !== null
+      ? normaliseDate(requestedDateTo)
+      : runType === "manual_backfill" && requestedDateFrom !== null
+        ? new Date().toISOString().slice(0, 10)
+        : null;
+  const isGlobalDateBackfill =
+    runType === "manual_backfill" && targetDistricts.length === 0 && requestedDateFrom !== null;
+  const manualCursor =
+    typeof requestBody.cursor === "string" && requestBody.cursor.trim().length > 0
+      ? requestBody.cursor.trim()
+      : undefined;
+
+  if (runType === "manual_backfill" && targetDistricts.length === 0 && !isGlobalDateBackfill) {
     return json(
       {
-        error: "postcode_districts_required",
-        message: "Manual backfill requires postcode_districts, for example [\"IP22\", \"NR1\", \"N2\"].",
+        error: "postcode_districts_or_date_from_required",
+        message: "Manual backfill requires postcode_districts or date_from for a global date-window backfill.",
       },
       400,
     );
+  }
+  if (
+    runType === "manual_backfill" &&
+    ((requestedDateFrom !== null && manualDateFrom === null) || (requestedDateTo !== null && manualDateTo === null))
+  ) {
+    return json({ error: "invalid_date", message: "date_from and date_to must use YYYY-MM-DD." }, 400);
+  }
+  if (manualDateFrom && manualDateTo && manualDateFrom > manualDateTo) {
+    return json({ error: "invalid_date_range", message: "date_from must be on or before date_to." }, 400);
   }
 
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
@@ -133,7 +168,7 @@ Deno.serve(async (req: Request) => {
   });
   const providerName = Deno.env.get("PLANNING_PROVIDER") ?? "mock";
   const manualPagesPerDistrict =
-    runType === "manual_backfill" && providerName === "plota"
+    runType === "manual_backfill" && providerName === "plota" && !isGlobalDateBackfill
       ? boundedInteger(
           requestBody.max_pages_per_district,
           DEFAULT_PLOTA_MANUAL_PAGES_PER_DISTRICT,
@@ -143,7 +178,11 @@ Deno.serve(async (req: Request) => {
       : 1;
   const automaticPageCap =
     providerName === "plota" && runType !== "manual_backfill" ? plotaPageCap() : null;
-  const maxPagesPerRun = automaticPageCap ?? Number.POSITIVE_INFINITY;
+  const manualMaxPagesPerRun =
+    runType === "manual_backfill" && isGlobalDateBackfill
+      ? boundedInteger(requestBody.max_pages_per_run, MAX_PLOTA_MANUAL_PAGES_PER_RUN, 1, MAX_PLOTA_MANUAL_PAGES_PER_RUN)
+      : null;
+  const maxPagesPerRun = automaticPageCap ?? manualMaxPagesPerRun ?? Number.POSITIVE_INFINITY;
 
   const { data: lastRun } = await admin
     .from("ingestion_runs")
@@ -154,15 +193,24 @@ Deno.serve(async (req: Request) => {
     .limit(1)
     .maybeSingle();
 
-  const cursorTo = lastRun?.cursor_to as { since?: string } | null;
-  const since = runType === "manual_backfill" ? undefined : (cursorTo?.since ?? defaultSince());
+  const cursorTo = lastRun?.cursor_to as Record<string, unknown> | null;
+  const since =
+    runType === "manual_backfill"
+      ? manualDateFrom ?? undefined
+      : (typeof cursorTo?.since === "string" ? cursorTo.since : defaultSince());
 
   const { data: runRow, error: runInsertError } = await admin
     .from("ingestion_runs")
     .insert({
       provider: providerName,
       run_type: runType,
-      cursor_from: { since: since ?? null, postcode_districts: targetDistricts.length > 0 ? targetDistricts : null },
+      cursor_from: {
+        since: since ?? null,
+        date_from: manualDateFrom,
+        date_to: manualDateTo,
+        cursor: manualCursor ?? null,
+        postcode_districts: targetDistricts.length > 0 ? targetDistricts : null,
+      },
     })
     .select("id")
     .single();
@@ -234,6 +282,22 @@ Deno.serve(async (req: Request) => {
           throw err;
         }
       }
+    } else if (runType === "manual_backfill" && isGlobalDateBackfill) {
+      // A date-window backfill uses one global query and follows its opaque
+      // cursor across ten-row pages. The cap protects the Demo allowance;
+      // the returned nextCursor lets the caller resume without guessing.
+      for await (const page of provider.fetchNewApplications({
+        since: manualDateFrom ?? defaultSince(),
+        dateTo: manualDateTo ?? new Date().toISOString().slice(0, 10),
+        cursor: manualCursor,
+      })) {
+        pagesRead++;
+        for (const raw of page) await processRaw(raw);
+        if (pagesRead >= maxPagesPerRun) {
+          manualBudgetExhausted = true;
+          break;
+        }
+      }
     } else if (runType === "manual_backfill") {
       // One sync request can target many districts. Each district consumes a
       // bounded number of ten-row Plota pages; the global budget protects Demo.
@@ -291,6 +355,11 @@ Deno.serve(async (req: Request) => {
           emptyDistricts,
           plotaHints,
           plotaApiCalls: providerForDiagnostics instanceof PlotaPlanningProvider ? providerForDiagnostics.apiRequestCount : null,
+          nextCursor: providerForDiagnostics instanceof PlotaPlanningProvider ? providerForDiagnostics.nextCursor : null,
+          date_from: manualDateFrom,
+          date_to: manualDateTo,
+          globalDateBackfill: isGlobalDateBackfill,
+          manualMaxPagesPerRun,
           manualBudgetExhausted,
           fellBackToPendingRotation,
         },
@@ -305,6 +374,11 @@ Deno.serve(async (req: Request) => {
       pagesRead,
       manualPagesPerDistrict: runType === "manual_backfill" ? manualPagesPerDistrict : null,
       plotaApiCalls: providerForDiagnostics instanceof PlotaPlanningProvider ? providerForDiagnostics.apiRequestCount : null,
+      nextCursor: providerForDiagnostics instanceof PlotaPlanningProvider ? providerForDiagnostics.nextCursor : null,
+      dateFrom: manualDateFrom,
+      dateTo: manualDateTo,
+      globalDateBackfill: isGlobalDateBackfill,
+      manualMaxPagesPerRun,
       emptyDistricts,
       plotaHints,
       manualBudgetExhausted,
@@ -325,6 +399,13 @@ Deno.serve(async (req: Request) => {
         applications_unchanged: stats.unchanged,
         errors_count: stats.errors + 1,
         error_details: [...errorDetails, detail],
+        cursor_to: {
+          date_from: manualDateFrom,
+          date_to: manualDateTo,
+          globalDateBackfill: isGlobalDateBackfill,
+          nextCursor: providerForDiagnostics instanceof PlotaPlanningProvider ? providerForDiagnostics.nextCursor : null,
+          plotaApiCalls: providerForDiagnostics instanceof PlotaPlanningProvider ? providerForDiagnostics.apiRequestCount : null,
+        },
       })
       .eq("id", runRow.id);
 
