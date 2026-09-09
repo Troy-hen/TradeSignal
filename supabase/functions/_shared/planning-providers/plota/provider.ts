@@ -81,7 +81,7 @@ export class PlotaPlanningProvider implements PlanningDataProvider {
         yield page.map(toRawApplication);
       }
     } catch (error) {
-      if (error instanceof PlotaApiError && (error.status === 401 || error.status === 403)) {
+      if (error instanceof PlotaApiError && error.status === 403) {
         throw new PlotaTierLimitationError(
           "Plota changed_since is not enabled for this API key; fall back to re-checking undecided applications.",
         );
