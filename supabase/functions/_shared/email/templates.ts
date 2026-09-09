@@ -163,6 +163,41 @@ export function outsideTerritoryEmail(params: {
   return { subject, html: shell(subject, body) };
 }
 
+export interface NearbyOpportunitySummary {
+  district: string;
+  postTown: string;
+  tradeName: string;
+  projectType: string | null;
+  status: string | null;
+  valueLow: number | null;
+  valueHigh: number | null;
+  detailUrl: string;
+}
+
+export function nearbyOpportunityDigestEmail(params: {
+  companyName: string;
+  opportunities: NearbyOpportunitySummary[];
+  dashboardUrl: string;
+}): { subject: string; html: string } {
+  const subject = "Nearby opportunities worth considering";
+  const rows = params.opportunities.map((opportunity) => [
+    '<tr><td style="padding:10px 0;border-bottom:1px solid ' + LIGHT_GREY + ';font-size:14px;line-height:21px;">',
+    '<strong>' + escapeHtml(opportunity.district) + ' · ' + escapeHtml(opportunity.postTown) + '</strong> (' + escapeHtml(opportunity.tradeName) + ')<br>',
+    '<span style="color:' + CHARCOAL + ';">' + escapeHtml(opportunity.projectType ?? "Planning opportunity") + '</span><br>',
+    '<span style="color:' + SLATE + ';font-size:13px;line-height:19px;">' + escapeHtml(formatStatus(opportunity.status)) + ' · Est. trade value: ' + formatGbp(opportunity.valueLow) + '–' + formatGbp(opportunity.valueHigh) + '</span>',
+    ' &nbsp;·&nbsp; <a href="' + safeUrl(opportunity.detailUrl) + '" style="color:' + ORANGE + ';font-size:13px;line-height:19px;">Preview the territory →</a>',
+    '</td></tr>',
+  ].join("")).join("");
+  const body = [
+    '<p style="margin:0 0 16px;font-size:15px;line-height:23px;color:' + CHARCOAL + ';">Hi ' + escapeHtml(params.companyName) + ',</p>',
+    '<p style="margin:0 0 16px;font-size:15px;line-height:23px;color:' + CHARCOAL + ';">These available postcode districts are close to territory you already own and contain live planning opportunities. Expand only where the extra coverage makes commercial sense.</p>',
+    '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">' + rows + '</table>',
+    button("Open your coverage", params.dashboardUrl),
+    '<p style="margin:16px 0 0;color:' + SLATE + ';font-size:13px;line-height:19px;">Nearby alerts are sent no more than once a week and can be turned off in Settings.</p>',
+  ].join("");
+  return { subject, html: shell(subject, body) };
+}
+
 export function announcementEmail(params: {
   companyName: string;
   title: string;
@@ -178,6 +213,11 @@ export function announcementEmail(params: {
     params.ctaLabel && params.ctaUrl ? button(params.ctaLabel, params.ctaUrl) : "",
   ].join("");
   return { subject: params.title, html: shell(params.title, body) };
+}
+
+function formatStatus(value: string | null): string {
+  if (!value) return "Status pending";
+  return value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 export function approvalAlertEmail(params: {
