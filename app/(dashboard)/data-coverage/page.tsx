@@ -1,5 +1,8 @@
+import Link from "next/link";
 import { requireCurrentCompany } from "@/lib/auth/get-current-company";
 import { createClient } from "@/lib/supabase/server";
+
+const PAGE_SIZE = 20;
 
 type CoverageAuthority = {
   authority_name: string;
@@ -32,10 +35,15 @@ type RpcClient = {
   }>;
 };
 
-export default async function DataCoveragePage() {
+export default async function DataCoveragePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   await requireCurrentCompany();
   const supabase = await createClient();
   const db = supabase as unknown as RpcClient;
+  const params = await searchParams;
 
   const [{ data: authorityData }, { data: snapshotData }] = await Promise.all([
     db.rpc("browse_data_coverage"),
@@ -45,6 +53,13 @@ export default async function DataCoveragePage() {
   const authorities = (Array.isArray(authorityData) ? authorityData : []) as CoverageAuthority[];
   const snapshotRow = Array.isArray(snapshotData) ? snapshotData[0] : snapshotData;
   const snapshot = normaliseSnapshot(snapshotRow);
+  const pageCount = Math.max(1, Math.ceil(authorities.length / PAGE_SIZE));
+  const requestedPage = Number(params.page ?? "1");
+  const currentPage = Number.isFinite(requestedPage) && requestedPage > 0
+    ? Math.min(Math.floor(requestedPage), pageCount)
+    : 1;
+  const pageStart = (currentPage - 1) * PAGE_SIZE;
+  const visibleAuthorities = authorities.slice(pageStart, pageStart + PAGE_SIZE);
 
   return (
     <div className="space-y-8">
@@ -57,8 +72,9 @@ export default async function DataCoveragePage() {
           </p>
         </div>
         <div className="rounded-2xl border border-light-grey bg-white px-4 py-3 text-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.11em] text-slate">Provider</p>
-          <p className="mt-1 font-semibold capitalize text-charcoal">{snapshot.provider}</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.11em] text-slate">Data source</p>
+          <p className="mt-1 font-semibold text-charcoal">{snapshot.provider === "plota" ? "Plota" : snapshot.provider}</p>
+          <p className="mt-1 text-xs text-slate">Public planning data</p>
         </div>
       </div>
 
@@ -92,6 +108,9 @@ export default async function DataCoveragePage() {
         <p className="mt-5 rounded-2xl bg-soft-surface px-4 py-3 text-xs leading-5 text-slate">
           Dates below reflect the public planning records loaded from the provider. A council may publish late or amend an application after its first appearance, so use the source link in an opportunity brief for the authoritative record.
         </p>
+        <p className="mt-3 rounded-2xl border border-signal-orange/20 bg-signal-orange/5 px-4 py-3 text-xs leading-5 text-slate">
+          Contact enrichment is not included in the current Plota feed. MyTradeBox does not display applicant contact details until a compliant contact-data add-on is enabled.
+        </p>
       </section>
 
       <section className="overflow-hidden rounded-3xl border border-light-grey bg-white">
@@ -117,7 +136,7 @@ export default async function DataCoveragePage() {
                 </tr>
               </thead>
               <tbody>
-                {authorities.map((authority) => (
+                {visibleAuthorities.map((authority) => (
                   <tr key={(authority.authority_code ?? "unknown") + "-" + authority.authority_name} className="border-t border-light-grey">
                     <td className="px-5 py-4 sm:px-7">
                       <p className="font-semibold text-charcoal">{authority.authority_name}</p>
@@ -134,6 +153,34 @@ export default async function DataCoveragePage() {
                 ))}
               </tbody>
             </table>
+            <div className="flex flex-col gap-3 border-t border-light-grey px-5 py-4 text-sm sm:flex-row sm:items-center sm:justify-between sm:px-7">
+              <p className="text-slate">
+                Showing {pageStart + 1}–{Math.min(pageStart + PAGE_SIZE, authorities.length)} of {formatNumber(authorities.length)} councils
+              </p>
+              <div className="flex items-center gap-2">
+                {currentPage > 1 ? (
+                  <Link
+                    href={`/data-coverage?page=${currentPage - 1}`}
+                    className="rounded-lg border border-light-grey px-3 py-2 font-semibold text-charcoal transition hover:border-signal-orange hover:text-signal-orange"
+                  >
+                    Previous
+                  </Link>
+                ) : (
+                  <span className="rounded-lg border border-light-grey/60 px-3 py-2 font-semibold text-slate/50">Previous</span>
+                )}
+                <span className="px-2 text-xs font-semibold uppercase tracking-[0.1em] text-slate">Page {currentPage} of {pageCount}</span>
+                {currentPage < pageCount ? (
+                  <Link
+                    href={`/data-coverage?page=${currentPage + 1}`}
+                    className="rounded-lg border border-light-grey px-3 py-2 font-semibold text-charcoal transition hover:border-signal-orange hover:text-signal-orange"
+                  >
+                    Next
+                  </Link>
+                ) : (
+                  <span className="rounded-lg border border-light-grey/60 px-3 py-2 font-semibold text-slate/50">Next</span>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </section>
