@@ -8,6 +8,7 @@ const NAV_ITEMS = [
   { href: "/opportunities", label: "Opportunities", icon: "opportunities" },
   { href: "/territories", label: "Territory Explorer", icon: "territories" },
   { href: "/coverage", label: "Coverage", icon: "claimed" },
+  { href: "/data-coverage", label: "Data coverage", icon: "data" },
   { href: "/roi", label: "ROI", icon: "roi" },
   { href: "/billing", label: "Billing", icon: "billing" },
   { href: "/settings", label: "Settings", icon: "settings" },
@@ -112,6 +113,15 @@ function NavIcon({ name, active }: { name: string; active: boolean }) {
       <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
         <path strokeLinecap="round" strokeLinejoin="round" d="M5 5.5A2.5 2.5 0 0 1 7.5 3H19v16H7.5A2.5 2.5 0 0 0 5 21.5v-16Z" />
         <path strokeLinecap="round" strokeLinejoin="round" d="M5 5.5v16M9 7h6M9 11h6" />
+      </svg>
+    );
+  }
+
+  if (name === "data") {
+    return (
+      <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5 6.5C5 4.8 8.1 3.5 12 3.5s7 1.3 7 3v11c0 1.7-3.1 3-7 3s-7-1.3-7-3v-11Z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M5 6.5c0 1.7 3.1 3 7 3s7-1.3 7-3M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3" />
       </svg>
     );
   }
