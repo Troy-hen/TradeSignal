@@ -1,6 +1,8 @@
 "use server";
 
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import { requireCurrentCompany } from "@/lib/auth/get-current-company";
 
 export interface OutreachUsage {
   used_generations: number;
@@ -29,16 +31,11 @@ type OutreachStatusRow = {
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-export async function getOutreachStatus(
-  opportunityId: string,
-): Promise<{ data?: OutreachUsage; error?: string }> {
+export async function getOutreachStatus(opportunityId: string): Promise<{ data?: OutreachUsage; error?: string }> {
   if (!UUID_PATTERN.test(opportunityId)) return { error: "Invalid opportunity." };
 
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("get_outreach_generation_status", {
-    p_opportunity_id: opportunityId,
-  });
-
+  const { data, error } = await supabase.rpc("get_outreach_generation_status", { p_opportunity_id: opportunityId });
   if (error) return { error: "Could not load outreach usage." };
 
   const row = (Array.isArray(data) ? data[0] : data) as OutreachStatusRow | null;
@@ -56,21 +53,13 @@ export async function getOutreachStatus(
   };
 }
 
-/**
- * Invokes generate-outreach with the caller's own session (supabase-js
- * forwards it automatically) — RLS on the Edge Function's own queries is
- * what actually gates this to opportunities the company holds an active
- * claim for, not anything checked here.
- */
-export async function generateOutreach(
-  opportunityId: string,
-): Promise<{ data?: OutreachContent; error?: string }> {
+export async function generateOutreach(opportunityId: string): Promise<{ data?: OutreachContent; error?: string }> {
+  if (!UUID_PATTERN.test(opportunityId)) return { error: "Invalid opportunity." };
+  const company = await requireCurrentCompany();
   const supabase = await createClient();
+  const db = supabase as unknown as SupabaseClient;
 
-  const { data, error } = await supabase.functions.invoke("generate-outreach", {
-    body: { opportunity_id: opportunityId },
-  });
-
+  const { data, error } = await supabase.functions.invoke("generate-outreach", { body: { opportunity_id: opportunityId } });
   if (error) return { error: "Could not generate outreach copy. Please try again." };
 
   if (!data?.ok) {
@@ -91,19 +80,37 @@ export async function generateOutreach(
     return { error: message };
   }
 
+  try {
+    const [{ data: userData }, { data: match }] = await Promise.all([
+      supabase.auth.getUser(),
+      supabase
+        .from("lead_match_current_state")
+        .select("lead_match_id")
+        .eq("application_trade_opportunity_id", opportunityId)
+        .eq("company_id", company.id)
+        .maybeSingle(),
+    ]);
+    await db.from("opportunity_activity_events").insert({
+      company_id: company.id,
+      opportunity_id: opportunityId,
+      lead_match_id: match?.lead_match_id ?? null,
+      event_type: "outreach_generated",
+      channel: "assistant",
+      metadata: { formats: ["letter", "phone_opener", "doorstep_script"] },
+      created_by: userData.user?.id ?? null,
+    });
+  } catch {
+    // Attribution is best-effort and must never block the generated content.
+  }
+
   return {
     data: {
       intro_letter: data.intro_letter,
       phone_opener: data.phone_opener,
       doorstep_script: data.doorstep_script,
       usage:
-        data.usage &&
-        typeof data.usage.used_generations === "number" &&
-        typeof data.usage.remaining_generations === "number"
-          ? {
-              used_generations: data.usage.used_generations,
-              remaining_generations: data.usage.remaining_generations,
-            }
+        data.usage && typeof data.usage.used_generations === "number" && typeof data.usage.remaining_generations === "number"
+          ? { used_generations: data.usage.used_generations, remaining_generations: data.usage.remaining_generations }
           : undefined,
     },
   };
