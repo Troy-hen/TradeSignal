@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useRef, useState, type PointerEvent, type ReactNode, type WheelEvent } from "react";
+import { LockedOpportunityPreview } from "@/components/locked-opportunity-preview";
 
 export type OpportunityMapPoint = {
   postcode_district: string;
@@ -16,6 +17,10 @@ export type OpportunityMapPoint = {
   trade_slug: string;
   territory_status: "available" | "claimed" | string;
   monthly_price_pence: number;
+  teaser_project_type?: string | null;
+  teaser_status?: string | null;
+  teaser_estimated_trade_value_low?: number | null;
+  teaser_estimated_trade_value_high?: number | null;
 };
 
 type TradeOption = {
@@ -365,6 +370,19 @@ export function OpportunityMap({
                 >
                   {selected.territory_status === "available" ? "Check and claim territory" : "View territory"} <span className="ml-2">→</span>
                 </Link>
+                <div className="mt-4">
+                  <LockedOpportunityPreview
+                    compact
+                    title="Claim the district to unlock the full brief"
+                    body="The project, status and indicative trade value are shown as a preview. Addresses and planning detail stay private until the territory is active."
+                    teaser={{
+                      projectType: selected.teaser_project_type,
+                      status: selected.teaser_status,
+                      estimatedTradeValueLow: selected.teaser_estimated_trade_value_low,
+                      estimatedTradeValueHigh: selected.teaser_estimated_trade_value_high,
+                    }}
+                  />
+                </div>
                 <p className="mt-3 text-center text-xs leading-5 text-slate">Project addresses stay private until the territory is active.</p>
               </>
             ) : (
