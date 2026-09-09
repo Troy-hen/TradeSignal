@@ -52,7 +52,7 @@ export default async function DashboardPage() {
         <div className="flex flex-wrap gap-3">
           <Link
             href="/territories"
-            className="inline-flex items-center justify-center rounded-xl border border-light-grey bg-white px-4 py-2.5 text-sm font-semibold text-charcoal transition hover:border-signal-orange/40"
+            className="inline-flex items-center justify-center rounded-xl border border-signal-orange/20 bg-signal-orange/[0.05] px-4 py-2.5 text-sm font-semibold text-charcoal transition hover:border-signal-orange/50 hover:bg-signal-orange/[0.08]"
           >
             Find a territory
           </Link>
@@ -72,11 +72,11 @@ export default async function DashboardPage() {
         <Kpi label="Est. pipeline value" value={formatGbp(pipelineValue)} detail="Open opportunities only" tone="charcoal" />
       </dl>
 
-      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_320px]">
-        <section className="overflow-hidden rounded-3xl border border-light-grey bg-white">
-          <div className="flex flex-col gap-3 border-b border-light-grey px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+      <div className="grid min-w-0 gap-8 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <section className="min-w-0 overflow-hidden rounded-3xl border border-light-grey bg-white">
+          <div className="flex flex-col gap-3 border-b border-signal-orange/10 bg-signal-orange/[0.025] px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Your opportunity feed</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Your opportunity feed</p>
               <h2 className="mt-1 text-xl font-semibold tracking-tight text-charcoal">Recent opportunities</h2>
             </div>
             <Link href="/opportunities" className="text-sm font-semibold text-signal-orange hover:text-[#e95f00]">
@@ -91,7 +91,7 @@ export default async function DashboardPage() {
           ) : (
             <ul className="space-y-3 p-4 sm:p-5">
               {recent.map((item) => (
-                <li key={item.leadMatchId}>
+                <li key={item.leadMatchId} className="min-w-0">
                   <OpportunityRow item={item} />
                 </li>
               ))}
@@ -99,7 +99,7 @@ export default async function DashboardPage() {
           )}
         </section>
 
-        <aside className="rounded-3xl bg-charcoal p-6 text-white shadow-xl shadow-charcoal/10">
+        <aside className="min-w-0 rounded-3xl bg-charcoal p-6 text-white shadow-xl shadow-charcoal/10">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Next best move</p>
           <h2 className="mt-4 text-2xl font-bold tracking-tight">Work the signal, not the spreadsheet.</h2>
           <p className="mt-4 text-sm leading-6 text-white/65">
@@ -131,6 +131,12 @@ function Kpi({
   detail: string;
   tone: "orange" | "green" | "blue" | "charcoal";
 }) {
+  const toneClass = {
+    orange: "border-signal-orange/25 bg-signal-orange/[0.06]",
+    green: "border-success/15 bg-success/[0.035]",
+    blue: "border-slate/15 bg-slate/[0.035]",
+    charcoal: "border-charcoal/10 bg-charcoal/[0.025]",
+  }[tone];
   const dotClass = {
     orange: "bg-signal-orange",
     green: "bg-success",
@@ -139,12 +145,12 @@ function Kpi({
   }[tone];
 
   return (
-    <div className="rounded-2xl border border-light-grey bg-white p-5">
-      <div className="flex items-center gap-2">
-        <span className={`h-2 w-2 rounded-full ${dotClass}`} />
-        <dt className="text-xs font-semibold uppercase tracking-[0.11em] text-slate">{label}</dt>
+    <div className={`min-w-0 rounded-2xl border p-4 sm:p-5 ${toneClass}`}>
+      <div className="flex min-w-0 items-center gap-2">
+        <span className={`h-2 w-2 shrink-0 rounded-full ${dotClass}`} />
+        <dt className="min-w-0 text-[10px] font-semibold uppercase tracking-[0.09em] text-slate sm:text-xs sm:tracking-[0.11em]">{label}</dt>
       </div>
-      <dd className="mt-4 text-3xl font-bold tracking-tight text-charcoal">{value}</dd>
+      <dd className="mt-4 break-words text-2xl font-bold tracking-tight text-charcoal sm:text-3xl">{value}</dd>
       <p className="mt-1 text-xs text-slate">{detail}</p>
     </div>
   );
@@ -152,7 +158,7 @@ function Kpi({
 
 function QuickTip({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-3">
+    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
       <span className="text-white/50">{label}</span>
       <span className="font-semibold text-white">{value}</span>
     </div>
@@ -170,8 +176,8 @@ function FreeState({ companyName }: { companyName: string }) {
         </p>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(300px,0.75fr)]">
-        <section className="rounded-3xl bg-charcoal p-7 text-white sm:p-9">
+      <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.25fr)_minmax(300px,0.75fr)]">
+        <section className="min-w-0 rounded-3xl bg-charcoal p-7 text-white sm:p-9">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Start with one patch</p>
           <h2 className="mt-4 max-w-xl text-3xl font-bold tracking-tight">Own the signal in the areas you already know.</h2>
           <p className="mt-4 max-w-xl text-sm leading-6 text-white/65 sm:text-base">
@@ -186,8 +192,8 @@ function FreeState({ companyName }: { companyName: string }) {
           </Link>
         </section>
 
-        <div className="rounded-3xl border border-light-grey bg-white p-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">What happens next</p>
+        <div className="min-w-0 rounded-3xl border border-signal-orange/20 bg-signal-orange/[0.045] p-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">What happens next</p>
           <div className="mt-6 space-y-5">
             <OnboardingStep number="01" title="Choose your area" body="Search a postcode district and trade." />
             <OnboardingStep number="02" title="Check the signal" body="See activity, value and availability." />
@@ -202,10 +208,10 @@ function FreeState({ companyName }: { companyName: string }) {
 function OnboardingStep({ number, title, body }: { number: string; title: string; body: string }) {
   return (
     <div className="flex gap-3">
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-signal-orange/10 text-xs font-bold text-signal-orange">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white text-xs font-bold text-signal-orange shadow-sm">
         {number}
       </span>
-      <div>
+      <div className="min-w-0">
         <p className="text-sm font-semibold text-charcoal">{title}</p>
         <p className="mt-1 text-xs leading-5 text-slate">{body}</p>
       </div>
