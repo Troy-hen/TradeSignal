@@ -18,6 +18,12 @@ interface CheckerResult {
   estimated_trade_value_gbp: number;
   territory_status: string;
   monthly_price_pence: number;
+  teaser?: {
+    project_type: string | null;
+    planning_status: string | null;
+    estimated_trade_value_low: number | null;
+    estimated_trade_value_high: number | null;
+  } | null;
 }
 
 const FALLBACK_TRADE: TradeOption = {
@@ -226,6 +232,16 @@ export function TerritoryCheckerWidget({
               compact
               title="Preview the opportunity shape"
               body="See the local signal for free. Claim the territory to reveal specific projects, addresses, AI interpretation and contact timing."
+              teaser={
+                result.teaser
+                  ? {
+                      projectType: result.teaser.project_type,
+                      status: result.teaser.planning_status,
+                      estimatedTradeValueLow: result.teaser.estimated_trade_value_low,
+                      estimatedTradeValueHigh: result.teaser.estimated_trade_value_high,
+                    }
+                  : null
+              }
             />
           </div>
 
