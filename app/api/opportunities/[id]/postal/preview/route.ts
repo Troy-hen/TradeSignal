@@ -25,13 +25,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: "postal_address_not_validated", recipient: validation.normalized ?? context.recipient }, { status: 422 });
     }
     const recipient = validation.normalized ?? context.recipient;
+    const deliveryId = crypto.randomUUID();
     const preview = await provider.previewLetter({
-      deliveryId: `preview-${id}-${crypto.randomUUID()}`,
+      deliveryId,
       recipient,
       content: body.data.content,
       reference: `opportunity-${id}`,
     });
     return NextResponse.json({
+      deliveryId,
       provider: provider.name,
       preview,
       recipient,
