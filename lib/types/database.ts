@@ -131,6 +131,76 @@ export type Database = {
           },
         ]
       }
+      ai_outreach_generations: {
+        Row: {
+          company_id: string
+          completed_at: string | null
+          created_at: string
+          error_code: string | null
+          estimated_cost_usd: number | null
+          generation_number: number
+          id: string
+          input_tokens: number | null
+          model: string | null
+          opportunity_id: string
+          output_tokens: number | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          completed_at?: string | null
+          created_at?: string
+          error_code?: string | null
+          estimated_cost_usd?: number | null
+          generation_number: number
+          id?: string
+          input_tokens?: number | null
+          model?: string | null
+          opportunity_id: string
+          output_tokens?: number | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          completed_at?: string | null
+          created_at?: string
+          error_code?: string | null
+          estimated_cost_usd?: number | null
+          generation_number?: number
+          id?: string
+          input_tokens?: number | null
+          model?: string | null
+          opportunity_id?: string
+          output_tokens?: number | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_outreach_generations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_outreach_generations_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "application_trade_opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_outreach_generations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_prompt_versions: {
         Row: {
           active: boolean
@@ -555,6 +625,186 @@ export type Database = {
           },
         ]
       }
+      contact_enrichment_lookups: {
+        Row: {
+          company_id: string
+          completed_at: string | null
+          error_code: string | null
+          id: string
+          planning_application_id: string
+          provider: string
+          requested_at: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          completed_at?: string | null
+          error_code?: string | null
+          id?: string
+          planning_application_id: string
+          provider?: string
+          requested_at?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          completed_at?: string | null
+          error_code?: string | null
+          id?: string
+          planning_application_id?: string
+          provider?: string
+          requested_at?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_enrichment_lookups_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_enrichment_lookups_planning_application_id_fkey"
+            columns: ["planning_application_id"]
+            isOneToOne: false
+            referencedRelation: "planning_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_enrichment_lookups_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contact_enrichment_records: {
+        Row: {
+          collected_at: string
+          company_id: string
+          contact_role: string
+          created_at: string
+          email: string | null
+          expires_at: string | null
+          full_name: string | null
+          id: string
+          is_public_source: boolean
+          lawful_basis: string
+          organisation: string | null
+          phone: string | null
+          planning_application_id: string
+          provenance: Json
+          purpose: string
+          source_name: string
+          source_record_id: string | null
+          source_url: string | null
+          suppressed_at: string | null
+          suppression_reason: string | null
+          updated_at: string
+          verified_at: string | null
+        }
+        Insert: {
+          collected_at?: string
+          company_id: string
+          contact_role: string
+          created_at?: string
+          email?: string | null
+          expires_at?: string | null
+          full_name?: string | null
+          id?: string
+          is_public_source?: boolean
+          lawful_basis?: string
+          organisation?: string | null
+          phone?: string | null
+          planning_application_id: string
+          provenance?: Json
+          purpose?: string
+          source_name: string
+          source_record_id?: string | null
+          source_url?: string | null
+          suppressed_at?: string | null
+          suppression_reason?: string | null
+          updated_at?: string
+          verified_at?: string | null
+        }
+        Update: {
+          collected_at?: string
+          company_id?: string
+          contact_role?: string
+          created_at?: string
+          email?: string | null
+          expires_at?: string | null
+          full_name?: string | null
+          id?: string
+          is_public_source?: boolean
+          lawful_basis?: string
+          organisation?: string | null
+          phone?: string | null
+          planning_application_id?: string
+          provenance?: Json
+          purpose?: string
+          source_name?: string
+          source_record_id?: string | null
+          source_url?: string | null
+          suppressed_at?: string | null
+          suppression_reason?: string | null
+          updated_at?: string
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_enrichment_records_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_enrichment_records_planning_application_id_fkey"
+            columns: ["planning_application_id"]
+            isOneToOne: false
+            referencedRelation: "planning_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contact_enrichment_usage: {
+        Row: {
+          company_id: string
+          lookup_count: number
+          monthly_limit: number
+          period_start: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          lookup_count?: number
+          monthly_limit?: number
+          period_start: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          lookup_count?: number
+          monthly_limit?: number
+          period_start?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_enrichment_usage_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coverage_area_postcodes: {
         Row: {
           coverage_area_id: string
@@ -880,6 +1130,84 @@ export type Database = {
           },
           {
             foreignKeyName: "lead_actions_lead_match_id_fkey"
+            columns: ["lead_match_id"]
+            isOneToOne: false
+            referencedRelation: "lead_matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_follow_ups: {
+        Row: {
+          company_id: string
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          created_by: string | null
+          due_at: string
+          id: string
+          lead_match_id: string
+          note: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          due_at: string
+          id?: string
+          lead_match_id: string
+          note?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          due_at?: string
+          id?: string
+          lead_match_id?: string
+          note?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_follow_ups_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_follow_ups_completed_by_fkey"
+            columns: ["completed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_follow_ups_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_follow_ups_lead_match_id_fkey"
+            columns: ["lead_match_id"]
+            isOneToOne: false
+            referencedRelation: "lead_match_current_state"
+            referencedColumns: ["lead_match_id"]
+          },
+          {
+            foreignKeyName: "lead_follow_ups_lead_match_id_fkey"
             columns: ["lead_match_id"]
             isOneToOne: false
             referencedRelation: "lead_matches"
@@ -1882,6 +2210,51 @@ export type Database = {
             Returns: string
           }
       auth_company_ids: { Args: never; Returns: string[] }
+      browse_data_coverage: {
+        Args: never
+        Returns: {
+          application_count: number
+          authority_code: string
+          authority_name: string
+          district_count: number
+          first_received_date: string
+          latest_received_date: string
+          latest_seen_at: string
+          provider: string
+        }[]
+      }
+      browse_data_coverage_snapshot: {
+        Args: never
+        Returns: {
+          application_count: number
+          authority_count: number
+          district_count: number
+          latest_created: number
+          latest_errors: number
+          latest_fetched: number
+          latest_ingest_at: string
+          latest_ingest_status: string
+          latest_updated: number
+          provider: string
+        }[]
+      }
+      browse_opportunity_map: {
+        Args: { p_limit?: number; p_trade_slug?: string }
+        Returns: {
+          estimated_trade_value_high: number
+          estimated_trade_value_low: number
+          latitude: number
+          longitude: number
+          monthly_price_pence: number
+          opportunity_count: number
+          post_town: string
+          postcode_district: string
+          territory_status: string
+          trade_category_id: string
+          trade_name: string
+          trade_slug: string
+        }[]
+      }
       browse_opportunity_teaser: {
         Args: { p_opportunity_id: string }
         Returns: {
@@ -1893,6 +2266,28 @@ export type Database = {
           trade_category_name: string
           trade_category_slug: string
         }[]
+      }
+      cancel_lead_follow_up: {
+        Args: { p_follow_up_id: string }
+        Returns: {
+          company_id: string
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          created_by: string | null
+          due_at: string
+          id: string
+          lead_match_id: string
+          note: string | null
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "lead_follow_ups"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       change_coverage_plan: {
         Args: { p_coverage_plan_id: string; p_postcode_districts: string[] }
@@ -1921,6 +2316,44 @@ export type Database = {
           planning_application_id: string
           previous_status: Database["public"]["Enums"]["classification_status"]
         }[]
+      }
+      complete_contact_enrichment_lookup: {
+        Args: { p_error_code?: string; p_lookup_id: string; p_status: string }
+        Returns: undefined
+      }
+      complete_lead_follow_up: {
+        Args: { p_follow_up_id: string }
+        Returns: {
+          company_id: string
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          created_by: string | null
+          due_at: string
+          id: string
+          lead_match_id: string
+          note: string | null
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "lead_follow_ups"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      complete_outreach_generation: {
+        Args: {
+          p_error_code?: string
+          p_estimated_cost_usd?: number
+          p_generation_id: string
+          p_input_tokens?: number
+          p_model?: string
+          p_output_tokens?: number
+          p_status: string
+        }
+        Returns: undefined
       }
       compute_opportunity_score: {
         Args: {
@@ -1970,6 +2403,28 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "companies"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_lead_follow_up: {
+        Args: { p_due_at: string; p_lead_match_id: string; p_note?: string }
+        Returns: {
+          company_id: string
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          created_by: string | null
+          due_at: string
+          id: string
+          lead_match_id: string
+          note: string | null
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "lead_follow_ups"
           isOneToOne: true
           isSetofReturn: false
         }
@@ -2106,6 +2561,17 @@ export type Database = {
         Returns: boolean
       }
       geomfromewkt: { Args: { "": string }; Returns: unknown }
+      get_outreach_generation_status: {
+        Args: { p_opportunity_id: string }
+        Returns: {
+          daily_remaining: number
+          daily_used: number
+          monthly_remaining: number
+          monthly_used: number
+          remaining_generations: number
+          used_generations: number
+        }[]
+      }
       gettransactionid: { Args: never; Returns: unknown }
       has_active_lead_match: {
         Args: { target_application_id: string }
@@ -2149,6 +2615,28 @@ export type Database = {
         Returns: boolean
       }
       is_platform_admin: { Args: never; Returns: boolean }
+      list_lead_follow_ups: {
+        Args: { p_lead_match_id: string }
+        Returns: {
+          company_id: string
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          created_by: string | null
+          due_at: string
+          id: string
+          lead_match_id: string
+          note: string | null
+          status: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "lead_follow_ups"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       longtransactionsenabled: { Args: never; Returns: boolean }
       populate_geometry_columns:
         | { Args: { tbl_oid: unknown; use_typmod?: boolean }; Returns: number }
@@ -2196,6 +2684,16 @@ export type Database = {
         Returns: undefined
       }
       rescore_stale_opportunities: { Args: never; Returns: undefined }
+      reserve_contact_enrichment_lookup: {
+        Args: { p_planning_application_id: string }
+        Returns: {
+          allowed: boolean
+          company_id: string
+          lookup_id: string
+          reason: string
+          remaining: number
+        }[]
+      }
       reserve_coverage_plan: {
         Args: {
           p_billing_mode?: Database["public"]["Enums"]["coverage_billing_mode"]
@@ -2208,6 +2706,16 @@ export type Database = {
           first_territory_claim_id: string
           monthly_price_pence: number
           postcode_count: number
+        }[]
+      }
+      reserve_outreach_generation: {
+        Args: { p_opportunity_id: string }
+        Returns: {
+          allowed: boolean
+          generation_count: number
+          generation_id: string
+          reason: string
+          remaining_generations: number
         }[]
       }
       reserve_territory: {
