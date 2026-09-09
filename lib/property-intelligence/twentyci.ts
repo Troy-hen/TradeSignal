@@ -3,6 +3,7 @@ import type {
   PropertyActivitySignal,
   PropertyIntelligenceProvider,
   PropertyIntelligenceSnapshot,
+  PropertyPlanningRecord,
   PropertyTransaction,
   PropertyTrigger,
 } from "./types";
@@ -32,7 +33,7 @@ export class TwentyCiPropertyIntelligenceProvider implements PropertyIntelligenc
 
   async enrichProperty(input: { address: string; postcode: string }): Promise<PropertyIntelligenceSnapshot | null> {
     const postcode = normalisePostcode(input.postcode);
-    const addressLine = firstAddressLine(input.address, postcode);
+    const addressLine = firstAddressLine(input.address);
     if (!postcode || !addressLine) return null;
 
     const search = await this.request<{ data?: TwentyPropertyRow[] }>("/properties/postcode-search", {
@@ -47,11 +48,12 @@ export class TwentyCiPropertyIntelligenceProvider implements PropertyIntelligenc
     const uprn = String(candidate.row.id ?? "").trim();
     if (!uprn) return null;
 
-    const [property, details, triggersResponse, transactionsResponse, likelyToSellResponse] = await Promise.all([
+    const [property, details, triggersResponse, transactionsResponse, planningResponse, likelyToSellResponse] = await Promise.all([
       this.optionalRequest<Record<string, unknown>>(`/properties/${encodeURIComponent(uprn)}`),
       this.optionalRequest<Record<string, unknown>>(`/properties/${encodeURIComponent(uprn)}/details`),
       this.optionalRequest<Record<string, unknown>>(`/properties/${encodeURIComponent(uprn)}/triggers`),
       this.optionalRequest<Record<string, unknown>>(`/properties/${encodeURIComponent(uprn)}/transactions`),
+      this.optionalRequest<Record<string, unknown>>(`/properties/${encodeURIComponent(uprn)}/plannings`),
       this.optionalRequest<Record<string, unknown>>(`/${encodeURIComponent(uprn)}/likely-to-sell`),
     ]);
 
@@ -60,9 +62,11 @@ export class TwentyCiPropertyIntelligenceProvider implements PropertyIntelligenc
     const detailAttributes = dataAttributes(details) ?? {};
     const triggers = parseTriggers(triggersResponse);
     const transactions = parseTransactions(transactionsResponse);
+    const planningHistory = parsePlanningHistory(planningResponse);
     const latestTrigger = latestByDate(triggers);
     const latestTransaction = latestByDate(transactions);
     const likelyToSellPercentile = findFirstNumber(likelyToSellResponse, [
+      "lts_percentile",
       "percentile",
       "likely_to_sell_percentile",
       "likelyToSellPercentile",
@@ -94,6 +98,7 @@ export class TwentyCiPropertyIntelligenceProvider implements PropertyIntelligenc
       activityReasons: activity.reasons,
       triggerHistory: triggers.slice(0, 12),
       transactionHistory: transactions.slice(0, 12),
+      planningHistory: planningHistory.slice(0, 20),
     };
   }
 
@@ -253,6 +258,18 @@ function parseTransactions(payload: unknown): PropertyTransaction[] {
     .sort((a, b) => dateNumber(b.date) - dateNumber(a.date));
 }
 
+function parsePlanningHistory(payload: unknown): PropertyPlanningRecord[] {
+  return dataRows(payload)
+    .map((row) => ({
+      planningId: String(row.planning_id ?? row.id ?? "").trim(),
+      address: firstString(row.address),
+      receivedDate: parseDate(row.received_date),
+      decision: firstString(row.decision),
+    }))
+    .filter((row) => row.planningId || row.receivedDate || row.decision)
+    .sort((a, b) => dateNumber(b.receivedDate) - dateNumber(a.receivedDate));
+}
+
 function dataRows(payload: unknown): Array<Record<string, unknown>> {
   const root = asRecord(payload);
   const data = root?.data;
@@ -271,8 +288,11 @@ function latestByDate<T extends { date: string | null }>(rows: T[]): T | null {
   return rows.length ? [...rows].sort((a, b) => dateNumber(b.date) - dateNumber(a.date))[0] : null;
 }
 
-function firstAddressLine(address: string, postcode: string) {
-  const withoutPostcode = address.replace(new RegExp(escapeRegExp(postcode.replace(" ", "\\s*")), "i"), "");
+function firstAddressLine(address: string) {
+  const withoutPostcode = address
+    .replace(/\b[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}\b/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
   return withoutPostcode.split(",")[0]?.trim() ?? "";
 }
 
@@ -283,7 +303,7 @@ function normalisePostcode(value: string) {
 }
 
 function normaliseAddress(value: string) {
-  return value.toLowerCase().replace(/\b(flat|apartment|unit)\b/g, "$1").replace(/[^a-z0-9]/g, "").trim();
+  return value.toLowerCase().replace(/[^a-z0-9]/g, "").trim();
 }
 
 function tokenSimilarity(a: string, b: string) {
@@ -354,6 +374,7 @@ function findFirstNumber(value: unknown, keys: string[]): number | null {
     }
   }
   for (const child of Object.values(record)) {
+    if (!child || typeof child !== "object") continue;
     const found = findFirstNumber(child, keys);
     if (found !== null) return found;
   }
@@ -362,8 +383,4 @@ function findFirstNumber(value: unknown, keys: string[]): number | null {
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
-}
-
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
