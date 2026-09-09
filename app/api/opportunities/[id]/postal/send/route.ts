@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPostalOpportunityContext } from "@/lib/outreach/postal-context";
 import { getPostalOutreachProvider } from "@/lib/outreach/postal-provider";
+import { createOrReuseDeliveryQuoteLink } from "@/lib/outreach/response-links";
 
 const bodySchema = z.object({
   content: z.string().trim().min(20).max(12000),
@@ -20,6 +21,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const provider = getPostalOutreachProvider();
   if (!provider) return NextResponse.json({ error: "postal_provider_not_configured" }, { status: 503 });
+  if (!process.env.QUOTE_LINK_SIGNING_SECRET?.trim()) {
+    return NextResponse.json({ error: "quote_link_signing_secret_not_configured" }, { status: 503 });
+  }
 
   const supabase = await createClient();
   const db = supabase as unknown as SupabaseClient;
@@ -62,10 +66,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       });
     }
 
-    if (existing?.content_snapshot && existing.content_snapshot !== body.data.content) {
-      return NextResponse.json({ error: "delivery_content_mismatch" }, { status: 409 });
-    }
-
     if (!existing) {
       const { error: insertError } = await admin
         .from("outreach_deliveries")
@@ -80,15 +80,46 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           recipient_name: recipient.name ?? context.strategy.suggestedRecipient,
           recipient_address: recipient,
           content_snapshot: body.data.content,
+          audience_type: "homeowner",
+          strategy_key: "planning-homeowner-introduction",
+          template_key: "mytradebox-quote-link-letter",
+          template_version: "1",
           created_by: user.id,
         });
       if (insertError) return NextResponse.json({ error: "delivery_create_failed" }, { status: 500 });
     }
 
+    const quoteLink = await createOrReuseDeliveryQuoteLink({
+      companyId: company.id,
+      opportunityId: id,
+      deliveryId: body.data.deliveryId,
+      channel: "letter",
+      audienceType: "homeowner",
+      createdBy: user.id,
+    });
+    const finalContent = appendQuoteLink(body.data.content, quoteLink.url);
+
+    if (existing?.content_snapshot && !contentIsCompatible(existing.content_snapshot, body.data.content, finalContent)) {
+      return NextResponse.json({ error: "delivery_content_mismatch" }, { status: 409 });
+    }
+
+    await admin
+      .from("outreach_deliveries")
+      .update({
+        content_snapshot: finalContent,
+        audience_type: "homeowner",
+        strategy_key: "planning-homeowner-introduction",
+        template_key: "mytradebox-quote-link-letter",
+        template_version: "1",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", body.data.deliveryId)
+      .eq("company_id", company.id);
+
     const result = await provider.sendLetter({
       deliveryId: body.data.deliveryId,
       recipient,
-      content: body.data.content,
+      content: finalContent,
       reference: `opportunity-${id}`,
     });
     const now = new Date().toISOString();
@@ -125,7 +156,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         channel: "letter",
         provider: provider.name,
         provider_reference: result.providerJobId,
-        metadata: { delivery_id: body.data.deliveryId, cost_pence: result.costPence ?? null },
+        metadata: {
+          delivery_id: body.data.deliveryId,
+          cost_pence: result.costPence ?? null,
+          response_link_id: quoteLink.id,
+          response_url: quoteLink.url,
+          audience_type: "homeowner",
+          strategy_key: "planning-homeowner-introduction",
+          template_key: "mytradebox-quote-link-letter",
+          template_version: "1",
+        },
         created_by: user.id,
       });
     }
@@ -136,9 +176,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       status: result.status,
       costPence: result.costPence ?? null,
       trackingUrl: result.trackingUrl ?? null,
+      responseUrl: quoteLink.url,
     });
   } catch (error) {
     console.error("Postal send failed", error);
     return NextResponse.json({ error: "postal_send_failed" }, { status: 502 });
   }
+}
+
+function appendQuoteLink(content: string, url: string) {
+  if (content.includes(url)) return content;
+  return `${content.trim()}\n\n────────────────────────\nWant to discuss the project or request a quote?\n${url}\n\nYou can use this private MyTradeBox response link to call, WhatsApp or request a quote directly.`;
+}
+
+function contentIsCompatible(stored: string, requested: string, finalContent: string) {
+  return stored === requested || stored === finalContent || stored.startsWith(`${requested.trim()}\n\n────────────────────────`);
 }
