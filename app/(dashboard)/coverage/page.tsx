@@ -57,7 +57,10 @@ export default async function CoveragePage() {
     name: trade.name,
     slug: trade.slug,
   }));
-  const districtOptions: CoverageDistrictOption[] = (postcodeDistricts ?? []).map((district) => ({\n    id: district.id,\n    town: district.post_town ?? "Other",\n  }));
+  const districtOptions: CoverageDistrictOption[] = (postcodeDistricts ?? []).map((district) => ({
+    id: district.id,
+    town: district.post_town ?? "Other",
+  }));
   const existingTradeIds = planViews.map((plan) => plan.tradeCategoryId);
   const areas = (coverageAreas ?? []) as { id: string; name: string }[];
 
