@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { Logo } from "@/components/logo";
+import { PublicThemeGuard } from "@/components/public-theme-guard";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-soft-surface px-4 py-12">
+    <>
+      <PublicThemeGuard />
+      <div className="flex min-h-screen flex-col items-center justify-center bg-soft-surface px-4 py-12">
       <Link href="/" className="mb-8">
         <Logo />
       </Link>
@@ -15,6 +18,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <Link href="/terms" className="hover:text-charcoal">Terms</Link>
         <Link href="/contact" className="hover:text-charcoal">Contact</Link>
       </nav>
-    </div>
+      </div>
+    </>
   );
 }
