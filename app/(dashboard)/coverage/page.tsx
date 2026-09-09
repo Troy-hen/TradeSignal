@@ -20,7 +20,7 @@ export default async function CoveragePage() {
       .select("id, name, slug")
       .eq("is_active", true)
       .order("display_order"),
-    supabase.from("postcode_districts").select("id").order("id"),
+    supabase.from("postcode_districts").select("id, post_town").order("id"),
     db.from("coverage_areas").select("id, name").eq("is_active", true).order("name"),
   ]);
 
@@ -57,7 +57,7 @@ export default async function CoveragePage() {
     name: trade.name,
     slug: trade.slug,
   }));
-  const districtOptions: CoverageDistrictOption[] = (postcodeDistricts ?? []).map((district) => ({ id: district.id }));
+  const districtOptions: CoverageDistrictOption[] = (postcodeDistricts ?? []).map((district) => ({\n    id: district.id,\n    town: district.post_town ?? "Other",\n  }));
   const existingTradeIds = planViews.map((plan) => plan.tradeCategoryId);
   const areas = (coverageAreas ?? []) as { id: string; name: string }[];
 
