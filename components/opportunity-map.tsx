@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, type PointerEvent, type WheelEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type PointerEvent, type ReactNode, type WheelEvent } from "react";
 
 export type OpportunityMapPoint = {
   postcode_district: string;
@@ -364,7 +364,7 @@ function MapControlButton({
 }: {
   label: string;
   onClick: () => void;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <button
