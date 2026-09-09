@@ -23,7 +23,7 @@ export default async function BillingPage() {
     .order("created_at", { ascending: false });
 
   return (
-    <div className="max-w-4xl space-y-8">
+    <div className="space-y-8">
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Account</p>
         <h1 className="mt-3 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">Billing.</h1>
