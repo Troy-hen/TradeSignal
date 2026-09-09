@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { OpportunityRelationshipIntelligence } from "@/lib/data/opportunity-intelligence";
+import { PlanningContactLookup } from "@/components/planning-contact-lookup";
 
 export function ContactEnrichmentPanel({
   intelligence,
@@ -8,7 +9,16 @@ export function ContactEnrichmentPanel({
   intelligence: OpportunityRelationshipIntelligence;
   sourceUrl: string | null;
 }) {
-  const { applicantName, agentCompany, organisation, relatedOpportunities, contactStrategy, projectAddress } = intelligence;
+  const {
+    opportunityId,
+    applicantName,
+    agentCompany,
+    organisation,
+    relatedOpportunities,
+    contactStrategy,
+    projectAddress,
+    planningContacts,
+  } = intelligence;
 
   return (
     <section className="mt-6 overflow-hidden rounded-3xl border border-light-grey bg-white">
@@ -49,6 +59,35 @@ export function ContactEnrichmentPanel({
         </div>
 
         <div className="min-w-0 p-5 sm:p-6">
+          {planningContacts.length > 0 && (
+            <div className="mb-6 rounded-2xl border border-signal-orange/20 bg-signal-orange/[0.03] p-4 sm:p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.13em] text-signal-orange">Published planning contacts</p>
+                  <p className="mt-1 text-sm font-semibold text-charcoal">Professional details attached to this planning record</p>
+                </div>
+                <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold text-slate">Source: {planningContacts[0]?.provider}</span>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {planningContacts.map((contact) => (
+                  <div key={contact.id} className="rounded-xl border border-light-grey bg-white p-4">
+                    <p className="text-sm font-semibold text-charcoal">
+                      {contact.personName ?? contact.organisationName ?? contact.jobTitle ?? "Planning contact"}
+                    </p>
+                    {contact.personName && contact.organisationName && <p className="mt-1 text-xs text-slate">{contact.organisationName}</p>}
+                    {contact.jobTitle && <p className="mt-1 text-xs text-slate">{contact.jobTitle}</p>}
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {contact.email && <a href={`mailto:${contact.email}`} className="rounded-lg bg-soft-surface px-2.5 py-1.5 text-xs font-semibold text-charcoal hover:text-signal-orange">{contact.email}</a>}
+                      {contact.phone && <a href={`tel:${contact.phone}`} className="rounded-lg bg-soft-surface px-2.5 py-1.5 text-xs font-semibold text-charcoal hover:text-signal-orange">{contact.phone}</a>}
+                      {contact.website && <a href={contact.website} target="_blank" rel="noreferrer" className="rounded-lg bg-soft-surface px-2.5 py-1.5 text-xs font-semibold text-charcoal hover:text-signal-orange">Website ↗</a>}
+                    </div>
+                    {contact.sourceUrl && <a href={contact.sourceUrl} target="_blank" rel="noreferrer" className="mt-3 inline-flex text-[10px] font-semibold text-slate hover:text-charcoal">Verify source ↗</a>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {organisation ? (
             <>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -71,13 +110,8 @@ export function ContactEnrichmentPanel({
                 <Signal label="Trade value" value={organisation.estimatedTradeValueHigh > 0 ? formatGbp(organisation.estimatedTradeValueHigh) + "+" : "—"} />
               </dl>
 
-              {contactStrategy.preferPlanningContactData && (
-                <div className="mt-5 rounded-2xl border border-light-grey bg-soft-surface p-4">
-                  <p className="text-sm font-semibold text-charcoal">Planning contact enrichment ready</p>
-                  <p className="mt-1 text-xs leading-5 text-slate">
-                    When Plota Contact Data is enabled, published planning-agent email/phone details will appear here first. Business enrichment is only used as a fallback for company-led opportunities.
-                  </p>
-                </div>
+              {contactStrategy.preferPlanningContactData && opportunityId && (
+                <PlanningContactLookup opportunityId={opportunityId} hasContacts={planningContacts.length > 0} />
               )}
 
               {relatedOpportunities.length > 0 ? (
