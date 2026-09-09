@@ -3,7 +3,8 @@ import Image from "next/image";
 type LogoTone = "dark" | "light";
 
 const iconSrc = "/brand/mytradebox-icon.png";
-const darkWordmarkSrc = "/brand/mytradebox-wordmark-dark.png";
+const lightIconSrc = "/brand/mytradebox-icon-light.png";
+const lightWordmarkSrc = "/brand/mytradebox-wordmark-light.png";
 
 export function LogoMark({
   className,
@@ -26,7 +27,14 @@ export function LogoMark({
         alt=""
         width={1254}
         height={1254}
-        className="h-full w-full object-contain"
+        className="h-full w-full object-contain dark:hidden"
+      />
+      <Image
+        src={lightIconSrc}
+        alt=""
+        width={1280}
+        height={1280}
+        className="hidden h-full w-full object-contain dark:block"
       />
     </span>
   );
@@ -45,12 +53,12 @@ export function Logo({
     return (
       <span className={"inline-flex items-center " + (className ?? "")}>
         <Image
-          src={darkWordmarkSrc}
+          src={lightWordmarkSrc}
           alt="MyTradeBox"
           width={2048}
           height={682}
           priority
-          className="h-12 w-auto object-contain sm:h-14"
+          className="h-12 w-auto object-contain"
         />
       </span>
     );
@@ -62,13 +70,21 @@ export function Logo({
       <span className="h-6 w-px bg-light-grey" />
       <span
         className={
-          "font-sans text-xl font-semibold tracking-[-0.03em] " +
+          "font-sans text-xl font-semibold tracking-[-0.03em] dark:hidden " +
           (wordmarkClassName ?? "text-charcoal")
         }
       >
         <span>MyTrade</span>
         <span className="text-signal-orange">Box</span>
       </span>
+      <Image
+        src={lightWordmarkSrc}
+        alt="MyTradeBox"
+        width={2048}
+        height={682}
+        priority
+        className="hidden h-10 w-auto object-contain dark:block"
+      />
     </span>
   );
 }
