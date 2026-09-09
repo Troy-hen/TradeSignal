@@ -17,8 +17,8 @@ type NotificationLogRow = {
   subject: string | null;
   created_at: string;
   metadata: unknown;
+  lead_match_id: string | null;
 };
-
 type NearbyRow = {
   postcode_district: string;
   post_town: string;
@@ -28,6 +28,8 @@ type NearbyRow = {
   teaser_project_type: string | null;
   teaser_status: string | null;
 };
+type LeadMatchRow = { id: string; application_trade_opportunity_id: string | null };
+type RankedNotification = InAppNotificationItem & { priority: number };
 
 export async function getInAppNotifications(companyId: string): Promise<InAppNotificationItem[]> {
   const supabase = await createClient();
@@ -36,132 +38,61 @@ export async function getInAppNotifications(companyId: string): Promise<InAppNot
   const [{ data: logData }, { data: nearbyData }] = await Promise.all([
     supabase
       .from("notification_log")
-      .select("id, notification_type, subject, created_at, metadata")
+      .select("id, notification_type, subject, created_at, metadata, lead_match_id")
       .eq("company_id", companyId)
       .eq("status", "sent")
       .gte("created_at", since)
       .order("created_at", { ascending: false })
-      .limit(8),
+      .limit(15),
     supabase.rpc("browse_nearby_opportunities", { p_limit: 3 }),
   ]);
 
-  const logged = ((logData ?? []) as NotificationLogRow[]).map(notificationFromLog);
+  const logs = (logData ?? []) as NotificationLogRow[];
+  const leadMatchIds = [...new Set(logs.map((row) => row.lead_match_id).filter((id): id is string => Boolean(id)))];
+  const { data: matchData } = leadMatchIds.length > 0
+    ? await supabase.from("lead_matches").select("id, application_trade_opportunity_id").in("id", leadMatchIds)
+    : { data: [] as LeadMatchRow[] };
+  const opportunityByMatch = new Map(((matchData ?? []) as LeadMatchRow[]).map((row) => [row.id, row.application_trade_opportunity_id]));
+
+  const logged = logs.map((row) => notificationFromLog(row, row.lead_match_id ? opportunityByMatch.get(row.lead_match_id) ?? null : null));
   const nearby = ((Array.isArray(nearbyData) ? nearbyData : []) as NearbyRow[]).map(notificationFromNearby);
 
-  // A digest and an instant alert can occasionally describe the same event.
-  // Keep the first item for an identical title so the global strip stays useful
-  // rather than reproducing the email delivery log verbatim.
   const seenTitles = new Set<string>();
-  return [...nearby, ...logged]
+  return [...logged, ...nearby]
+    .sort((a, b) => b.priority - a.priority || Date.parse(b.createdAt) - Date.parse(a.createdAt))
     .filter((item) => {
       const key = item.title.trim().toLowerCase();
       if (seenTitles.has(key)) return false;
       seenTitles.add(key);
       return true;
     })
-    .slice(0, 10);
+    .slice(0, 10)
+    .map(({ priority: _priority, ...item }) => item);
 }
 
-function notificationFromLog(row: NotificationLogRow): InAppNotificationItem {
+function notificationFromLog(row: NotificationLogRow, opportunityId: string | null): RankedNotification {
   const metadata = isRecord(row.metadata) ? row.metadata : {};
   const type = row.notification_type;
   const fallbackTitle = notificationLabel(type);
+  const opportunityHref = opportunityId ? "/opportunities/" + encodeURIComponent(opportunityId) : "/opportunities";
 
-  if (type === "payment_failed") {
-    return {
-      id: "log:" + row.id,
-      tone: "warning",
-      eyebrow: "Billing",
-      title: row.subject ?? "Action needed on your subscription",
-      detail: "Review your billing details to keep territory access active.",
-      href: "/billing",
-      ctaLabel: "Review billing",
-      createdAt: row.created_at,
-    };
-  }
-
-  if (type === "territory_available") {
-    return {
-      id: "log:" + row.id,
-      tone: "success",
-      eyebrow: "Territory available",
-      title: row.subject ?? fallbackTitle,
-      detail: "An area you were watching is available to claim.",
-      href: "/territories",
-      ctaLabel: "View territory",
-      createdAt: row.created_at,
-    };
-  }
-
-  if (type === "approval_alert") {
-    return {
-      id: "log:" + row.id,
-      tone: "signal",
-      eyebrow: "Planning approved",
-      title: row.subject ?? fallbackTitle,
-      detail: "A matched application has moved into an important contact window.",
-      href: "/opportunities",
-      ctaLabel: "View opportunities",
-      createdAt: row.created_at,
-    };
-  }
-
-  if (type === "new_lead_instant") {
-    return {
-      id: "log:" + row.id,
-      tone: "signal",
-      eyebrow: "New opportunity",
-      title: row.subject ?? fallbackTitle,
-      detail: "A high-priority opportunity has been matched to your coverage.",
-      href: "/opportunities",
-      ctaLabel: "Open opportunities",
-      createdAt: row.created_at,
-    };
-  }
-
-  if (type === "nearby_opportunity_digest" || type === "outside_territory") {
-    return {
-      id: "log:" + row.id,
-      tone: "signal",
-      eyebrow: "Coverage opportunity",
-      title: row.subject ?? fallbackTitle,
-      detail: "There is signal outside your current coverage that may be worth a look.",
-      href: safeInternalHref(metadata.preview_url) ?? "/territories",
-      ctaLabel: "Explore coverage",
-      createdAt: row.created_at,
-    };
-  }
-
-  if (type === "announcement") {
-    return {
-      id: "log:" + row.id,
-      tone: "info",
-      eyebrow: "MyTradeBox update",
-      title: row.subject ?? fallbackTitle,
-      detail: typeof metadata.message === "string" ? metadata.message : null,
-      href: safeInternalHref(metadata.cta_url) ?? "/notifications",
-      ctaLabel: typeof metadata.cta_label === "string" ? metadata.cta_label : "View update",
-      createdAt: row.created_at,
-    };
-  }
-
-  return {
-    id: "log:" + row.id,
-    tone: "info",
-    eyebrow: type.includes("digest") ? "Opportunity digest" : "Notification",
-    title: row.subject ?? fallbackTitle,
-    detail: null,
-    href: "/notifications",
-    ctaLabel: "View notifications",
-    createdAt: row.created_at,
-  };
+  if (type === "payment_failed") return ranked(100, row, "warning", "Billing", row.subject ?? "Action needed on your subscription", "Review your billing details to keep territory access active.", "/billing", "Review billing");
+  if (type === "approval_alert") return ranked(90, row, "signal", "Planning approved", row.subject ?? fallbackTitle, "A matched application has moved into an important contact window.", opportunityHref, opportunityId ? "Open opportunity" : "View opportunities");
+  if (type === "new_lead_instant") return ranked(80, row, "signal", "New opportunity", row.subject ?? fallbackTitle, "A high-priority opportunity has been matched to your coverage.", opportunityHref, opportunityId ? "Open opportunity" : "Open opportunities");
+  if (type === "follow_up_reminder") return ranked(70, row, "warning", "Follow-up due", row.subject ?? fallbackTitle, "A lead follow-up is due now.", opportunityHref, opportunityId ? "Open opportunity" : "View follow-ups");
+  if (type === "territory_available") return ranked(60, row, "success", "Territory available", row.subject ?? fallbackTitle, "An area you were watching is available to claim.", safeInternalHref(metadata.claim_url) ?? "/territories", "View territory");
+  if (type === "nearby_opportunity_digest" || type === "outside_territory") return ranked(50, row, "signal", "Coverage opportunity", row.subject ?? fallbackTitle, "There is signal outside your current coverage that may be worth a look.", safeInternalHref(metadata.preview_url) ?? "/territories", "Explore territory");
+  if (type === "announcement") return ranked(40, row, "info", "MyTradeBox update", row.subject ?? fallbackTitle, typeof metadata.message === "string" ? metadata.message : null, safeInternalHref(metadata.cta_url) ?? "/notifications", typeof metadata.cta_label === "string" ? metadata.cta_label : "View update");
+  if (type.includes("digest")) return ranked(20, row, "info", "Opportunity digest", row.subject ?? fallbackTitle, null, "/notifications", "View digest");
+  return ranked(30, row, "info", "Notification", row.subject ?? fallbackTitle, null, "/notifications", "View notifications");
 }
 
-function notificationFromNearby(row: NearbyRow): InAppNotificationItem {
+function notificationFromNearby(row: NearbyRow): RankedNotification {
   const count = Number(row.opportunity_count ?? 0);
   const project = row.teaser_project_type?.trim() || "Live planning opportunity";
   return {
     id: "nearby:" + row.postcode_district + ":" + row.trade_category_slug + ":" + String(count),
+    priority: 45,
     tone: "signal",
     eyebrow: "Nearby signal",
     title: row.postcode_district + " · " + row.post_town + " is available for " + row.trade_category_name,
@@ -172,15 +103,10 @@ function notificationFromNearby(row: NearbyRow): InAppNotificationItem {
   };
 }
 
-function notificationLabel(value: string): string {
-  return value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+function ranked(priority: number, row: NotificationLogRow, tone: InAppNotificationItem["tone"], eyebrow: string, title: string, detail: string | null, href: string, ctaLabel: string): RankedNotification {
+  return { id: "log:" + row.id, priority, tone, eyebrow, title, detail, href, ctaLabel, createdAt: row.created_at };
 }
 
-function safeInternalHref(value: unknown): string | null {
-  if (typeof value !== "string") return null;
-  return value.startsWith("/") && !value.startsWith("//") ? value : null;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
+function notificationLabel(value: string): string { return value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()); }
+function safeInternalHref(value: unknown): string | null { if (typeof value !== "string") return null; return value.startsWith("/") && !value.startsWith("//") ? value : null; }
+function isRecord(value: unknown): value is Record<string, unknown> { return typeof value === "object" && value !== null && !Array.isArray(value); }
