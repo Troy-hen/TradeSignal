@@ -6,7 +6,10 @@ import { createClient } from "@/lib/supabase/server";
 import { getPostalOpportunityContext } from "@/lib/outreach/postal-context";
 import { getPostalOutreachProvider } from "@/lib/outreach/postal-provider";
 
-const bodySchema = z.object({ content: z.string().trim().min(20).max(12000) });
+const bodySchema = z.object({
+  content: z.string().trim().min(20).max(12000),
+  deliveryId: z.string().uuid(),
+});
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const company = await requireCurrentCompany();
@@ -38,26 +41,54 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (!validation.valid) return NextResponse.json({ error: "postal_address_not_validated" }, { status: 422 });
     const recipient = validation.normalized ?? context.recipient;
 
-    const { data: delivery, error: insertError } = await db
+    const { data: existing } = await db
       .from("outreach_deliveries")
-      .insert({
-        company_id: company.id,
-        opportunity_id: id,
-        lead_match_id: leadMatch?.id ?? null,
-        channel: "letter",
+      .select("id,provider_job_id,status,cost_pence,tracking_url,content_snapshot")
+      .eq("id", body.data.deliveryId)
+      .eq("company_id", company.id)
+      .eq("opportunity_id", id)
+      .maybeSingle();
+
+    if (existing?.provider_job_id && ["queued", "sent", "delivered"].includes(existing.status)) {
+      return NextResponse.json({
+        deliveryId: existing.id,
         provider: provider.name,
-        status: "draft",
-        recipient_name: recipient.name ?? context.strategy.suggestedRecipient,
-        recipient_address: recipient,
-        content_snapshot: body.data.content,
-        created_by: user.id,
-      })
-      .select("id")
-      .single();
-    if (insertError || !delivery) return NextResponse.json({ error: "delivery_create_failed" }, { status: 500 });
+        status: existing.status,
+        costPence: existing.cost_pence ?? null,
+        trackingUrl: existing.tracking_url ?? null,
+        idempotentReplay: true,
+      });
+    }
+
+    if (existing?.content_snapshot && existing.content_snapshot !== body.data.content) {
+      return NextResponse.json({ error: "delivery_content_mismatch" }, { status: 409 });
+    }
+
+    let delivery = existing;
+    if (!delivery) {
+      const { data: inserted, error: insertError } = await db
+        .from("outreach_deliveries")
+        .insert({
+          id: body.data.deliveryId,
+          company_id: company.id,
+          opportunity_id: id,
+          lead_match_id: leadMatch?.id ?? null,
+          channel: "letter",
+          provider: provider.name,
+          status: "draft",
+          recipient_name: recipient.name ?? context.strategy.suggestedRecipient,
+          recipient_address: recipient,
+          content_snapshot: body.data.content,
+          created_by: user.id,
+        })
+        .select("id,provider_job_id,status,cost_pence,tracking_url,content_snapshot")
+        .single();
+      if (insertError || !inserted) return NextResponse.json({ error: "delivery_create_failed" }, { status: 500 });
+      delivery = inserted;
+    }
 
     const result = await provider.sendLetter({
-      deliveryId: delivery.id,
+      deliveryId: body.data.deliveryId,
       recipient,
       content: body.data.content,
       reference: `opportunity-${id}`,
@@ -74,23 +105,34 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         sent_at: result.status === "sent" ? now : null,
         updated_at: now,
       })
-      .eq("id", delivery.id)
+      .eq("id", body.data.deliveryId)
       .eq("company_id", company.id);
 
-    await db.from("opportunity_activity_events").insert({
-      company_id: company.id,
-      opportunity_id: id,
-      lead_match_id: leadMatch?.id ?? null,
-      event_type: result.status === "sent" ? "letter_sent" : "letter_queued",
-      channel: "letter",
-      provider: provider.name,
-      provider_reference: result.providerJobId,
-      metadata: { delivery_id: delivery.id, cost_pence: result.costPence ?? null },
-      created_by: user.id,
-    });
+    const { data: priorEvent } = await db
+      .from("opportunity_activity_events")
+      .select("id")
+      .eq("company_id", company.id)
+      .eq("provider_reference", result.providerJobId)
+      .in("event_type", ["letter_sent", "letter_queued"])
+      .limit(1)
+      .maybeSingle();
+
+    if (!priorEvent) {
+      await db.from("opportunity_activity_events").insert({
+        company_id: company.id,
+        opportunity_id: id,
+        lead_match_id: leadMatch?.id ?? null,
+        event_type: result.status === "sent" ? "letter_sent" : "letter_queued",
+        channel: "letter",
+        provider: provider.name,
+        provider_reference: result.providerJobId,
+        metadata: { delivery_id: body.data.deliveryId, cost_pence: result.costPence ?? null },
+        created_by: user.id,
+      });
+    }
 
     return NextResponse.json({
-      deliveryId: delivery.id,
+      deliveryId: body.data.deliveryId,
       provider: provider.name,
       status: result.status,
       costPence: result.costPence ?? null,
