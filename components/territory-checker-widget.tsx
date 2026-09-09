@@ -25,6 +25,15 @@ const FALLBACK_TRADE: TradeOption = {
   name: "General Builder",
 };
 
+function formatMonthlyPrice(pence: number): string {
+  return new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency: "GBP",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(pence / 100);
+}
+
 function MapPinIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
@@ -92,7 +101,7 @@ export function TerritoryCheckerWidget({
     }
   }
 
-  const priceGbp = result ? Math.round(result.monthly_price_pence / 100) : 0;
+  const priceLabel = result ? formatMonthlyPrice(result.monthly_price_pence) : "";
   const isAvailable = result?.territory_status === "available";
 
   return (
@@ -227,12 +236,12 @@ export function TerritoryCheckerWidget({
               </p>
               {isAvailable && (
                 <p className="mt-1 text-sm text-slate">
-                  From £{priceGbp}/month, exclusive to your business.
+                  From {priceLabel}/month, exclusive to your business.
                 </p>
               )}
             </div>
             <Link
-              href={`/territories/${encodeURIComponent(checkedDistrict)}/${encodeURIComponent(tradeSlug)}`}
+              href={\`/territories/\${encodeURIComponent(checkedDistrict)}/\${encodeURIComponent(tradeSlug)}\`}
               className="inline-flex items-center rounded-xl bg-signal-orange px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#e95f00]"
             >
               {isAvailable ? "View territory & claim" : "View territory"}
