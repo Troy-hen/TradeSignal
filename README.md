@@ -100,7 +100,9 @@ The webhook handler reads the **raw** request body before any JSON parsing (Stri
 
 ## Resend (email) configuration
 
-Set `RESEND_API_KEY` and `RESEND_FROM_EMAIL` as Edge Function secrets (email sending happens in `notify-leads`, not the Next.js app). No SDK — a single `fetch` POST per email, since the surface is small.
+Set `RESEND_API_KEY` and `RESEND_FROM_EMAIL` as Edge Function secrets (email sending happens in `notify-leads`, not the Next.js app). Set `RESEND_FROM_NAME=MyTradeBox` and optionally `RESEND_REPLY_TO` so every transactional message carries the correct brand and reply path. No SDK — a single `fetch` POST per email, since the surface is small.
+
+The shared email templates are branded as MyTradeBox and support new-opportunity alerts, daily/weekly digests, approval alerts, outside-territory announcements, payment notices, territory availability, and welcome messages. The hosted Supabase Auth source templates live in `supabase/templates/` for confirmation, recovery, invitation, magic-link, password-changed, and email-changed flows. Copy them into Authentication → Emails → Templates after setting the project's Site URL to the live Worker URL. Resend dashboard templates are kept as drafts until a verified sending domain and sender are configured; no email is sent by the template setup itself.
 
 ## Planning data provider
 
