@@ -1,13 +1,22 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import { TerritoryCheckerWidget } from "@/components/territory-checker-widget";
+import { ContactRequestForm } from "@/components/contact-request-form";
 
 export const metadata: Metadata = {
   title: "Contact",
   description: "Contact MyTradeBox about territories, accounts and support.",
 };
 
-export default function ContactPage() {
+export default async function ContactPage() {
   const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL?.trim();
+  const supabase = await createClient();
+  const { data: trades } = await supabase
+    .from("trade_categories")
+    .select("slug, name")
+    .eq("is_active", true)
+    .order("display_order");
 
   return (
     <div className="bg-soft-surface">
@@ -26,7 +35,7 @@ export default function ContactPage() {
           <ContactCard
             title="Territory questions"
             body="Check a postcode district and see the live aggregate signal, price and availability before you create an account."
-            href="/territories"
+            href="#availability-checker"
             label="Check availability"
           />
           <ContactCard
@@ -45,6 +54,21 @@ export default function ContactPage() {
             href={supportEmail ? "mailto:" + supportEmail : "/signup"}
             label={supportEmail ? supportEmail : "Create an account"}
           />
+        </div>
+
+        <div id="availability-checker" className="mx-auto mt-10 max-w-7xl scroll-mt-8 rounded-3xl border border-light-grey bg-white p-7 sm:p-9">
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Live territory check</p>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight text-charcoal">Search your postcode district.</h2>
+            <p className="mt-2 text-sm leading-6 text-slate">Choose a trade and preview current planning activity, estimated value and territory availability without creating an account.</p>
+          </div>
+          <div className="mt-6">
+            <TerritoryCheckerWidget trades={trades ?? []} compact />
+          </div>
+        </div>
+
+        <div className="mx-auto mt-10 max-w-7xl">
+          <ContactRequestForm />
         </div>
 
         <div className="mx-auto mt-10 max-w-7xl rounded-3xl border border-light-grey bg-white p-7 sm:p-9">
