@@ -75,9 +75,9 @@ export function DashboardShell({
   return (
     <div className="flex min-h-screen bg-soft-surface">
       <aside
-        className={`sticky top-0 hidden h-screen shrink-0 border-r border-light-grey bg-white transition-[width] duration-200 lg:flex ${
+        className={"sticky top-0 hidden h-screen shrink-0 border-r border-light-grey bg-white transition-[width] duration-200 lg:flex " + (
           collapsed ? "w-[76px]" : "w-[272px]"
-        }`}
+        )}
         aria-label="Workspace sidebar"
       >
         <SidebarContent
@@ -123,7 +123,7 @@ export function DashboardShell({
             <MenuIcon />
           </button>
           <Link href="/dashboard" aria-label="MyTradeBox overview">
-            <Logo wordmarkClassName="text-base" />
+            <Logo wordmarkClassName="text-xl" />
           </Link>
           <span className="h-9 w-9" aria-hidden="true" />
         </header>
@@ -151,14 +151,14 @@ function SidebarContent({
 }) {
   return (
     <div className="flex min-h-screen w-full flex-col">
-      <div className={`border-b border-light-grey px-4 py-5 ${
+      <div className={"border-b border-light-grey px-4 py-5 " + (
         collapsed ? "flex flex-col items-center gap-4" : "flex items-center justify-between gap-3"
-      }`}>
+      )}>
         <Link href="/dashboard" aria-label="MyTradeBox overview" onClick={mobile ? onToggle : undefined}>
           {collapsed ? (
             <LogoMark className="h-9 w-9" />
           ) : (
-            <Logo wordmarkClassName="text-lg" />
+            <Logo wordmarkClassName="text-xl" />
           )}
         </Link>
         <button
@@ -173,22 +173,22 @@ function SidebarContent({
         </button>
         {!collapsed && (
           <p className="absolute left-[-9999px] h-px w-px overflow-hidden">
-            Use Ctrl/Cmd + \\ to toggle the sidebar.
+            Use Ctrl/Cmd + \ to toggle the sidebar.
           </p>
         )}
       </div>
 
-      <div className={`border-b border-light-grey py-5 ${
+      <div className={"border-b border-light-grey py-5 " + (
         collapsed ? "px-3" : "px-5"
-      }`}>
+      )}>
         {!collapsed && (
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate">
             Workspace
           </p>
         )}
-        <div className={`mt-3 flex items-center ${
+        <div className={"mt-3 flex items-center " + (
           collapsed ? "justify-center" : "gap-3"
-        }`}>
+        )}>
           <span
             title={collapsed ? company.trading_name : undefined}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-signal-orange/10 text-xs font-bold text-signal-orange"
@@ -206,17 +206,17 @@ function SidebarContent({
 
       <DashboardNav collapsed={collapsed} />
 
-      <div className={`mt-auto border-t border-light-grey ${
+      <div className={"mt-auto border-t border-light-grey " + (
         collapsed ? "space-y-2 p-3" : "space-y-1 p-5"
-      }`}>
+      )}>
         <ThemeToggle collapsed={collapsed} />
         <form action={signOut}>
           <button
             type="submit"
             title={collapsed ? "Sign out" : undefined}
-            className={`flex w-full items-center rounded-xl py-2.5 text-sm font-medium text-slate transition hover:bg-soft-surface hover:text-charcoal ${
+            className={"flex w-full items-center rounded-xl py-2.5 text-sm font-medium text-slate transition hover:bg-soft-surface hover:text-charcoal " + (
               collapsed ? "justify-center px-2" : "justify-between px-3"
-            }`}
+            )}
           >
             <span className={collapsed ? "sr-only" : undefined}>Sign out</span>
             <span aria-hidden="true" className={collapsed ? undefined : "ml-auto"}>↗</span>
