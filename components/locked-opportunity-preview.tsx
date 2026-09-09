@@ -1,5 +1,5 @@
 export function LockedOpportunityPreview({
-  title = "Opportunity details locked",
+  title = "See the opportunity shape",
   body = "Claim the territory to reveal projects, addresses, AI interpretation and contact timing.",
   compact = false,
 }: {
@@ -8,30 +8,29 @@ export function LockedOpportunityPreview({
   compact?: boolean;
 }) {
   return (
-    <div
-      className={
-        "relative overflow-hidden rounded-2xl border border-light-grey bg-white " +
-        (compact ? "min-h-[170px]" : "min-h-[220px]")
-      }
-    >
-      <div aria-hidden="true" className={"space-y-3 p-5 opacity-35 " + (compact ? "sm:p-6" : "sm:p-8")}>
-        <div className="h-3 w-2/5 rounded-full bg-slate/25" />
-        <div className="h-8 w-3/5 rounded-xl bg-slate/20" />
-        <div className="grid grid-cols-3 gap-3 pt-2">
-          <div className="h-16 rounded-xl bg-soft-surface" />
-          <div className="h-16 rounded-xl bg-soft-surface" />
-          <div className="h-16 rounded-xl bg-soft-surface" />
+    <div className={"relative overflow-hidden rounded-2xl border border-light-grey bg-white " + (compact ? "min-h-[190px]" : "min-h-[240px]")}>
+      <div aria-hidden="true" className={"grid gap-3 p-5 " + (compact ? "sm:p-6" : "sm:p-8")}>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <PreviewField label="Project type" width="w-4/5" />
+          <PreviewField label="Property address" width="w-3/5" />
         </div>
-        <div className="h-3 w-4/5 rounded-full bg-slate/20" />
-        <div className="h-3 w-3/5 rounded-full bg-slate/15" />
+        <div className="rounded-xl border border-light-grey bg-soft-surface p-4">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate/60">Planning summary</p>
+          <div className="mt-3 space-y-2 blur-[4px]">
+            <div className="h-3 w-11/12 rounded-full bg-slate/30" />
+            <div className="h-3 w-4/5 rounded-full bg-slate/20" />
+            <div className="h-3 w-2/3 rounded-full bg-slate/20" />
+          </div>
+        </div>
+        <div className="flex items-center justify-between rounded-xl border border-light-grey p-3">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate/60">Recommended action</p>
+          <div className="h-3 w-20 rounded-full bg-slate/25 blur-[4px]" />
+        </div>
       </div>
 
-      <div className="absolute inset-0 flex items-center justify-center bg-white/80 px-5 text-center backdrop-blur-[3px]">
+      <div className="absolute inset-0 flex items-center justify-center bg-white/68 px-5 text-center backdrop-blur-[2px]">
         <div className="max-w-md">
-          <span className="mx-auto flex h-10 w-10 items-center justify-center rounded-2xl bg-charcoal text-white" aria-hidden="true">
-            <LockIcon />
-          </span>
-          <p className="mt-3 text-sm font-semibold text-charcoal">{title}</p>
+          <p className="text-sm font-semibold text-charcoal">{title}</p>
           <p className="mt-1 text-xs leading-5 text-slate">{body}</p>
         </div>
       </div>
@@ -39,11 +38,11 @@ export function LockedOpportunityPreview({
   );
 }
 
-function LockIcon() {
+function PreviewField({ label, width }: { label: string; width: string }) {
   return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-      <rect x="5" y="10" width="14" height="10" rx="2" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8 10V7a4 4 0 0 1 8 0v3" />
-    </svg>
+    <div className="rounded-xl border border-light-grey p-3">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate/60">{label}</p>
+      <div className={"mt-3 h-3 rounded-full bg-slate/25 blur-[4px] " + width} />
+    </div>
   );
 }
