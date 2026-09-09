@@ -20,26 +20,31 @@ export function InAppNotificationFeed({
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
+    let frame = 0;
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       if (!raw) return;
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) setDismissed(parsed.filter((value) => typeof value === "string"));
+      if (Array.isArray(parsed)) {
+        const stored = parsed.filter((value) => typeof value === "string");
+        frame = window.requestAnimationFrame(() => setDismissed(stored));
+      }
     } catch {
       // Ignore malformed local storage and start fresh.
     }
+    return () => { if (frame) window.cancelAnimationFrame(frame); };
   }, []);
 
   const activeItems = useMemo(() => items.filter((item) => !dismissed.includes(item.id)), [dismissed, items]);
+  const safeIndex = activeItems.length > 0 ? Math.min(index, activeItems.length - 1) : 0;
 
   useEffect(() => {
     onCountChange(activeItems.length);
-    if (index >= activeItems.length) setIndex(Math.max(0, activeItems.length - 1));
-  }, [activeItems.length, index, onCountChange]);
+  }, [activeItems.length, onCountChange]);
 
   if (activeItems.length === 0) return null;
 
-  const current = activeItems[index] ?? activeItems[0];
+  const current = activeItems[safeIndex] ?? activeItems[0];
   const tone = toneClasses(current.tone);
 
   function dismissCurrent() {
@@ -50,7 +55,7 @@ export function InAppNotificationFeed({
     } catch {
       // UI dismissal still works for the current session.
     }
-    if (index >= activeItems.length - 1) setIndex(Math.max(0, index - 1));
+    if (safeIndex >= activeItems.length - 1) setIndex(Math.max(0, safeIndex - 1));
   }
 
   function previous() {
@@ -75,7 +80,7 @@ export function InAppNotificationFeed({
           <div className="min-w-0 flex-1">
             <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
               <span className={["text-[10px] font-bold uppercase tracking-[0.13em]", tone.label].join(" ")}>{current.eyebrow}</span>
-              {activeItems.length > 1 && <span className="text-[10px] font-semibold text-slate/60">{index + 1} of {activeItems.length}</span>}
+              {activeItems.length > 1 && <span className="text-[10px] font-semibold text-slate/60">{safeIndex + 1} of {activeItems.length}</span>}
             </div>
             <p className="mt-1 break-words text-sm font-semibold leading-5 text-charcoal">{current.title}</p>
             {current.detail && <p className="mt-0.5 line-clamp-2 break-words text-xs leading-5 text-slate md:line-clamp-1">{current.detail}</p>}
