@@ -12,7 +12,7 @@ export default function ContactPage() {
   return (
     <div className="bg-soft-surface">
       <section className="bg-charcoal px-6 py-20 text-white sm:py-28">
-        <div className="mx-auto max-w-4xl lg:px-2">
+        <div className="mx-auto max-w-7xl lg:px-2">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Contact</p>
           <h1 className="mt-5 text-4xl font-bold tracking-tight sm:text-6xl">Let&apos;s make your local pipeline more useful.</h1>
           <p className="mt-6 max-w-2xl text-base leading-7 text-white/70 sm:text-lg">
@@ -22,7 +22,7 @@ export default function ContactPage() {
       </section>
 
       <section className="px-6 py-16 sm:py-24">
-        <div className="mx-auto grid max-w-5xl gap-5 md:grid-cols-3">
+        <div className="mx-auto grid max-w-7xl gap-5 md:grid-cols-3">
           <ContactCard
             title="Territory questions"
             body="Check a postcode district and see the live aggregate signal, price and availability before you create an account."
@@ -47,7 +47,7 @@ export default function ContactPage() {
           />
         </div>
 
-        <div className="mx-auto mt-10 max-w-5xl rounded-3xl border border-light-grey bg-white p-7 sm:p-9">
+        <div className="mx-auto mt-10 max-w-7xl rounded-3xl border border-light-grey bg-white p-7 sm:p-9">
           <h2 className="text-xl font-semibold text-charcoal">What to include in a support request</h2>
           <ul className="mt-5 grid gap-3 text-sm leading-6 text-slate sm:grid-cols-2">
             <li>• The email address on your MyTradeBox account</li>
