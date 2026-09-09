@@ -13,12 +13,15 @@ export function LogoMark({
   tone?: LogoTone;
 }) {
   const fixedLightTone = tone === "light";
+  const tileClass = fixedLightTone
+    ? "border border-white/70 bg-[#f8fafc]"
+    : "border border-[#e5e7eb] bg-[#f8fafc] dark:border-white/15 dark:bg-[#f8fafc]";
 
   return (
     <span
       className={
         "inline-flex items-center justify-center overflow-hidden rounded-xl " +
-        (fixedLightTone ? "bg-[#f8fafc]" : "bg-[#1f2937] dark:bg-[#f8fafc]") +
+        tileClass +
         " " +
         (className ?? "")
       }
@@ -64,23 +67,17 @@ export function Logo({
 }) {
   const fixedLightTone = tone === "light";
   const wordmarkClass =
-    "font-sans font-semibold tracking-[-0.03em] " +
-    (wordmarkClassName ?? "text-xl");
+    "whitespace-nowrap font-sans text-xl font-semibold tracking-[-0.03em] " +
+    (wordmarkClassName ?? "");
+  const wordmarkTone = fixedLightTone ? "text-white" : "text-[#1f2937] dark:text-white";
+  const dividerTone = fixedLightTone ? "bg-white/40" : "bg-[#cbd5e1] dark:bg-white/30";
 
   return (
     <span className={"inline-flex items-center gap-3 " + (className ?? "")}>
       <LogoMark className="h-9 w-9 shrink-0" tone={tone} />
-      <span
-        className={
-          "h-6 w-px " +
-          (fixedLightTone ? "bg-white/30" : "bg-light-grey dark:bg-white/30")
-        }
-        aria-hidden="true"
-      />
+      <span className={"h-6 w-px " + dividerTone} aria-hidden="true" />
       <span className={wordmarkClass}>
-        <span className={fixedLightTone ? "text-white" : "text-charcoal dark:text-white"}>
-          MyTrade
-        </span>
+        <span className={wordmarkTone}>MyTrade</span>
         <span className="text-signal-orange">Box</span>
       </span>
     </span>
