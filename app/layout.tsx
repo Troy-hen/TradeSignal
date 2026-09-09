@@ -11,12 +11,19 @@ const sora = Sora({
 const themeInitScript = `try {
   var storedTheme = window.localStorage.getItem("mytradebox-theme");
   var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  if (storedTheme === "dark" || (!storedTheme && prefersDark)) {
+  var appRoutes = ["/dashboard", "/opportunities", "/territories", "/coverage", "/roi", "/billing", "/settings", "/my-territories", "/admin"];
+  var isAppRoute = appRoutes.some(function (prefix) {
+    return window.location.pathname === prefix || window.location.pathname.indexOf(prefix + "/") === 0;
+  });
+
+  if (isAppRoute && (storedTheme === "dark" || (!storedTheme && prefersDark))) {
     document.documentElement.classList.add("dark");
     document.documentElement.style.colorScheme = "dark";
+  } else {
+    document.documentElement.classList.remove("dark");
+    document.documentElement.style.colorScheme = "light";
   }
-} catch (_) {}
-`;
+} catch (_) {}`;
 
 export const metadata: Metadata = {
   title: {
