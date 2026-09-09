@@ -37,24 +37,28 @@ export default async function TerritoriesPage() {
   }));
 
   return (
-    <div className="space-y-8">
-      <div>
+    <div className="min-w-0 space-y-8">
+      <div className="min-w-0">
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Territory Explorer</p>
-        <h1 className="mt-3 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">Find the right patch.</h1>
+        <h1 className="mt-3 break-words text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">Find the right patch.</h1>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-slate sm:text-base">
           Search a loaded postcode district and trade to see local planning activity, estimated value and whether the
           exclusive territory is available. Build a wider service area from Coverage once you know what works.
         </p>
       </div>
 
-      <OpportunityMap points={mapPoints} trades={trades ?? []} />
+      <div className="min-w-0 max-w-full overflow-hidden">
+        <OpportunityMap points={mapPoints} trades={trades ?? []} />
+      </div>
 
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start">
-        <TerritorySearchForm trades={trades ?? []} />
+      <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start">
+        <div className="min-w-0">
+          <TerritorySearchForm trades={trades ?? []} />
+        </div>
 
-        <section className="rounded-3xl bg-charcoal p-6 text-white sm:p-8">
+        <section className="min-w-0 rounded-3xl bg-charcoal p-5 text-white sm:p-8">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">How territories work</p>
-          <h2 className="mt-4 text-2xl font-bold tracking-tight sm:text-3xl">Start with one district. Expand when the signal earns it.</h2>
+          <h2 className="mt-4 break-words text-2xl font-bold tracking-tight sm:text-3xl">Start with one district. Expand when the signal earns it.</h2>
           <p className="mt-4 text-sm leading-6 text-white/65 sm:text-base">
             MyTradeBox keeps each trade feed exclusive by postcode district, then lets you group the districts you actually serve into one coverage plan.
           </p>
@@ -71,11 +75,11 @@ export default async function TerritoriesPage() {
 
 function InfoRow({ number, title, body }: { number: string; title: string; body: string }) {
   return (
-    <div className="flex gap-3">
+    <div className="flex min-w-0 gap-3">
       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/10 text-xs font-bold text-signal-orange">{number}</span>
-      <div>
-        <p className="text-sm font-semibold text-white">{title}</p>
-        <p className="mt-1 text-xs leading-5 text-white/55">{body}</p>
+      <div className="min-w-0">
+        <p className="break-words text-sm font-semibold text-white">{title}</p>
+        <p className="mt-1 break-words text-xs leading-5 text-white/55">{body}</p>
       </div>
     </div>
   );
