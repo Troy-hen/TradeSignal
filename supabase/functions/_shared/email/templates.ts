@@ -9,7 +9,8 @@ const CHARCOAL = "#1F2937";
 const SLATE = "#64748B";
 const LIGHT_GREY = "#E5E7EB";
 const SOFT_SURFACE = "#F8FAFC";
-const rawAppUrl = Deno.env.get("NEXT_PUBLIC_APP_URL") ?? "";\nconst APP_URL = rawAppUrl.endsWith("/") ? rawAppUrl.slice(0, -1) : rawAppUrl;
+const rawAppUrl = Deno.env.get("NEXT_PUBLIC_APP_URL") ?? "";
+const APP_URL = rawAppUrl.endsWith("/") ? rawAppUrl.slice(0, -1) : rawAppUrl;
 const LOGO_URL = APP_URL ? APP_URL + "/brand/mytradebox-wordmark-light.png" : null;
 
 function escapeHtml(value: unknown): string {
@@ -169,7 +170,8 @@ export function announcementEmail(params: {
   ctaLabel?: string;
   ctaUrl?: string;
 }): { subject: string; html: string } {
-  const messageHtml = escapeHtml(params.message).replace(/\\n/g, "<br>");
+  const messageHtml = escapeHtml(params.message).replace(/\
+/g, "<br>");
   const body = [
     '<p style="margin:0 0 16px;font-size:15px;line-height:23px;color:' + CHARCOAL + ';">Hi ' + escapeHtml(params.companyName) + ",</p>",
     '<h1 style="margin:0 0 16px;font-size:24px;line-height:31px;color:' + CHARCOAL + ';">' + escapeHtml(params.title) + "</h1>",
