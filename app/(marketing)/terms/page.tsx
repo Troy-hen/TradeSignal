@@ -13,7 +13,7 @@ export default function TermsPage() {
   return (
     <div className="bg-soft-surface">
       <section className="bg-charcoal px-6 py-16 text-white sm:py-20">
-        <div className="mx-auto max-w-4xl lg:px-2">
+        <div className="mx-auto max-w-7xl lg:px-2">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Legal</p>
           <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">Terms of service</h1>
           <p className="mt-4 text-sm text-white/60">Last updated {updated}</p>
@@ -41,7 +41,7 @@ export default function TermsPage() {
           </LegalSection>
 
           <LegalSection title="4. Territories and billing">
-            <p>Territory pricing is shown before activation and may vary by trade category and area. Monthly subscriptions are billed through the payment method and provider shown at checkout. Your account is responsible for charges incurred by authorised users. Cancellation takes effect according to the billing status and terms shown in your account.</p>
+            <p>Territory pricing is shown before activation. The starting price is the same across trades; volume pricing reduces the unit price as you add districts, and verified county bundles may receive a discount. Monthly subscriptions are billed through the payment method and provider shown at checkout. Your account is responsible for charges incurred by authorised users. Cancellation takes effect according to the billing status and terms shown in your account.</p>
             <p className="mt-3">A territory does not guarantee a number of leads, enquiries, conversions, revenue or exclusivity outside the specific trade and geographic unit stated in your account.</p>
           </LegalSection>
 
