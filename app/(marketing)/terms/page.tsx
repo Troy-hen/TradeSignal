@@ -20,7 +20,7 @@ export default function TermsPage() {
         </div>
       </section>
 
-      <article className="mx-auto max-w-4xl px-6 py-12 sm:py-16 lg:px-2">
+      <article className="mx-auto max-w-7xl px-6 py-12 sm:py-16 lg:px-2">
         <div className="space-y-9 text-sm leading-7 text-slate">
           <p>
             These terms explain how you may use the MyTradeBox service. By creating an account or using the service, you agree to these terms. The service operator is <strong className="font-semibold text-charcoal">{operatorName}</strong>.
