@@ -10,6 +10,7 @@ import {
   outsideTerritoryEmail,
   announcementEmail,
   welcomeEmail,
+  followUpReminderEmail,
   type MatchSummary,
 } from "../_shared/email/templates.ts";
 
@@ -36,6 +37,7 @@ const DEFAULT_INSTANT_MIN_SCORE = 90;
 const DEFAULT_DIGEST_MIN_SCORE = 0;
 const DEFAULT_DIGEST_FREQUENCY: Cadence = "daily";
 const MAX_MATCHES_PER_RUN = 500;
+const MAX_FOLLOW_UP_REMINDERS_PER_RUN = 100;
 
 Deno.serve(async (req: Request) => {
   const cronSecret = Deno.env.get("CRON_SECRET");
@@ -57,10 +59,11 @@ Deno.serve(async (req: Request) => {
   });
   const appUrl = Deno.env.get("NEXT_PUBLIC_APP_URL") ?? "http://localhost:3000";
 
-  const results = { newLeadEmails: 0, approvalAlerts: 0, queuedNotifications: 0, errors: 0 };
+  const results = { newLeadEmails: 0, approvalAlerts: 0, followUpReminders: 0, followUpSuppressed: 0, queuedNotifications: 0, errors: 0 };
 
   await processNewLeadMatches(admin, appUrl, cadence, results);
   await processApprovalAlerts(admin, appUrl, results);
+  await processFollowUpReminders(admin, appUrl, results);
   await processQueuedNotifications(admin, appUrl, results);
 
   return json({ ok: true, cadence, ...results });
@@ -180,6 +183,116 @@ async function processNewLeadMatches(admin: any, appUrl: string, cadence: Cadenc
       });
       results.errors++;
       // notified_at stays null on failure — naturally retried next tick.
+    }
+  }
+}
+
+// deno-lint-ignore no-explicit-any
+async function processFollowUpReminders(admin: any, appUrl: string, results: Record<string, number>) {
+  const { data: followUps } = await admin
+    .from("lead_follow_ups")
+    .select("id, company_id, lead_match_id, due_at, note")
+    .eq("status", "open")
+    .is("notified_at", null)
+    .lte("due_at", new Date().toISOString())
+    .order("due_at", { ascending: true })
+    .limit(MAX_FOLLOW_UP_REMINDERS_PER_RUN);
+
+  if (!followUps || followUps.length === 0) return;
+
+  const matchIds = [...new Set(followUps.map((row: { lead_match_id: string }) => row.lead_match_id))];
+  const { data: matches } = await admin
+    .from("lead_matches")
+    .select("id, application_trade_opportunity_id")
+    .in("id", matchIds);
+  const matchById = new Map((matches ?? []).map((match: { id: string }) => [match.id, match]));
+
+  const opportunityIds = [...new Set((matches ?? []).map((match: { application_trade_opportunity_id: string | null }) => match.application_trade_opportunity_id).filter(Boolean))];
+  const { data: opportunities } = await admin
+    .from("application_trade_opportunities")
+    .select("id, postcode_district, trade_category_id, application_classification_id")
+    .in("id", opportunityIds);
+  const opportunityById = new Map((opportunities ?? []).map((opportunity: { id: string }) => [opportunity.id, opportunity]));
+
+  const tradeIds = [...new Set((opportunities ?? []).map((opportunity: { trade_category_id: string }) => opportunity.trade_category_id))];
+  const { data: trades } = await admin.from("trade_categories").select("id, name").in("id", tradeIds);
+  const tradeById = new Map((trades ?? []).map((trade: { id: string }) => [trade.id, trade]));
+
+  const classificationIds = [...new Set((opportunities ?? []).map((opportunity: { application_classification_id: string | null }) => opportunity.application_classification_id).filter(Boolean))];
+  const { data: classifications } = await admin.from("application_classifications").select("id, project_type").in("id", classificationIds);
+  const classificationById = new Map((classifications ?? []).map((classification: { id: string }) => [classification.id, classification]));
+
+  const companyIds = [...new Set(followUps.map((row: { company_id: string }) => row.company_id))];
+  const { data: companies } = await admin.from("companies").select("id, trading_name, billing_email").in("id", companyIds);
+  const companyById = new Map((companies ?? []).map((company: { id: string }) => [company.id, company]));
+  const { data: prefs } = await admin
+    .from("notification_preferences")
+    .select("company_id, channel_email")
+    .in("company_id", companyIds)
+    .is("user_id", null);
+  const prefByCompany = new Map((prefs ?? []).map((pref: { company_id: string }) => [pref.company_id, pref]));
+
+  for (const row of followUps) {
+    const company = companyById.get(row.company_id);
+    const match = matchById.get(row.lead_match_id);
+    const opportunity = match?.application_trade_opportunity_id
+      ? opportunityById.get(match.application_trade_opportunity_id)
+      : null;
+
+    if (!company || !opportunity) {
+      await admin.from("lead_follow_ups").update({ notified_at: new Date().toISOString() }).eq("id", row.id).is("notified_at", null);
+      results.errors++;
+      continue;
+    }
+
+    // Claim the row before sending so overlapping cron ticks cannot send the
+    // same reminder twice. Failed sends release the claim for retry.
+    const { data: claim } = await admin
+      .from("lead_follow_ups")
+      .update({ notified_at: new Date().toISOString() })
+      .eq("id", row.id)
+      .is("notified_at", null)
+      .select("id")
+      .maybeSingle();
+    if (!claim) continue;
+
+    if (prefByCompany.get(row.company_id)?.channel_email === false) {
+      results.followUpSuppressed++;
+      continue;
+    }
+
+    const trade = tradeById.get(opportunity.trade_category_id);
+    const classification = opportunity.application_classification_id
+      ? classificationById.get(opportunity.application_classification_id)
+      : null;
+    const template = followUpReminderEmail({
+      companyName: company.trading_name,
+      district: opportunity.postcode_district,
+      tradeName: trade?.name ?? "Trade",
+      projectType: classification?.project_type ?? null,
+      dueAt: row.due_at,
+      note: row.note,
+      detailUrl: appUrl + "/opportunities/" + opportunity.id,
+    });
+    const sendResult = await sendEmail({ to: company.billing_email, subject: template.subject, html: template.html });
+
+    await admin.from("notification_log").insert({
+      company_id: row.company_id,
+      lead_match_id: row.lead_match_id,
+      notification_type: "follow_up_reminder",
+      status: sendResult.success ? "sent" : "failed",
+      subject: template.subject,
+      provider_message_id: sendResult.success ? sendResult.messageId : null,
+      sent_at: sendResult.success ? new Date().toISOString() : null,
+      error_message: sendResult.success ? null : sendResult.error,
+      metadata: { follow_up_id: row.id, due_at: row.due_at },
+    });
+
+    if (sendResult.success) {
+      results.followUpReminders++;
+    } else {
+      await admin.from("lead_follow_ups").update({ notified_at: null }).eq("id", row.id);
+      results.errors++;
     }
   }
 }
