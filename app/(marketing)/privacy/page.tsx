@@ -21,7 +21,7 @@ export default function PrivacyPage() {
         </div>
       </section>
 
-      <article className="mx-auto max-w-4xl px-6 py-12 sm:py-16 lg:px-2">
+      <article className="mx-auto max-w-7xl px-6 py-12 sm:py-16 lg:px-2">
         <div className="space-y-9 text-sm leading-7 text-slate">
           <p>
             This notice explains how <strong className="font-semibold text-charcoal">{operatorName}</strong> handles personal data when you visit MyTradeBox, create an account or use a territory.
