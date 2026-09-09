@@ -28,6 +28,14 @@ type NearbyRow = {
   teaser_project_type: string | null;
   teaser_status: string | null;
 };
+type TerritoryMarketEvent = {
+  event_id: string;
+  event_type: "claimed" | "released";
+  postcode_district: string;
+  trade_name: string;
+  trade_slug: string;
+  occurred_at: string;
+};
 type LeadMatchRow = { id: string; application_trade_opportunity_id: string | null };
 type RankedNotification = InAppNotificationItem & { priority: number };
 
@@ -35,16 +43,10 @@ export async function getInAppNotifications(companyId: string): Promise<InAppNot
   const supabase = await createClient();
   const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
-  const [{ data: logData }, { data: nearbyData }] = await Promise.all([
-    supabase
-      .from("notification_log")
-      .select("id, notification_type, subject, created_at, metadata, lead_match_id")
-      .eq("company_id", companyId)
-      .eq("status", "sent")
-      .gte("created_at", since)
-      .order("created_at", { ascending: false })
-      .limit(25),
+  const [{ data: logData }, { data: nearbyData }, { data: marketEventData }] = await Promise.all([
+    supabase.from("notification_log").select("id, notification_type, subject, created_at, metadata, lead_match_id").eq("company_id", companyId).eq("status", "sent").gte("created_at", since).order("created_at", { ascending: false }).limit(25),
     supabase.rpc("browse_nearby_opportunities", { p_limit: 3 }),
+    supabase.rpc("browse_recent_territory_market_events", { p_limit: 5 }),
   ]);
 
   const logs = (logData ?? []) as NotificationLogRow[];
@@ -61,9 +63,10 @@ export async function getInAppNotifications(companyId: string): Promise<InAppNot
     return notificationFromLog(row, opportunityId);
   });
   const nearby = ((Array.isArray(nearbyData) ? nearbyData : []) as NearbyRow[]).map(notificationFromNearby);
+  const territoryEvents = ((Array.isArray(marketEventData) ? marketEventData : []) as TerritoryMarketEvent[]).map(notificationFromTerritoryEvent);
 
   const seenTitles = new Set<string>();
-  return [...logged, ...nearby]
+  return [...logged, ...territoryEvents, ...nearby]
     .sort((a, b) => b.priority - a.priority || Date.parse(b.createdAt) - Date.parse(a.createdAt))
     .filter((item) => {
       if (item.eyebrow === "Quote request") return true;
@@ -73,10 +76,7 @@ export async function getInAppNotifications(companyId: string): Promise<InAppNot
       return true;
     })
     .slice(0, 10)
-    .map(({ priority, ...item }) => {
-      void priority;
-      return item;
-    });
+    .map(({ priority, ...item }) => { void priority; return item; });
 }
 
 function notificationFromLog(row: NotificationLogRow, opportunityId: string | null): RankedNotification {
@@ -103,6 +103,25 @@ function notificationFromLog(row: NotificationLogRow, opportunityId: string | nu
   return ranked(30, row, "info", "Notification", row.subject ?? fallbackTitle, null, "/notifications", "View notifications");
 }
 
+function notificationFromTerritoryEvent(row: TerritoryMarketEvent): RankedNotification {
+  const claimed = row.event_type === "claimed";
+  return {
+    id: `territory-market:${row.event_id}`,
+    priority: claimed ? 48 : 58,
+    tone: claimed ? "warning" : "success",
+    eyebrow: claimed ? "Territory activity" : "Territory released",
+    title: claimed
+      ? `${row.postcode_district} has just been claimed for ${row.trade_name}`
+      : `${row.postcode_district} is back in play for ${row.trade_name}`,
+    detail: claimed
+      ? "A nearby business has taken this exclusive trade territory. Check surrounding patches before they move too."
+      : "A relevant trade territory has been released and may now be available to claim.",
+    href: `/territories/${encodeURIComponent(row.postcode_district)}/${encodeURIComponent(row.trade_slug)}`,
+    ctaLabel: claimed ? "Explore nearby" : "Check availability",
+    createdAt: row.occurred_at,
+  };
+}
+
 function notificationFromNearby(row: NearbyRow): RankedNotification {
   const count = Number(row.opportunity_count ?? 0);
   const project = row.teaser_project_type?.trim() || "Live planning opportunity";
@@ -122,7 +141,6 @@ function notificationFromNearby(row: NearbyRow): RankedNotification {
 function ranked(priority: number, row: NotificationLogRow, tone: InAppNotificationItem["tone"], eyebrow: string, title: string, detail: string | null, href: string, ctaLabel: string): RankedNotification {
   return { id: "log:" + row.id, priority, tone, eyebrow, title, detail, href, ctaLabel, createdAt: row.created_at };
 }
-
 function notificationLabel(value: string): string { return value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()); }
 function safeInternalHref(value: unknown): string | null { if (typeof value !== "string") return null; return value.startsWith("/") && !value.startsWith("//") ? value : null; }
 function isRecord(value: unknown): value is Record<string, unknown> { return typeof value === "object" && value !== null && !Array.isArray(value); }
