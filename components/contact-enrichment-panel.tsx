@@ -9,8 +9,6 @@ export function ContactEnrichmentPanel({
   agentCompany: string | null;
   sourceUrl: string | null;
 }) {
-  const hasPublicContact = Boolean(applicantName || agentCompany);
-
   return (
     <section className="mt-5 rounded-2xl border border-light-grey bg-white p-5 sm:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
