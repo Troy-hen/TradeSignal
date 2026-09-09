@@ -1,4 +1,5 @@
 import "server-only";
+import { PlotaContactIntelligenceProvider } from "./plota-provider";
 
 export type ContactLookupContext = {
   opportunityId: string;
@@ -31,13 +32,19 @@ export interface ContactIntelligenceProvider {
 }
 
 /**
- * External contact data stays provider-optional. The application already has
- * the persistence/provenance model, but no provider is silently enabled. Add
- * a concrete adapter here only after its UK coverage, provenance, DPA/GDPR
- * terms and lookup economics have been reviewed.
+ * Contact intelligence is explicitly opt-in. Plota is the first provider
+ * because it returns contacts published with the planning record itself.
+ * Consumer email/mobile enrichment is intentionally out of scope.
  */
 export function getContactIntelligenceProvider(): ContactIntelligenceProvider | null {
   const configured = process.env.CONTACT_INTELLIGENCE_PROVIDER?.trim().toLowerCase();
   if (!configured || configured === "none") return null;
+
+  if (configured === "plota") {
+    const apiKey = process.env.PLOTA_API_KEY;
+    if (!apiKey) throw new Error("CONTACT_INTELLIGENCE_PROVIDER=plota requires PLOTA_API_KEY");
+    return new PlotaContactIntelligenceProvider(apiKey);
+  }
+
   throw new Error(`Unsupported CONTACT_INTELLIGENCE_PROVIDER: ${configured}`);
 }
