@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { hashQuoteLinkToken, recordQuoteLinkEvent, resolveQuoteLink } from "@/lib/outreach/response-links";
 
 const schema = z.object({
-  eventType: z.enum(["page_viewed", "call_clicked", "quote_started", "not_interested"]),
+  eventType: z.enum(["page_viewed", "call_clicked", "whatsapp_clicked", "quote_started", "not_interested"]),
 });
 
 export async function POST(request: Request, { params }: { params: Promise<{ token: string }> }) {
