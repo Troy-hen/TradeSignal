@@ -30,16 +30,10 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
   const company = await requireCurrentCompany();
   const supabase = await createClient();
   const db = supabase as unknown as SupabaseClient;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
 
-  const { data: opportunity } = await supabase
-    .from("application_trade_opportunities")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
+  const { data: opportunity } = await supabase.from("application_trade_opportunities").select("*").eq("id", id).maybeSingle();
   if (!opportunity) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
   const [{ data: application }, { data: classification }, { data: trade }] = await Promise.all([
@@ -63,16 +57,20 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
     ? relationship.agentCompany ?? relationship.applicantName
     : null;
 
-  const [knowledge, companyIntelligence, propertyIntelligence] = await Promise.all([
-    retrieveKnowledge(
-      `${trade.name} planning opportunity ${classification.project_type ?? "project"} commercial approach timing`,
-      4,
-    ),
+  const [knowledge, companyIntelligence, propertyIntelligence, epcIntelligence] = await Promise.all([
+    retrieveKnowledge(`${trade.name} planning opportunity ${classification.project_type ?? "project"} commercial approach timing`, 4),
     getCompaniesHouseCompanySummary(corporateName).catch((error) => {
       console.warn("Companies House enrichment unavailable", error);
       return null;
     }),
     getStoredPropertyIntelligence(company.id, id),
+    db
+      .from("epc_intelligence_records")
+      .select("current_band,current_efficiency,potential_band,potential_efficiency,property_type,built_form,floor_area,construction_age_band,main_heating_description,main_fuel,roof_description,windows_description,walls_description,improvement_signals,signal_summary,registration_date,retrieved_at")
+      .eq("company_id", company.id)
+      .eq("opportunity_id", id)
+      .maybeSingle()
+      .then(({ data }) => data ?? null),
   ]);
 
   const { data: reportRow, error: insertError } = await db
@@ -110,6 +108,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
     },
     relationship,
     propertyIntelligence,
+    epcIntelligence,
     companyIntelligence,
     knowledge: knowledge.map((item) => ({ title: item.document_title, content: item.content })),
     sourcePlanningUrl: application.source_url,
@@ -153,6 +152,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
         source_count: sources.length,
         companies_house: Boolean(companyIntelligence),
         property_intelligence: Boolean(propertyIntelligence),
+        epc_intelligence: Boolean(epcIntelligence),
       },
       created_by: user.id,
     });
@@ -160,11 +160,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ report: completed });
   } catch (error) {
     console.error("Opportunity research failed", error);
-    await db
-      .from("opportunity_research_reports")
-      .update({ status: "failed", error_message: "Research generation failed.", updated_at: new Date().toISOString() })
-      .eq("id", reportRow.id)
-      .eq("company_id", company.id);
+    await db.from("opportunity_research_reports").update({ status: "failed", error_message: "Research generation failed.", updated_at: new Date().toISOString() }).eq("id", reportRow.id).eq("company_id", company.id);
     return NextResponse.json({ error: "research_failed" }, { status: 502 });
   }
 }
@@ -175,7 +171,7 @@ async function createResearchResponse(openai: NonNullable<ReturnType<typeof getA
     input: [
       {
         role: "system" as const,
-        content: `You are MyTradeBox commercial research. Produce a grounded sales-research brief for a UK trade business. Use the supplied MyTradeBox evidence as authoritative. Public web research may supplement organisation/project context, but never invent facts or personal contact details. Follow the supplied contactStrategy: do not recommend consumer email/mobile enrichment for homeowner-led opportunities. Companies House officers are registry context, not automatically sales contacts. TwentyCI propertyIntelligence is property-level timing and market context only: it does not prove who lives at the property, create permission to contact an individual electronically, or prove construction intent. A Likely To Sell score is movement context, not evidence that planned works will proceed. Use property recency only when it genuinely changes timing or prioritisation. Focus on what changes the user's next action. Return JSON only with executiveSummary, commercialAssessment, whoToApproach, timing, relationshipSignal, risks, nextActions, externalFindings. Each array must contain short strings. If public research finds nothing useful, say so in externalFindings.`,
+        content: `You are MyTradeBox commercial research. Produce a grounded sales-research brief for a UK trade business. Use the supplied MyTradeBox evidence as authoritative. Public web research may supplement organisation/project context, but never invent facts or personal contact details. Follow the supplied contactStrategy: do not recommend consumer email/mobile enrichment for homeowner-led opportunities. Companies House officers are registry context, not automatically sales contacts. Companies House healthLevel and healthSignals are basic public-registry indicators only: they are not a credit score, credit limit or recommendation to extend credit. TwentyCI propertyIntelligence is property-level timing and market context only: it does not prove who lives at the property, create permission to contact an individual electronically, or prove construction intent. A Likely To Sell score is movement context, not evidence that planned works will proceed. EPC epcIntelligence describes the recorded building and energy-efficiency potential; it may help qualify renewables, heating, roofing, window or fabric opportunities but must never be presented as proof of purchase intent. Use property/EPC/company context only when it genuinely changes timing, risk or prioritisation. Focus on what changes the user's next action. Return JSON only with executiveSummary, commercialAssessment, whoToApproach, timing, relationshipSignal, risks, nextActions, externalFindings. Each array must contain short strings. If public research finds nothing useful, say so in externalFindings.`,
       },
       { role: "user" as const, content: JSON.stringify(evidence) },
     ],
@@ -204,11 +200,7 @@ async function createResearchResponse(openai: NonNullable<ReturnType<typeof getA
   };
 
   try {
-    return await openai.responses.create({
-      ...common,
-      tools: [{ type: "web_search_preview" }],
-      include: ["web_search_call.action.sources"],
-    });
+    return await openai.responses.create({ ...common, tools: [{ type: "web_search_preview" }], include: ["web_search_call.action.sources"] });
   } catch (error) {
     console.warn("Web-backed research unavailable; retrying with internal evidence only", error);
     return openai.responses.create(common);
