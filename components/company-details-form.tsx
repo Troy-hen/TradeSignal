@@ -8,41 +8,46 @@ export function CompanyDetailsForm({ tradingName, billingEmail }: { tradingName:
   const [state, formAction] = useActionState(updateCompanyDetails, undefined);
 
   return (
-    <form action={formAction} className="max-w-md space-y-4">
-      <div>
-        <label htmlFor="tradingName" className="mb-1 block text-sm font-medium text-charcoal">
-          Company name
-        </label>
-        <input
-          id="tradingName"
-          name="tradingName"
-          type="text"
-          required
-          defaultValue={tradingName}
-          className="w-full rounded-xl border border-light-grey px-4 py-3 text-sm focus:border-signal-orange focus:outline-none focus:ring-2 focus:ring-signal-orange/15"
-        />
+    <form action={formAction} className="w-full space-y-4">
+      <div className="grid gap-4 md:grid-cols-2">
+        <div>
+          <label htmlFor="tradingName" className="mb-1 block text-sm font-medium text-charcoal">
+            Company name
+          </label>
+          <input
+            id="tradingName"
+            name="tradingName"
+            type="text"
+            required
+            defaultValue={tradingName}
+            className="w-full rounded-xl border border-light-grey px-4 py-3 text-sm focus:border-signal-orange focus:outline-none focus:ring-2 focus:ring-signal-orange/15"
+          />
+        </div>
+        <div>
+          <label htmlFor="billingEmail" className="mb-1 block text-sm font-medium text-charcoal">
+            Billing email
+          </label>
+          <input
+            id="billingEmail"
+            name="billingEmail"
+            type="email"
+            required
+            defaultValue={billingEmail}
+            className="w-full rounded-xl border border-light-grey px-4 py-3 text-sm focus:border-signal-orange focus:outline-none focus:ring-2 focus:ring-signal-orange/15"
+          />
+        </div>
       </div>
-      <div>
-        <label htmlFor="billingEmail" className="mb-1 block text-sm font-medium text-charcoal">
-          Billing email
-        </label>
-        <input
-          id="billingEmail"
-          name="billingEmail"
-          type="email"
-          required
-          defaultValue={billingEmail}
-          className="w-full rounded-xl border border-light-grey px-4 py-3 text-sm focus:border-signal-orange focus:outline-none focus:ring-2 focus:ring-signal-orange/15"
-        />
+
+      <div className="flex flex-wrap items-center gap-3">
+        <SubmitButton
+          pendingText="Saving…"
+          className="rounded-xl bg-signal-orange px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#e95f00] disabled:opacity-60"
+        >
+          Save company details
+        </SubmitButton>
+        {state?.error && <p className="text-sm text-danger">{state.error}</p>}
+        {state?.success && <p className="text-sm text-success">Saved.</p>}
       </div>
-      {state?.error && <p className="text-sm text-danger">{state.error}</p>}
-      {state?.success && <p className="text-sm text-success">Saved.</p>}
-      <SubmitButton
-        pendingText="Saving…"
-        className="rounded-xl bg-signal-orange px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#e95f00] disabled:opacity-60"
-      >
-        Save company details
-      </SubmitButton>
     </form>
   );
 }
