@@ -42,6 +42,12 @@ const TILE_SIZE = 256;
 const MIN_ZOOM = 5;
 const MAX_ZOOM = 12;
 const TILE_RANGE = 2;
+const UK_BOUNDS = {
+  minLatitude: 49.5,
+  maxLatitude: 59.5,
+  minLongitude: -8.5,
+  maxLongitude: 2.2,
+};
 
 export function OpportunityMap({
   points,
@@ -110,7 +116,8 @@ export function OpportunityMap({
   function updateViewport(next: MapViewport | ((current: MapViewport) => MapViewport)) {
     setViewport((current) => {
       const base = viewportKey === filterKey ? current : fitViewport(filteredPoints);
-      return typeof next === "function" ? next(base) : next;
+      const updated = typeof next === "function" ? next(base) : next;
+      return clampViewport(updated);
     });
     setViewportKey(filterKey);
   }
@@ -410,7 +417,7 @@ function MapMetric({ label, value }: { label: string; value: string }) {
 
 function fitViewport(points: OpportunityMapPoint[]): MapViewport {
   if (points.length === 0) {
-    return { latitude: 52.7, longitude: -1.1, zoom: 6 };
+    return clampViewport({ latitude: 52.7, longitude: -1.1, zoom: 6 });
   }
 
   const lats = points.map((point) => point.latitude);
@@ -427,7 +434,15 @@ function fitViewport(points: OpportunityMapPoint[]): MapViewport {
   const heightZoom = Math.log2((360 * 420) / (TILE_SIZE * latitudeSpan * 1.35));
   const zoom = clamp(Math.floor(Math.min(widthZoom, heightZoom)), MIN_ZOOM, 10);
 
-  return { latitude, longitude, zoom };
+  return clampViewport({ latitude, longitude, zoom });
+}
+
+function clampViewport(viewport: MapViewport): MapViewport {
+  return {
+    latitude: clamp(viewport.latitude, UK_BOUNDS.minLatitude, UK_BOUNDS.maxLatitude),
+    longitude: clamp(viewport.longitude, UK_BOUNDS.minLongitude, UK_BOUNDS.maxLongitude),
+    zoom: clamp(viewport.zoom, MIN_ZOOM, MAX_ZOOM),
+  };
 }
 
 function project(latitude: number, longitude: number, zoom: number): { x: number; y: number } {
