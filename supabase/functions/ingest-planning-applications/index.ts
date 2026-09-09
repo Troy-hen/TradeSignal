@@ -311,7 +311,11 @@ Deno.serve(async (req: Request) => {
           providerName === "plota"
             ? Math.min(manualPagesPerDistrict, remainingBudget)
             : manualPagesPerDistrict;
-        const rows = await provider.searchByPostcode(district, { maxPages: pagesForDistrict });
+        const rows = await provider.searchByPostcode(district, {
+          maxPages: pagesForDistrict,
+          dateFrom: manualDateFrom ?? undefined,
+          dateTo: manualDateTo ?? undefined,
+        });
         const providerPageCount = provider instanceof PlotaPlanningProvider ? provider.lastPageCount : 1;
         pagesRead += Math.max(1, providerPageCount);
         if (rows.length === 0) {
