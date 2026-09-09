@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, type PointerEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type PointerEvent, type WheelEvent } from "react";
 
 export type OpportunityMapPoint = {
   postcode_district: string;
@@ -171,7 +171,7 @@ export function OpportunityMap({
     }
   }
 
-  function handleWheel(event: React.WheelEvent<HTMLDivElement>) {
+  function handleWheel(event: WheelEvent<HTMLDivElement>) {
     event.preventDefault();
     changeZoom(event.deltaY > 0 ? -1 : 1);
   }
@@ -411,8 +411,11 @@ function fitViewport(points: OpportunityMapPoint[]): MapViewport {
   const maxLng = Math.max(...lngs);
   const latitude = (minLat + maxLat) / 2;
   const longitude = (minLng + maxLng) / 2;
-  const span = Math.max(maxLat - minLat, (maxLng - minLng) * 0.7, 0.35);
-  const zoom = clamp(Math.floor(Math.log2(48 / span)), MIN_ZOOM, 10);
+  const longitudeSpan = Math.max(maxLng - minLng, 0.45);
+  const latitudeSpan = Math.max(maxLat - minLat, 0.35);
+  const widthZoom = Math.log2((360 * 760) / (TILE_SIZE * longitudeSpan * 1.35));
+  const heightZoom = Math.log2((360 * 420) / (TILE_SIZE * latitudeSpan * 1.35));
+  const zoom = clamp(Math.floor(Math.min(widthZoom, heightZoom)), MIN_ZOOM, 10);
 
   return { latitude, longitude, zoom };
 }
