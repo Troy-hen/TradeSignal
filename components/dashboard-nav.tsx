@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Overview", icon: "overview" },
   { href: "/opportunities", label: "Opportunities", icon: "opportunities" },
+  { href: "/notifications", label: "Notifications", icon: "notifications" },
   { href: "/territories", label: "Territory Explorer", icon: "territories" },
   { href: "/coverage", label: "Coverage", icon: "claimed" },
   { href: "/data-coverage", label: "Data coverage", icon: "data" },
@@ -104,6 +105,14 @@ function NavIcon({ name, active }: { name: string; active: boolean }) {
       <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 21s7-5.25 7-11a7 7 0 1 0-14 0c0 5.75 7 11 7 11Z" />
         <circle cx="12" cy="10" r="2.25" />
+      </svg>
+    );
+  }
+
+  if (name === "notifications") {
+    return (
+      <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M18 10a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 22h4" />
       </svg>
     );
   }
