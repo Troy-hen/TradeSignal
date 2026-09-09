@@ -82,8 +82,9 @@ export async function GET() {
       },
     ],
   });
+  const pdfBody = new Uint8Array(pdf).buffer;
 
-  return new NextResponse(pdf, {
+  return new NextResponse(pdfBody, {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": 'attachment; filename="mytradebox-roi-report.pdf"',
