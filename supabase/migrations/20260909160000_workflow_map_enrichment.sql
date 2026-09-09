@@ -231,7 +231,7 @@ as $$
     least(2, count(*) filter (where status in ('reserved', 'succeeded'))::integer),
     greatest(0, 2 - count(*) filter (where status in ('reserved', 'succeeded'))::integer),
     count(*) filter (where status in ('reserved', 'succeeded') and created_at >= date_trunc('day', now()))::integer,
-    greatest(0, 20 - count(*) filter (where status in ('reserved', 'succeeded') and created_at >= date_trunc('day', now()))::integer,
+    greatest(0, 20 - count(*) filter (where status in ('reserved', 'succeeded') and created_at >= date_trunc('day', now())))::integer,
     count(*) filter (where status in ('reserved', 'succeeded') and created_at >= date_trunc('month', now()))::integer,
     greatest(0, 100 - count(*) filter (where status in ('reserved', 'succeeded') and created_at >= date_trunc('month', now()))::integer)
   from public.ai_outreach_generations aog
