@@ -51,8 +51,8 @@ export function DashboardShell({ company, notifications, children }: { company: 
   }
 
   return (
-    <div className="flex min-h-screen min-w-0 overflow-x-hidden bg-soft-surface">
-      <aside className={"sticky top-0 hidden h-screen shrink-0 border-r border-light-grey bg-white transition-[width] duration-200 lg:flex " + (collapsed ? "w-[76px]" : "w-[272px]")} aria-label="Workspace sidebar">
+    <div className="min-h-screen min-w-0 overflow-x-hidden bg-soft-surface">
+      <aside className={"fixed inset-y-0 left-0 z-40 hidden border-r border-light-grey bg-white transition-[width] duration-200 lg:flex " + (collapsed ? "w-[76px]" : "w-[272px]")} aria-label="Workspace sidebar">
         <SidebarContent company={company} initials={initials || "MT"} collapsed={collapsed} notificationCount={notificationCount} onToggle={toggleSidebar} />
       </aside>
 
@@ -63,7 +63,7 @@ export function DashboardShell({ company, notifications, children }: { company: 
         </aside>
       </>}
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className={"flex min-h-screen min-w-0 flex-col transition-[margin] duration-200 " + (collapsed ? "lg:ml-[76px]" : "lg:ml-[272px]")}>
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-light-grey bg-white/95 px-4 backdrop-blur lg:hidden">
           <button type="button" className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate transition hover:bg-soft-surface hover:text-charcoal" aria-label="Open navigation" aria-expanded={mobileOpen} onClick={() => setMobileOpen(true)}><MenuIcon /></button>
           <Link href="/dashboard" aria-label="MyTradeBox overview" className="inline-flex h-9 w-9 items-center justify-center"><LogoMark className="h-9 w-9" /></Link>
