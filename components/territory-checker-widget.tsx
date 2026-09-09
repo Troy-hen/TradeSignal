@@ -241,7 +241,7 @@ export function TerritoryCheckerWidget({
               )}
             </div>
             <Link
-              href={\`/territories/\${encodeURIComponent(checkedDistrict)}/\${encodeURIComponent(tradeSlug)}\`}
+              href={"/territories/" + encodeURIComponent(checkedDistrict) + "/" + encodeURIComponent(tradeSlug)}
               className="inline-flex items-center rounded-xl bg-signal-orange px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#e95f00]"
             >
               {isAvailable ? "View territory & claim" : "View territory"}
