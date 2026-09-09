@@ -18,9 +18,11 @@ const NAV_ITEMS = [
 export function DashboardNav({
   mobile = false,
   collapsed = false,
+  onNavigate,
 }: {
   mobile?: boolean;
   collapsed?: boolean;
+  onNavigate?: () => void;
 }) {
   const pathname = usePathname();
 
@@ -42,6 +44,7 @@ export function DashboardNav({
             href={item.href}
             title={collapsed ? item.label : undefined}
             aria-label={collapsed ? item.label : undefined}
+            onClick={onNavigate}
             className={
               mobile
                 ? `inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition ${
