@@ -12,11 +12,9 @@ type CoverageAuthority = {
   first_received_date: string | null;
   latest_received_date: string | null;
   latest_seen_at: string | null;
-  provider: string;
 };
 
 type CoverageSnapshot = {
-  provider: string;
   latest_ingest_at: string | null;
   latest_ingest_status: string | null;
   latest_fetched: number;
@@ -101,10 +99,10 @@ export default async function DataCoveragePage({
           <RunMetric label="Errors" value={formatNumber(snapshot.latest_errors)} />
         </div>
         <p className="mt-5 rounded-2xl bg-soft-surface px-4 py-3 text-xs leading-5 text-slate">
-          Dates below reflect the public planning records loaded from the provider. A council may publish late or amend an application after its first appearance, so use the source link in an opportunity brief for the authoritative record.
+          Dates below reflect the public planning records loaded into MyTradeBox. A council may publish late or amend an application after its first appearance, so use the source link in an opportunity brief for the authoritative record.
         </p>
         <p className="mt-3 rounded-2xl border border-signal-orange/20 bg-signal-orange/5 px-4 py-3 text-xs leading-5 text-slate">
-          Contact enrichment is not included in the current Plota feed. MyTradeBox does not display applicant contact details until a compliant contact-data add-on is enabled.
+          Contact enrichment is not included in the current planning feed. MyTradeBox does not display applicant contact details until a compliant contact-data add-on is enabled.
         </p>
       </section>
 
@@ -186,7 +184,6 @@ export default async function DataCoveragePage({
 function normaliseSnapshot(value: unknown): CoverageSnapshot {
   const row = (value ?? {}) as Partial<CoverageSnapshot>;
   return {
-    provider: row.provider ?? "plota",
     latest_ingest_at: row.latest_ingest_at ?? null,
     latest_ingest_status: row.latest_ingest_status ?? null,
     latest_fetched: Number(row.latest_fetched ?? 0),
