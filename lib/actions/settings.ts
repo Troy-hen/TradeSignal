@@ -42,6 +42,7 @@ const notificationPreferencesSchema = z.object({
   instantAlertMinScore: z.number().min(0).max(100),
   digestMinScore: z.number().min(0).max(100),
   approvalAlertsEnabled: z.boolean(),
+  nearbyOpportunityAlertsEnabled: z.boolean(),
 });
 
 export async function updateNotificationPreferences(
@@ -54,6 +55,7 @@ export async function updateNotificationPreferences(
     instantAlertMinScore: Number(formData.get("instantAlertMinScore")),
     digestMinScore: Number(formData.get("digestMinScore")),
     approvalAlertsEnabled: formData.get("approvalAlertsEnabled") === "on",
+    nearbyOpportunityAlertsEnabled: formData.get("nearbyOpportunityAlertsEnabled") === "on",
   });
   if (!parsed.success) return { error: "Invalid preferences" };
 
@@ -70,6 +72,7 @@ export async function updateNotificationPreferences(
     p_instant_alert_min_score: parsed.data.instantAlertMinScore,
     p_digest_min_score: parsed.data.digestMinScore,
     p_approval_alerts_enabled: parsed.data.approvalAlertsEnabled,
+    p_nearby_opportunity_alerts_enabled: parsed.data.nearbyOpportunityAlertsEnabled,
   });
 
   if (error) return { error: "Could not save preferences. Only company owners/admins can edit these." };
