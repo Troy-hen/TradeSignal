@@ -71,8 +71,8 @@ export class PlotaPlanningProvider implements PlanningDataProvider {
     private readonly planTier = "demo",
   ) {}
 
-  async *fetchNewApplications({ since, cursor }: { since?: string; cursor?: string }): AsyncGenerator<RawApplication[]> {
-    for await (const page of this.client.paginate("/applications", { date_from: since, cursor })) {
+  async *fetchNewApplications({ since, dateTo, cursor }: { since?: string; dateTo?: string; cursor?: string }): AsyncGenerator<RawApplication[]> {
+    for await (const page of this.client.paginate("/applications", { date_from: since, date_to: dateTo, cursor })) {
       yield page.map(toRawApplication);
     }
   }
@@ -99,7 +99,7 @@ export class PlotaPlanningProvider implements PlanningDataProvider {
 
   async searchByPostcode(
     postcodeOrDistrict: string,
-    opts?: { radius?: number; maxPages?: number },
+    opts?: { radius?: number; maxPages?: number; dateFrom?: string; dateTo?: string },
   ): Promise<RawApplication[]> {
     const trimmed = postcodeOrDistrict.trim().toUpperCase();
     const maxPages = Math.max(1, Math.min(opts?.maxPages ?? 1, 20));
@@ -107,8 +107,13 @@ export class PlotaPlanningProvider implements PlanningDataProvider {
     // means a bare district ("NR15") -> the plain list endpoint.
     const path = /\s/.test(trimmed) ? "/applications/nearby" : "/applications";
     const searchParams = /\s/.test(trimmed)
-      ? { postcode: trimmed, radius: Math.min(opts?.radius ?? 1000, 5000) }
-      : { postcode: trimmed };
+      ? {
+          postcode: trimmed,
+          radius: Math.min(opts?.radius ?? 1000, 5000),
+          date_from: opts?.dateFrom,
+          date_to: opts?.dateTo,
+        }
+      : { postcode: trimmed, date_from: opts?.dateFrom, date_to: opts?.dateTo };
     const apps: PlotaApplication[] = [];
     let pagesRead = 0;
     for await (const page of this.client.paginate(path, searchParams)) {
@@ -129,6 +134,10 @@ export class PlotaPlanningProvider implements PlanningDataProvider {
 
   get apiRequestCount(): number {
     return this.client.requestCount;
+  }
+
+  get nextCursor(): string | null {
+    return this.client.nextCursor;
   }
 
   async searchByDate(dateFrom: string, dateTo: string): Promise<RawApplication[]> {
