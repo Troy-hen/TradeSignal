@@ -26,19 +26,21 @@ export function LockedOpportunityPreview({
     <div className={"min-w-0 overflow-hidden rounded-2xl border border-light-grey bg-white " + (compact ? "min-h-[210px]" : "min-h-[280px]")}>
       <div className={compact ? "min-w-0 p-4 sm:p-5" : "min-w-0 p-5 sm:p-6"}>
         <div className="min-w-0 rounded-xl border border-signal-orange/20 bg-signal-orange/[0.06] p-4">
-          <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-signal-orange">Project preview</p>
-              <p className="mt-2 break-words text-base font-semibold leading-6 text-charcoal">{projectType}</p>
-            </div>
-            <span className="inline-flex w-fit max-w-full shrink-0 items-center gap-2 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate">
+          <div className="flex min-w-0 flex-wrap items-start justify-between gap-2">
+            <p className="pt-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-signal-orange">Project preview</p>
+            <span className="inline-flex max-w-full items-center gap-2 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate">
               <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-success" />
-              <span className="break-words">{status}</span>
+              <span className="whitespace-normal">{status}</span>
             </span>
           </div>
-          <div className="mt-4 flex min-w-0 flex-col gap-1 border-t border-signal-orange/15 pt-3 sm:flex-row sm:items-end sm:justify-between sm:gap-3">
+
+          <p className="mt-3 min-w-0 whitespace-normal break-normal text-base font-semibold leading-6 text-charcoal">
+            {projectType}
+          </p>
+
+          <div className="mt-4 flex min-w-0 flex-wrap items-end justify-between gap-x-3 gap-y-1 border-t border-signal-orange/15 pt-3">
             <span className="text-xs text-slate">Estimated trade value</span>
-            <span className="break-words text-sm font-bold text-charcoal">{tradeValue}</span>
+            <span className="whitespace-nowrap text-sm font-bold text-charcoal">{tradeValue}</span>
           </div>
         </div>
 
