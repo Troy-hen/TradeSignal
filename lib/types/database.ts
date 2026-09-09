@@ -805,6 +805,42 @@ export type Database = {
           },
         ]
       }
+      contact_requests: {
+        Row: {
+          company_name: string | null
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          postcode_district: string | null
+          request_type: string
+          status: string
+        }
+        Insert: {
+          company_name?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          postcode_district?: string | null
+          request_type: string
+          status?: string
+        }
+        Update: {
+          company_name?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          postcode_district?: string | null
+          request_type?: string
+          status?: string
+        }
+        Relationships: []
+      }
       coverage_area_postcodes: {
         Row: {
           coverage_area_id: string
@@ -1148,6 +1184,7 @@ export type Database = {
           id: string
           lead_match_id: string
           note: string | null
+          notified_at: string | null
           status: string
           updated_at: string
         }
@@ -1161,6 +1198,7 @@ export type Database = {
           id?: string
           lead_match_id: string
           note?: string | null
+          notified_at?: string | null
           status?: string
           updated_at?: string
         }
@@ -1174,6 +1212,7 @@ export type Database = {
           id?: string
           lead_match_id?: string
           note?: string | null
+          notified_at?: string | null
           status?: string
           updated_at?: string
         }
@@ -1277,8 +1316,8 @@ export type Database = {
         Row: {
           company_id: string | null
           created_at: string
-          error_message: string | null
           email_html: string | null
+          error_message: string | null
           id: string
           lead_match_id: string | null
           metadata: Json | null
@@ -1292,6 +1331,7 @@ export type Database = {
         Insert: {
           company_id?: string | null
           created_at?: string
+          email_html?: string | null
           error_message?: string | null
           id?: string
           lead_match_id?: string | null
@@ -1306,6 +1346,7 @@ export type Database = {
         Update: {
           company_id?: string | null
           created_at?: string
+          email_html?: string | null
           error_message?: string | null
           id?: string
           lead_match_id?: string | null
@@ -1358,6 +1399,7 @@ export type Database = {
           digest_min_score: number
           id: string
           instant_alert_min_score: number
+          nearby_opportunity_alerts_enabled: boolean
           updated_at: string
           user_id: string | null
         }
@@ -1370,6 +1412,7 @@ export type Database = {
           digest_min_score?: number
           id?: string
           instant_alert_min_score?: number
+          nearby_opportunity_alerts_enabled?: boolean
           updated_at?: string
           user_id?: string | null
         }
@@ -1382,6 +1425,7 @@ export type Database = {
           digest_min_score?: number
           id?: string
           instant_alert_min_score?: number
+          nearby_opportunity_alerts_enabled?: boolean
           updated_at?: string
           user_id?: string | null
         }
@@ -2239,6 +2283,42 @@ export type Database = {
           provider: string
         }[]
       }
+      browse_nearby_opportunities: {
+        Args: { p_limit?: number }
+        Returns: {
+          estimated_trade_value_high: number
+          estimated_trade_value_low: number
+          monthly_price_pence: number
+          opportunity_count: number
+          post_town: string
+          postcode_district: string
+          teaser_estimated_trade_value_high: number
+          teaser_estimated_trade_value_low: number
+          teaser_project_type: string
+          teaser_status: string
+          territory_status: string
+          trade_category_name: string
+          trade_category_slug: string
+        }[]
+      }
+      browse_nearby_opportunities_for_company: {
+        Args: { p_company_id: string; p_limit?: number }
+        Returns: {
+          estimated_trade_value_high: number
+          estimated_trade_value_low: number
+          monthly_price_pence: number
+          opportunity_count: number
+          post_town: string
+          postcode_district: string
+          teaser_estimated_trade_value_high: number
+          teaser_estimated_trade_value_low: number
+          teaser_project_type: string
+          teaser_status: string
+          territory_status: string
+          trade_category_name: string
+          trade_category_slug: string
+        }[]
+      }
       browse_opportunity_map: {
         Args: { p_limit?: number; p_trade_slug?: string }
         Returns: {
@@ -2250,6 +2330,10 @@ export type Database = {
           opportunity_count: number
           post_town: string
           postcode_district: string
+          teaser_estimated_trade_value_high: number
+          teaser_estimated_trade_value_low: number
+          teaser_project_type: string
+          teaser_status: string
           territory_status: string
           trade_category_id: string
           trade_name: string
@@ -2259,13 +2343,31 @@ export type Database = {
       browse_opportunity_teaser: {
         Args: { p_opportunity_id: string }
         Returns: {
+          estimated_total_project_value_high: number
+          estimated_total_project_value_low: number
+          estimated_trade_value_high: number
+          estimated_trade_value_low: number
           id: string
           monthly_price_pence: number
+          opportunity_bucket: Database["public"]["Enums"]["opportunity_bucket"]
+          opportunity_score: number
+          planning_status: Database["public"]["Enums"]["planning_application_status"]
           postcode_district: string
+          project_type: string
+          received_date: string
           territory_status: string
           trade_category_id: string
           trade_category_name: string
           trade_category_slug: string
+        }[]
+      }
+      browse_territory_teaser: {
+        Args: { p_postcode_district: string; p_trade_slug: string }
+        Returns: {
+          estimated_trade_value_high: number
+          estimated_trade_value_low: number
+          planning_status: Database["public"]["Enums"]["planning_application_status"]
+          project_type: string
         }[]
       }
       cancel_lead_follow_up: {
@@ -2280,6 +2382,7 @@ export type Database = {
           id: string
           lead_match_id: string
           note: string | null
+          notified_at: string | null
           status: string
           updated_at: string
         }
@@ -2334,6 +2437,7 @@ export type Database = {
           id: string
           lead_match_id: string
           note: string | null
+          notified_at: string | null
           status: string
           updated_at: string
         }
@@ -2420,6 +2524,7 @@ export type Database = {
           id: string
           lead_match_id: string
           note: string | null
+          notified_at: string | null
           status: string
           updated_at: string
         }
@@ -2628,6 +2733,7 @@ export type Database = {
           id: string
           lead_match_id: string
           note: string | null
+          notified_at: string | null
           status: string
           updated_at: string
         }[]
@@ -3345,6 +3451,7 @@ export type Database = {
           p_digest_frequency: string
           p_digest_min_score: number
           p_instant_alert_min_score: number
+          p_nearby_opportunity_alerts_enabled: boolean
         }
         Returns: {
           approval_alerts_enabled: boolean
@@ -3355,6 +3462,7 @@ export type Database = {
           digest_min_score: number
           id: string
           instant_alert_min_score: number
+          nearby_opportunity_alerts_enabled: boolean
           updated_at: string
           user_id: string | null
         }
