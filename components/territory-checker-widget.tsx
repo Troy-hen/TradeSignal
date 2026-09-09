@@ -224,8 +224,8 @@ export function TerritoryCheckerWidget({
           <div className="mt-5">
             <LockedOpportunityPreview
               compact
-              title="Opportunity details locked"
-              body="Preview the local signal for free. Claim the territory to reveal specific projects, addresses, AI interpretation and contact timing."
+              title="Preview the opportunity shape"
+              body="See the local signal for free. Claim the territory to reveal specific projects, addresses, AI interpretation and contact timing."
             />
           </div>
 
