@@ -7,84 +7,111 @@ export interface PricingItem {
   monthlyPricePence: number;
 }
 
-export const FALLBACK_PRICING: PricingItem[] = [
-  { slug: "general-builder", name: "General Builder", description: "Extensions, conversions and whole-project builds", monthlyPricePence: 9900 },
-  { slug: "groundworks", name: "Groundworks", description: "Excavation, foundations, drainage and site preparation", monthlyPricePence: 7900 },
-  { slug: "roofing", name: "Roofing", description: "Re-roofing, roof extensions and roofline work", monthlyPricePence: 7900 },
-  { slug: "structural-steel", name: "Structural Steel", description: "Steel beams and structural alterations", monthlyPricePence: 6900 },
-  { slug: "windows-doors", name: "Windows & Doors", description: "Replacement and new windows, doors and glazing", monthlyPricePence: 6900 },
-  { slug: "landscaping", name: "Landscaping", description: "Gardens, patios, boundaries and external works", monthlyPricePence: 5900 },
-  { slug: "electrical", name: "Electrical", description: "Rewiring, consumer units, EV charging and new circuits", monthlyPricePence: 7900 },
-  { slug: "plumbing-heating", name: "Plumbing & Heating", description: "Boilers, heating systems, bathrooms and heat pumps", monthlyPricePence: 7900 },
-  { slug: "brickwork", name: "Brickwork", description: "Blockwork, brickwork and masonry", monthlyPricePence: 6900 },
-  { slug: "demolition", name: "Demolition", description: "Full or partial demolition and strip-out", monthlyPricePence: 5900 },
-  { slug: "loft-conversion", name: "Loft Conversion", description: "Loft conversions and roof-space development", monthlyPricePence: 6900 },
-  { slug: "driveways", name: "Driveways", description: "Driveways, hardstanding and parking areas", monthlyPricePence: 5900 },
-  { slug: "renewables", name: "Renewables", description: "Solar PV, heat pumps and renewable installations", monthlyPricePence: 6900 },
-];
+const PRICING_TIERS = [
+  {
+    label: "First postcode district",
+    price: "£29.99",
+    detail: "Your starting district in any trade category",
+  },
+  {
+    label: "Districts 2–3",
+    price: "£24.99",
+    detail: "Each additional district in the same trade plan",
+  },
+  {
+    label: "Districts 4–6",
+    price: "£19.99",
+    detail: "Each additional district in the same trade plan",
+  },
+  {
+    label: "Districts 7–10",
+    price: "£14.99",
+    detail: "Each additional district in the same trade plan",
+  },
+  {
+    label: "District 11+",
+    price: "£9.99",
+    detail: "Each additional district in the same trade plan",
+  },
+] as const;
 
-function formatMonthlyPrice(pence: number) {
-  return new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency: "GBP",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(pence / 100);
-}
-
-export function PricingGrid({ items, compact = false }: { items: PricingItem[]; compact?: boolean }) {
-  const visibleItems = compact ? items.slice(0, 4) : items;
-
+export function PricingGrid({ compact = false }: { items?: PricingItem[]; compact?: boolean }) {
   return (
     <section id="pricing" className={compact ? "bg-white px-6 py-20 sm:py-24" : "px-6 py-12 sm:py-16"}>
       <div className="mx-auto max-w-7xl lg:px-2">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="max-w-2xl">
+          <div className="max-w-3xl">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Transparent pricing</p>
             <h2 className="mt-4 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">
-              Start at £29.99. Pay less as your coverage grows.
+              One price for every trade. Pay less as coverage grows.
             </h2>
             <p className="mt-5 text-base leading-7 text-slate">
-              Start with one trade in one postcode district for £29.99/month. Add districts around your service area and the unit price steps down automatically.
+              The price is the same whether you are a builder, roofer, electrician or another trade. Start with one postcode district, then add coverage around your service area at automatically lower unit prices.
             </p>
           </div>
           {compact && (
             <Link href="/pricing" className="shrink-0 text-sm font-semibold text-signal-orange hover:text-[#e95f00]">
-              See all trade pricing →
+              See coverage pricing →
             </Link>
           )}
         </div>
 
-        <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {visibleItems.map((item) => (
-            <article key={item.slug} className="flex flex-col rounded-2xl border border-light-grey bg-soft-surface p-5">
-              <p className="text-sm font-semibold text-charcoal">{item.name}</p>
-              <p className="mt-2 min-h-12 text-xs leading-5 text-slate">{item.description}</p>
-              <div className="mt-5">
-                <p className="text-xs font-medium uppercase tracking-[0.12em] text-slate">From</p>
-                <p className="mt-1 text-3xl font-bold tracking-tight text-charcoal">
-                  {formatMonthlyPrice(item.monthlyPricePence)}
-                  <span className="ml-1 text-sm font-normal text-slate">/mo</span>
+        <div className="mt-9 grid gap-5 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.65fr)]">
+          <article className="flex flex-col rounded-2xl border border-signal-orange/30 bg-charcoal p-6 text-white">
+            <p className="text-sm font-semibold text-signal-orange">Universal starting price</p>
+            <p className="mt-5 text-5xl font-bold tracking-tight">
+              £29.99<span className="ml-1 text-base font-normal text-white/60">/month</span>
+            </p>
+            <p className="mt-3 text-sm leading-6 text-white/70">
+              Your first postcode district in any trade category. No trade or territory surcharge.
+            </p>
+            <ul className="mt-6 space-y-3 text-sm text-white/80">
+              <li>• Exclusive access for your business</li>
+              <li>• Planning activity, scores and indicative values</li>
+              <li>• Add or remove districts as your service area changes</li>
+            </ul>
+            <Link
+              href="/territories"
+              className="mt-7 inline-flex items-center justify-center rounded-xl bg-signal-orange px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#e95f00]"
+            >
+              Check an area
+            </Link>
+          </article>
+
+          <div className="rounded-2xl border border-light-grey bg-soft-surface p-6">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-charcoal">Automatic volume pricing</p>
+                <p className="mt-1 text-sm leading-6 text-slate">
+                  Discounting applies to the additional districts within each trade coverage plan.
                 </p>
               </div>
-              <div className="mt-5 border-t border-light-grey pt-4 text-xs leading-5 text-slate">
-                Exclusive to one business for this trade and postcode district.
-              </div>
-              <Link
-                href="/territories"
-                className="mt-5 inline-flex items-center justify-center rounded-xl border border-signal-orange px-3 py-2.5 text-xs font-semibold text-signal-orange transition hover:bg-signal-orange hover:text-white"
-              >
-                Check an area
-              </Link>
-            </article>
-          ))}
+              <span className="text-xs font-semibold uppercase tracking-[0.12em] text-signal-orange">Monthly</span>
+            </div>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+              {PRICING_TIERS.map((tier) => (
+                <div key={tier.label} className="rounded-2xl border border-light-grey bg-white p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-slate">{tier.label}</p>
+                  <p className="mt-3 text-2xl font-bold tracking-tight text-charcoal">{tier.price}</p>
+                  <p className="mt-1 text-xs text-slate">per month</p>
+                  <p className="mt-4 text-xs leading-5 text-slate">{tier.detail}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-signal-orange/20 bg-signal-orange/5 p-4">
+              <p className="text-sm font-semibold text-charcoal">County coverage</p>
+              <p className="mt-1 text-sm leading-6 text-slate">
+                Verified county bundles receive 20% off the tiered postcode subtotal. You keep control of the individual districts in the bundle and can adjust coverage to fit your budget.
+              </p>
+            </div>
+          </div>
         </div>
 
-        {compact && (
-          <p className="mt-6 text-sm leading-6 text-slate">
-            Coverage is flexible: £24.99 each for districts 2–3, £19.99 for 4–6, £14.99 for 7–10 and £9.99 from 11 onwards. Verified county bundles receive 20% off the tiered subtotal.
-          </p>
-        )}
+        <p className="mt-6 max-w-4xl text-sm leading-6 text-slate">
+          Pricing is per trade coverage plan. Adding a second trade starts a separate plan at the same £29.99 first-district price; volume discounts then apply within that trade. There are no different prices for different industries or postcode districts.
+        </p>
       </div>
     </section>
   );
