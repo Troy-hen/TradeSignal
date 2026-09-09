@@ -1278,6 +1278,7 @@ export type Database = {
           company_id: string | null
           created_at: string
           error_message: string | null
+          email_html: string | null
           id: string
           lead_match_id: string | null
           metadata: Json | null
