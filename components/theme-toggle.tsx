@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 type Theme = "light" | "dark";
 
@@ -11,29 +11,40 @@ function applyTheme(theme: Theme) {
   document.documentElement.style.colorScheme = theme;
 }
 
+function subscribeToTheme(onChange: () => void) {
+  if (typeof window === "undefined") return () => {};
+
+  const observer = new MutationObserver(onChange);
+  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+
+  const handleStorage = (event: StorageEvent) => {
+    if (event.key === STORAGE_KEY) onChange();
+  };
+  window.addEventListener("storage", handleStorage);
+
+  return () => {
+    observer.disconnect();
+    window.removeEventListener("storage", handleStorage);
+  };
+}
+
+function getThemeSnapshot(): Theme {
+  return document.documentElement.classList.contains("dark") ? "dark" : "light";
+}
+
+function getServerThemeSnapshot(): Theme {
+  return "light";
+}
+
 export function ThemeToggle({ collapsed = false }: { collapsed?: boolean }) {
-  const [theme, setTheme] = useState<Theme>("light");
-
-  useEffect(() => {
-    const preferenceFrame = window.requestAnimationFrame(() => {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
-      const preferred: Theme =
-        stored === "dark" || stored === "light"
-          ? stored
-          : window.matchMedia("(prefers-color-scheme: dark)").matches
-            ? "dark"
-            : "light";
-
-      setTheme(preferred);
-      applyTheme(preferred);
-    });
-
-    return () => window.cancelAnimationFrame(preferenceFrame);
-  }, []);
+  const theme = useSyncExternalStore(
+    subscribeToTheme,
+    getThemeSnapshot,
+    getServerThemeSnapshot,
+  );
 
   function toggleTheme() {
     const next: Theme = theme === "dark" ? "light" : "dark";
-    setTheme(next);
     applyTheme(next);
     window.localStorage.setItem(STORAGE_KEY, next);
   }
