@@ -13,7 +13,7 @@ Deno.serve(async (req: Request) => {
   if (!cronSecret || req.headers.get("Authorization") !== `Bearer ${cronSecret}`) return json({ error: "unauthorized" }, 401);
 
   let body: Body = {};
-  try { body = await req.json() as Body; } catch { /* scheduled call may omit a body */ }
+  try { body = await req.json() as Body; } catch { /* scheduled calls may omit a body */ }
 
   const configured = configuredMarketSignalProviders();
   const requested = Array.isArray(body.providers)
@@ -23,7 +23,7 @@ Deno.serve(async (req: Request) => {
   if (providers.length === 0) return json({ ok: true, message: "No market signal providers enabled", providers: [] });
 
   const since = normalizeSince(body.since);
-  const limit = boundedInt(body.limit, 100, 1, 100);
+  const limit = boundedInt(body.limit, 50, 1, 100);
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
   const { data: tradeRows, error: tradeError } = await admin.from("trade_categories").select("id,name,slug").eq("is_active", true);
   if (tradeError) return json({ error: "trade_categories_unavailable", detail: tradeError.message }, 500);
@@ -80,7 +80,39 @@ Deno.serve(async (req: Request) => {
 });
 
 async function upsertSignal(admin: ReturnType<typeof createClient>, signal: NormalizedMarketSignal): Promise<string | null> {
-  const { data, error } = await admin.from("market_signals").upsert({
+  // The same procurement can be syndicated through more than one UK portal.
+  // Prefer the OCDS identifier as the cross-source identity so a territory
+  // count cannot double simply because Find a Tender also references a PCS or
+  // Contracts Finder release.
+  if (signal.externalOcid) {
+    const { data: existing } = await admin
+      .from("market_signals")
+      .select("id")
+      .eq("external_ocid", signal.externalOcid)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (existing?.id) {
+      const { error } = await admin.from("market_signals").update(signalPayload(signal)).eq("id", existing.id);
+      if (error) { console.error("market signal update failed", error); return null; }
+      return existing.id;
+    }
+  }
+
+  const { data, error } = await admin
+    .from("market_signals")
+    .upsert(signalPayload(signal), { onConflict: "source,source_signal_id" })
+    .select("id")
+    .single();
+  if (error) {
+    console.error("market signal upsert failed", { source: signal.source, sourceSignalId: signal.sourceSignalId, error });
+    return null;
+  }
+  return data?.id ?? null;
+}
+
+function signalPayload(signal: NormalizedMarketSignal) {
+  return {
     source: signal.source,
     source_signal_id: signal.sourceSignalId,
     signal_type: signal.signalType,
@@ -114,12 +146,7 @@ async function upsertSignal(admin: ReturnType<typeof createClient>, signal: Norm
     value_currency: signal.valueCurrency ?? "GBP",
     source_updated_at: signal.sourceUpdatedAt ?? signal.publishedAt ?? null,
     location_confidence: signal.locationConfidence ?? "unresolved",
-  }, { onConflict: "source,source_signal_id" }).select("id").single();
-  if (error) {
-    console.error("market signal upsert failed", { source: signal.source, sourceSignalId: signal.sourceSignalId, error });
-    return null;
-  }
-  return data?.id ?? null;
+  };
 }
 
 function normalizeSince(value: unknown) {
