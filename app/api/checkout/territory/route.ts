@@ -184,6 +184,7 @@ export async function POST(request: Request) {
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
+      integration_identifier: "mytradebox_checkout_" + randomLetters(8),
       customer: stripeCustomerId,
       line_items: [
         {
@@ -242,4 +243,11 @@ export async function POST(request: Request) {
     const error = err instanceof Error && err.message === "demo_activation_failed" ? "demo_activation_failed" : "checkout_failed";
     return NextResponse.json({ error }, { status: error === "demo_activation_failed" ? 500 : 502 });
   }
+}
+
+
+function randomLetters(length: number): string {
+  const bytes = new Uint8Array(length);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => String.fromCharCode(97 + (byte % 26))).join("");
 }
