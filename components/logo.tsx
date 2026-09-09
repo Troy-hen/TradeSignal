@@ -4,7 +4,6 @@ type LogoTone = "dark" | "light";
 
 const iconSrc = "/brand/mytradebox-icon.png";
 const lightIconSrc = "/brand/mytradebox-icon-light.png";
-const lightWordmarkSrc = "/brand/mytradebox-wordmark-light.png";
 
 export function LogoMark({
   className,
@@ -17,7 +16,7 @@ export function LogoMark({
     <span
       className={
         "inline-flex items-center justify-center overflow-hidden rounded-xl " +
-        (tone === "light" ? "bg-white/10" : "bg-[#1f2937]") +
+        (tone === "light" ? "bg-[#f8fafc] dark:bg-white" : "bg-[#1f2937] dark:bg-[#f8fafc]") +
         " " +
         (className ?? "")
       }
@@ -43,50 +42,33 @@ export function LogoMark({
 export function Logo({
   className,
   wordmarkClassName,
-  tone = "dark",
 }: {
   className?: string;
   wordmarkClassName?: string;
   tone?: LogoTone;
 }) {
-  if (tone === "light") {
-    return (
-      <span className={"inline-flex items-center " + (className ?? "")}>
-        <Image
-          src={lightWordmarkSrc}
-          alt="MyTradeBox"
-          width={2048}
-          height={682}
-          priority
-          className="h-12 w-auto object-contain"
-        />
-      </span>
-    );
-  }
+  const wordmarkClass =
+    "font-sans font-semibold tracking-[-0.03em] " +
+    (wordmarkClassName ?? "text-xl");
 
   return (
     <span className={"inline-flex items-center " + (className ?? "")}>
       <span className="inline-flex items-center gap-3 dark:hidden">
-        <LogoMark className="h-9 w-9 shrink-0" tone="dark" />
-        <span className="h-6 w-px bg-light-grey" />
-        <span
-          className={
-            "font-sans text-xl font-semibold tracking-[-0.03em] " +
-            (wordmarkClassName ?? "text-charcoal")
-          }
-        >
-          <span>MyTrade</span>
+        <LogoMark className="h-9 w-9 shrink-0" />
+        <span className="h-6 w-px bg-light-grey" aria-hidden="true" />
+        <span className={wordmarkClass}>
+          <span className="text-charcoal">MyTrade</span>
           <span className="text-signal-orange">Box</span>
         </span>
       </span>
-      <Image
-        src={lightWordmarkSrc}
-        alt="MyTradeBox"
-        width={2048}
-        height={682}
-        priority
-        className="hidden h-12 w-auto object-contain dark:block"
-      />
+      <span className="hidden items-center gap-3 dark:inline-flex">
+        <LogoMark className="h-9 w-9 shrink-0" tone="light" />
+        <span className="h-6 w-px bg-white/20" aria-hidden="true" />
+        <span className={wordmarkClass}>
+          <span className="text-white">MyTrade</span>
+          <span className="text-signal-orange">Box</span>
+        </span>
+      </span>
     </span>
   );
 }
