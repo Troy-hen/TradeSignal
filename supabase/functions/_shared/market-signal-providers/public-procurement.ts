@@ -2,7 +2,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 import { normalizeOcdsPackage } from "./ocds.ts";
 import type { MarketSignalProvider, NormalizedMarketSignal } from "./types.ts";
 
-const DEFAULT_LIMIT = 100;
+const DEFAULT_LIMIT = 50;
 
 export function createPublicProcurementProvider(name: string): MarketSignalProvider {
   switch (name) {
@@ -69,14 +69,7 @@ async function fetchJson(url: string): Promise<unknown> {
   try {
     const response = await fetch(url, { headers: { Accept: "application/json" }, signal: controller.signal });
     if (response.ok) return await response.json();
-
-    // GOV.UK's public OCDS endpoints currently return 403 from the Supabase
-    // Edge egress network while the same unauthenticated request succeeds
-    // through the project's Postgres network. Use the allowlisted pg_net
-    // bridge only for that network-specific rejection; never proxy arbitrary
-    // hosts or silently mask normal upstream failures.
     if (response.status === 403) return await fetchJsonViaPgNet(url);
-
     const retryAfter = response.headers.get("Retry-After");
     throw new Error(`HTTP ${response.status}${retryAfter ? ` retry-after=${retryAfter}` : ""}`);
   } finally { clearTimeout(timeout); }
@@ -86,15 +79,15 @@ async function fetchJsonViaPgNet(url: string): Promise<unknown> {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!supabaseUrl || !serviceRoleKey) throw new Error("pg_net fallback unavailable: Supabase service credentials missing");
-
   const admin = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } });
   const { data: requestId, error: queueError } = await admin.rpc("queue_public_market_signal_fetch", { p_url: url });
-  if (queueError || requestId === null || requestId === undefined) {
-    throw new Error(`pg_net fetch queue failed: ${queueError?.message ?? "no request id"}`);
-  }
+  if (queueError || requestId === null || requestId === undefined) throw new Error(`pg_net fetch queue failed: ${queueError?.message ?? "no request id"}`);
 
-  for (let attempt = 0; attempt < 40; attempt += 1) {
-    if (attempt > 0) await sleep(125);
+  // Government OCDS releases are unusually large JSON payloads. The
+  // allowlisted pg_net request has a 20s network timeout, so give it a
+  // bounded 18s poll window here instead of failing at the old 5s default.
+  for (let attempt = 0; attempt < 120; attempt += 1) {
+    if (attempt > 0) await sleep(150);
     const { data, error } = await admin.rpc("read_public_market_signal_fetch", { p_request_id: requestId });
     if (error) throw new Error(`pg_net response read failed: ${error.message}`);
     const row = Array.isArray(data) ? data[0] as { status_code?: number; content?: string; timed_out?: boolean; error_msg?: string | null } | undefined : undefined;
