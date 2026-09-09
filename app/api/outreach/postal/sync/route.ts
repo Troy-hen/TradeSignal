@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireCurrentCompany } from "@/lib/auth/get-current-company";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getPostalOutreachProvider } from "@/lib/outreach/postal-provider";
 
 export async function POST() {
@@ -11,6 +12,7 @@ export async function POST() {
 
   const supabase = await createClient();
   const db = supabase as unknown as SupabaseClient;
+  const admin = createAdminClient() as unknown as SupabaseClient;
   const { data: deliveries } = await db
     .from("outreach_deliveries")
     .select("id,opportunity_id,lead_match_id,provider_job_id,status")
@@ -24,10 +26,12 @@ export async function POST() {
   let synced = 0;
   for (const delivery of deliveries ?? []) {
     try {
-      const result = await provider.getStatus(String(delivery.provider_job_id));
+      const providerJobId = String(delivery.provider_job_id);
+      const result = await provider.getStatus(providerJobId);
       if (result.status === delivery.status) continue;
+
       const now = new Date().toISOString();
-      await db
+      const { error: updateError } = await admin
         .from("outreach_deliveries")
         .update({
           status: result.status,
@@ -39,17 +43,30 @@ export async function POST() {
         })
         .eq("id", delivery.id)
         .eq("company_id", company.id);
+      if (updateError) throw updateError;
 
-      await db.from("opportunity_activity_events").insert({
-        company_id: company.id,
-        opportunity_id: delivery.opportunity_id,
-        lead_match_id: delivery.lead_match_id,
-        event_type: `letter_${result.status}`,
-        channel: "letter",
-        provider: provider.name,
-        provider_reference: delivery.provider_job_id,
-        metadata: { delivery_id: delivery.id },
-      });
+      const eventType = `letter_${result.status}`;
+      const { data: existingEvent } = await admin
+        .from("opportunity_activity_events")
+        .select("id")
+        .eq("company_id", company.id)
+        .eq("provider_reference", providerJobId)
+        .eq("event_type", eventType)
+        .limit(1)
+        .maybeSingle();
+
+      if (!existingEvent) {
+        await admin.from("opportunity_activity_events").insert({
+          company_id: company.id,
+          opportunity_id: delivery.opportunity_id,
+          lead_match_id: delivery.lead_match_id,
+          event_type: eventType,
+          channel: "letter",
+          provider: provider.name,
+          provider_reference: providerJobId,
+          metadata: { delivery_id: delivery.id },
+        });
+      }
       synced++;
     } catch (error) {
       console.warn("Could not sync postal delivery", delivery.id, error);
