@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --signal-orange: #ff6a00;
   --charcoal: #1f2937;
@@ -16,12 +18,27 @@
   --foreground: var(--charcoal);
 }
 
+html.dark {
+  --charcoal: #f8fafc;
+  --slate: #94a3b8;
+  --light-grey: #334155;
+  --soft-surface: #0f172a;
+  --white: #111827;
+  --success: #4ade80;
+  --warning: #f59e0b;
+  --danger: #f87171;
+  --locked-overlay: rgba(2, 6, 23, 0.8);
+  --background: #0b1120;
+  --foreground: #f8fafc;
+}
+
 @theme inline {
   --color-signal-orange: var(--signal-orange);
   --color-charcoal: var(--charcoal);
   --color-slate: var(--slate);
   --color-light-grey: var(--light-grey);
   --color-soft-surface: var(--soft-surface);
+  --color-white: var(--white);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
@@ -39,6 +56,11 @@
 
 html {
   scroll-behavior: smooth;
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
 }
 
 body {
