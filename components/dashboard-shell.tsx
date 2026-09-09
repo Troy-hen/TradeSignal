@@ -31,7 +31,9 @@ export function DashboardShell({
     .toUpperCase();
 
   useEffect(() => {
-    setCollapsed(window.localStorage.getItem("mytradebox-sidebar") === "collapsed");
+    const preferenceFrame = window.requestAnimationFrame(() => {
+      setCollapsed(window.localStorage.getItem("mytradebox-sidebar") === "collapsed");
+    });
 
     function handleShortcut(event: KeyboardEvent) {
       if ((event.metaKey || event.ctrlKey) && event.key === "\\") {
@@ -43,7 +45,10 @@ export function DashboardShell({
     }
 
     window.addEventListener("keydown", handleShortcut);
-    return () => window.removeEventListener("keydown", handleShortcut);
+    return () => {
+      window.cancelAnimationFrame(preferenceFrame);
+      window.removeEventListener("keydown", handleShortcut);
+    };
   }, []);
 
   useEffect(() => {
