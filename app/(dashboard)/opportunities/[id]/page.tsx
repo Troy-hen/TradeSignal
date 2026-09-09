@@ -6,6 +6,8 @@ import { OpportunityBadge, formatGbpRange } from "@/components/opportunity-badge
 import { ClaimTerritoryButton } from "@/components/claim-territory-button";
 import { LockedOpportunityPreview } from "@/components/locked-opportunity-preview";
 import { LeadActionPanel } from "@/components/lead-action-panel";
+import { FollowUpPanel } from "@/components/follow-up-panel";
+import { listLeadFollowUps } from "@/lib/actions/lead-follow-ups";
 import { OutreachAssistant } from "@/components/outreach-assistant";
 import type { Database } from "@/lib/types/database";
 import { formatMonthlyGbp } from "@/lib/coverage/pricing";
@@ -80,6 +82,7 @@ async function PaidBrief({ opportunity, companyId }: { opportunity: Opportunity;
 
   const leadMatchId = matchState?.lead_match_id ?? null;
   const currentAction = matchState?.current_action ?? null;
+  const followUps = leadMatchId ? await listLeadFollowUps(leadMatchId) : [];
 
   // Opening the brief is what moves a match out of "New" — a lightweight,
   // best-effort side effect; it must never block rendering the page.
@@ -208,6 +211,12 @@ async function PaidBrief({ opportunity, companyId }: { opportunity: Opportunity;
       {leadMatchId && (
         <Section title="Track this opportunity">
           <LeadActionPanel leadMatchId={leadMatchId} currentAction={currentAction} />
+        </Section>
+      )}
+
+      {leadMatchId && (
+        <Section title="Follow-up reminders">
+          <FollowUpPanel leadMatchId={leadMatchId} opportunityId={opportunity.id} initialFollowUps={followUps} />
         </Section>
       )}
 
