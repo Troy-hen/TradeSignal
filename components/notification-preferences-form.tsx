@@ -10,12 +10,14 @@ export function NotificationPreferencesForm({
   instantAlertMinScore,
   digestMinScore,
   approvalAlertsEnabled,
+  nearbyOpportunityAlertsEnabled,
 }: {
   channelEmail: boolean;
   digestFrequency: string;
   instantAlertMinScore: number;
   digestMinScore: number;
   approvalAlertsEnabled: boolean;
+  nearbyOpportunityAlertsEnabled: boolean;
 }) {
   const [state, formAction] = useActionState(updateNotificationPreferences, undefined);
 
@@ -77,6 +79,14 @@ export function NotificationPreferencesForm({
       <label className="flex items-center gap-3 rounded-xl bg-soft-surface p-4 text-sm font-medium text-charcoal">
         <input type="checkbox" name="approvalAlertsEnabled" defaultChecked={approvalAlertsEnabled} className="h-4 w-4 accent-[#FF6A00]" />
         Always alert me instantly when a matched application is approved
+      </label>
+
+      <label className="flex items-start gap-3 rounded-xl border border-signal-orange/20 bg-signal-orange/[0.05] p-4 text-sm text-charcoal">
+        <input type="checkbox" name="nearbyOpportunityAlertsEnabled" defaultChecked={nearbyOpportunityAlertsEnabled} className="mt-0.5 h-4 w-4 accent-[#FF6A00]" />
+        <span>
+          <span className="block font-medium">Nearby opportunity alerts</span>
+          <span className="mt-1 block text-xs leading-5 text-slate">Show and email a weekly digest of available districts within roughly 20 miles of your owned territories. Off by default.</span>
+        </span>
       </label>
 
       {state?.error && <p className="text-sm text-danger">{state.error}</p>}
