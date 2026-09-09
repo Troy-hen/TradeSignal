@@ -12,6 +12,15 @@ type PropertyPriorityContext = {
   planningRecordCount: number;
 };
 
+type EpcPriorityContext = {
+  currentBand: string | null;
+  potentialBand: string | null;
+  currentEfficiency: number | null;
+  potentialEfficiency: number | null;
+  signalCount: number;
+  signalSummary: string | null;
+};
+
 export async function getWorkspaceSnapshot(companyId: string) {
   const supabase = await createClient();
   const db = supabase as unknown as SupabaseClient;
@@ -22,12 +31,15 @@ export async function getWorkspaceSnapshot(companyId: string) {
   ]);
   const opportunityIds = opportunities.map((item) => item.opportunityId);
 
-  const [{ data: claims }, { data: followUps }, { data: nearby }, { data: propertyRows }] = await Promise.all([
+  const [{ data: claims }, { data: followUps }, { data: nearby }, { data: propertyRows }, { data: epcRows }] = await Promise.all([
     supabase.from("territory_claims").select("territory_id").eq("company_id", companyId).eq("status", "active"),
     supabase.from("lead_follow_ups").select("id,lead_match_id,due_at,note,status").eq("company_id", companyId).eq("status", "pending").order("due_at").limit(50),
     db.rpc("browse_nearby_opportunities", { p_limit: 12 }),
     opportunityIds.length
       ? db.from("property_intelligence_records").select("opportunity_id,timing_signal,latest_trigger_date,planning_history").eq("company_id", companyId).in("opportunity_id", opportunityIds)
+      : Promise.resolve({ data: [] as Array<Record<string, unknown>> }),
+    opportunityIds.length
+      ? db.from("epc_intelligence_records").select("opportunity_id,current_band,current_efficiency,potential_band,potential_efficiency,improvement_signals,signal_summary").eq("company_id", companyId).in("opportunity_id", opportunityIds)
       : Promise.resolve({ data: [] as Array<Record<string, unknown>> }),
   ]);
 
@@ -43,6 +55,21 @@ export async function getWorkspaceSnapshot(companyId: string) {
       timingSignal,
       latestTriggerDate: typeof row.latest_trigger_date === "string" ? row.latest_trigger_date : null,
       planningRecordCount: planningHistory.length,
+    });
+  }
+
+  const epcByOpportunity = new Map<string, EpcPriorityContext>();
+  for (const row of (epcRows ?? []) as Array<Record<string, unknown>>) {
+    const opportunityId = typeof row.opportunity_id === "string" ? row.opportunity_id : null;
+    if (!opportunityId) continue;
+    const improvementSignals = Array.isArray(row.improvement_signals) ? row.improvement_signals : [];
+    epcByOpportunity.set(opportunityId, {
+      currentBand: typeof row.current_band === "string" ? row.current_band : null,
+      potentialBand: typeof row.potential_band === "string" ? row.potential_band : null,
+      currentEfficiency: toNumber(row.current_efficiency),
+      potentialEfficiency: toNumber(row.potential_efficiency),
+      signalCount: improvementSignals.length,
+      signalSummary: typeof row.signal_summary === "string" ? row.signal_summary : null,
     });
   }
 
@@ -72,9 +99,9 @@ export async function getWorkspaceSnapshot(companyId: string) {
 
   const ranked = [...opportunities]
     .filter((item) => !["won", "lost"].includes(item.currentAction ?? ""))
-    .sort((a, b) => priorityScore(b, propertyByOpportunity.get(b.opportunityId)) - priorityScore(a, propertyByOpportunity.get(a.opportunityId)))
+    .sort((a, b) => priorityScore(b, propertyByOpportunity.get(b.opportunityId), epcByOpportunity.get(b.opportunityId)) - priorityScore(a, propertyByOpportunity.get(a.opportunityId), epcByOpportunity.get(a.opportunityId)))
     .slice(0, 12)
-    .map((item) => toAssistantOpportunity(item, propertyByOpportunity.get(item.opportunityId)));
+    .map((item) => toAssistantOpportunity(item, propertyByOpportunity.get(item.opportunityId), epcByOpportunity.get(item.opportunityId)));
 
   const rankedMarket = [...marketSignals]
     .filter((item) => !["won", "lost"].includes(item.current_action))
@@ -148,7 +175,7 @@ export async function getWorkspaceSnapshot(companyId: string) {
   };
 }
 
-function priorityScore(item: Awaited<ReturnType<typeof getCompanyOpportunities>>[number], property?: PropertyPriorityContext) {
+function priorityScore(item: Awaited<ReturnType<typeof getCompanyOpportunities>>[number], property?: PropertyPriorityContext, epc?: EpcPriorityContext) {
   let score = Number(item.score ?? 0);
   if (item.planningStatus === "approved") score += 20;
   if (item.currentAction === null) score += 8;
@@ -159,6 +186,13 @@ function priorityScore(item: Awaited<ReturnType<typeof getCompanyOpportunities>>
   else if (property?.timingSignal === "positive") score += 4;
   else if (property?.timingSignal === "caution") score -= 2;
   if ((property?.planningRecordCount ?? 0) > 1) score += Math.min(3, property!.planningRecordCount - 1);
+
+  // EPC is supporting qualification context, never the dominant ranking factor.
+  // A weak energy rating can add a small amount of relevance for a matched trade,
+  // while the core planning/project score, value and timing continue to lead.
+  if (epc?.currentBand && ["D", "E", "F", "G"].includes(epc.currentBand)) score += 2;
+  if (epc?.currentEfficiency !== null && epc?.currentEfficiency !== undefined && epc?.potentialEfficiency !== null && epc?.potentialEfficiency !== undefined && epc.potentialEfficiency - epc.currentEfficiency >= 10) score += 1;
+  score += Math.min(2, epc?.signalCount ?? 0);
   return score;
 }
 
@@ -175,7 +209,7 @@ function marketPriorityScore(item: Awaited<ReturnType<typeof getOwnedMarketSigna
   return score;
 }
 
-function toAssistantOpportunity(item: Awaited<ReturnType<typeof getCompanyOpportunities>>[number], property?: PropertyPriorityContext) {
+function toAssistantOpportunity(item: Awaited<ReturnType<typeof getCompanyOpportunities>>[number], property?: PropertyPriorityContext, epc?: EpcPriorityContext) {
   return {
     opportunityId: item.opportunityId,
     postcodeDistrict: item.district,
@@ -193,5 +227,19 @@ function toAssistantOpportunity(item: Awaited<ReturnType<typeof getCompanyOpport
     propertySignal: property?.timingSignal ?? null,
     propertyLatestTriggerDate: property?.latestTriggerDate ?? null,
     propertyPlanningRecordCount: property?.planningRecordCount ?? 0,
+    epc: epc ? {
+      currentBand: epc.currentBand,
+      potentialBand: epc.potentialBand,
+      currentEfficiency: epc.currentEfficiency,
+      potentialEfficiency: epc.potentialEfficiency,
+      signalCount: epc.signalCount,
+      summary: epc.signalSummary,
+    } : null,
   };
+}
+
+function toNumber(value: unknown) {
+  if (value === null || value === undefined) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
 }
