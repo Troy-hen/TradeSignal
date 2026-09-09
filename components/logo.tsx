@@ -17,7 +17,7 @@ export function LogoMark({
     <span
       className={
         "inline-flex items-center justify-center overflow-hidden rounded-xl " +
-        (tone === "light" ? "bg-white/10" : "bg-charcoal") +
+        (tone === "light" ? "bg-white/10" : "bg-[#1f2937]") +
         " " +
         (className ?? "")
       }
@@ -65,17 +65,19 @@ export function Logo({
   }
 
   return (
-    <span className={"inline-flex items-center gap-3 " + (className ?? "")}>
-      <LogoMark className="h-9 w-9 shrink-0" tone="dark" />
-      <span className="h-6 w-px bg-light-grey" />
-      <span
-        className={
-          "font-sans text-xl font-semibold tracking-[-0.03em] dark:hidden " +
-          (wordmarkClassName ?? "text-charcoal")
-        }
-      >
-        <span>MyTrade</span>
-        <span className="text-signal-orange">Box</span>
+    <span className={"inline-flex items-center " + (className ?? "")}>
+      <span className="inline-flex items-center gap-3 dark:hidden">
+        <LogoMark className="h-9 w-9 shrink-0" tone="dark" />
+        <span className="h-6 w-px bg-light-grey" />
+        <span
+          className={
+            "font-sans text-xl font-semibold tracking-[-0.03em] " +
+            (wordmarkClassName ?? "text-charcoal")
+          }
+        >
+          <span>MyTrade</span>
+          <span className="text-signal-orange">Box</span>
+        </span>
       </span>
       <Image
         src={lightWordmarkSrc}
@@ -83,7 +85,7 @@ export function Logo({
         width={2048}
         height={682}
         priority
-        className="hidden h-10 w-auto object-contain dark:block"
+        className="hidden h-12 w-auto object-contain dark:block"
       />
     </span>
   );
