@@ -125,7 +125,7 @@ export function PricingGrid({ compact = false }: { items?: PricingItem[]; compac
         </div>
 
         <p className="mt-6 max-w-4xl text-sm leading-6 text-slate">
-          Pricing is per trade coverage plan. Adding a second trade starts a separate plan at the same £29.99 first-district price; volume discounts then apply within that trade. There are no different prices for different industries or postcode districts.
+          Pricing is per trade coverage plan. General Builder is one broad trade view, not an all-trades bundle: adding a specialist trade such as roofing or plumbing starts a separate plan at the same £29.99 first-district price. Volume discounts then apply within each trade. The same postcode district can therefore be relevant to and purchased by multiple trades, while each trade's feed stays focused.
         </p>
       </div>
     </section>
