@@ -196,6 +196,35 @@ export function approvalAlertEmail(params: {
   return { subject, html: shell(subject, body) };
 }
 
+export function followUpReminderEmail(params: {
+  companyName: string;
+  district: string;
+  tradeName: string;
+  projectType: string | null;
+  dueAt: string;
+  note: string | null;
+  detailUrl: string;
+}): { subject: string; html: string } {
+  const dueLabel = new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(params.dueAt));
+  const subject = "Follow-up reminder — " + params.district + " (" + params.tradeName + ")";
+  const body = [
+    '<p style="margin:0 0 16px;font-size:15px;line-height:23px;color:' + CHARCOAL + ';">Hi ' + escapeHtml(params.companyName) + ",</p>",
+    '<p style="margin:0 0 16px;font-size:15px;line-height:23px;color:' + CHARCOAL + '; ">A follow-up reminder is due for <strong>' + escapeHtml(params.projectType ?? "a planning opportunity") + "</strong> in " + escapeHtml(params.district) + " (" + escapeHtml(params.tradeName) + ")</p>",
+    '<p style="margin:0 0 16px;color:' + SLATE + ';font-size:13px;line-height:19px;">Due: ' + escapeHtml(dueLabel) + "</p>",
+    params.note
+      ? '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:' + SOFT_SURFACE + ';margin-bottom:12px;"><tr><td style="padding:14px;font-size:14px;line-height:21px;color:' + CHARCOAL + ';"><strong>Your note</strong><br>' + escapeHtml(params.note) + "</td></tr></table>"
+      : "",
+    button("Open opportunity", params.detailUrl),
+  ].join("");
+  return { subject, html: shell(subject, body) };
+}
+
 export function paymentFailedEmail(params: { companyName: string; billingPortalUrl: string }): { subject: string; html: string } {
   const subject = "Action needed: your MyTradeBox payment failed";
   const body = [
