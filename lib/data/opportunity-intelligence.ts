@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { deriveContactStrategy, type ContactStrategy } from "@/lib/contact-intelligence/strategy";
 
 export type OpportunityRelationshipIntelligence = {
+  opportunityId: string | null;
   applicantName: string | null;
   agentCompany: string | null;
   projectAddress: string | null;
@@ -40,12 +41,6 @@ export type OpportunityRelationshipIntelligence = {
   }>;
 };
 
-/**
- * Builds relationship intelligence only from rows the signed-in user can
- * already see through RLS. That means the related-project signal becomes
- * richer as the customer expands coverage, without leaking addresses or
- * project detail from territories they do not own.
- */
 export async function getOpportunityRelationshipIntelligence(input: {
   planningApplicationId: string;
   tradeCategoryId: string;
@@ -56,11 +51,18 @@ export async function getOpportunityRelationshipIntelligence(input: {
   const db = supabase as unknown as SupabaseClient;
   const organisationName = input.agentCompany?.trim() || null;
 
-  const [{ data: currentApplication }, { data: contactRows }] = await Promise.all([
+  const [{ data: currentApplication }, { data: currentOpportunity }, { data: contactRows }] = await Promise.all([
     supabase
       .from("planning_applications")
       .select("address_text, is_commercial, application_type, proposal_description")
       .eq("id", input.planningApplicationId)
+      .maybeSingle(),
+    supabase
+      .from("application_trade_opportunities")
+      .select("id")
+      .eq("planning_application_id", input.planningApplicationId)
+      .eq("trade_category_id", input.tradeCategoryId)
+      .eq("is_active", true)
       .maybeSingle(),
     db
       .from("contact_intelligence_records")
@@ -95,6 +97,7 @@ export async function getOpportunityRelationshipIntelligence(input: {
   }));
 
   const base = {
+    opportunityId: currentOpportunity?.id ?? null,
     applicantName: input.applicantName,
     agentCompany: input.agentCompany,
     projectAddress: currentApplication?.address_text ?? null,
@@ -103,11 +106,7 @@ export async function getOpportunityRelationshipIntelligence(input: {
   };
 
   if (!organisationName) {
-    return {
-      ...base,
-      organisation: null,
-      relatedOpportunities: [],
-    };
+    return { ...base, organisation: null, relatedOpportunities: [] };
   }
 
   const { data: applications } = await supabase
@@ -122,23 +121,14 @@ export async function getOpportunityRelationshipIntelligence(input: {
   if (visibleApplications.length === 0) {
     return {
       ...base,
-      organisation: {
-        name: organisationName,
-        visibleProjects: 1,
-        approvedProjects: 0,
-        postcodeDistricts: 1,
-        estimatedTradeValueHigh: 0,
-      },
+      organisation: { name: organisationName, visibleProjects: 1, approvedProjects: 0, postcodeDistricts: 1, estimatedTradeValueHigh: 0 },
       relatedOpportunities: [],
     };
   }
 
   const applicationIds = visibleApplications.map((row) => row.id);
   const [{ data: classifications }, { data: opportunities }] = await Promise.all([
-    supabase
-      .from("application_classifications")
-      .select("id, planning_application_id, project_type")
-      .in("planning_application_id", applicationIds),
+    supabase.from("application_classifications").select("id, planning_application_id, project_type").in("planning_application_id", applicationIds),
     supabase
       .from("application_trade_opportunities")
       .select("id, planning_application_id, estimated_trade_value_low, estimated_trade_value_high")
@@ -147,12 +137,8 @@ export async function getOpportunityRelationshipIntelligence(input: {
       .eq("is_active", true),
   ]);
 
-  const classificationByApplication = new Map(
-    (classifications ?? []).map((row) => [row.planning_application_id, row]),
-  );
-  const opportunityByApplication = new Map(
-    (opportunities ?? []).map((row) => [row.planning_application_id, row]),
-  );
+  const classificationByApplication = new Map((classifications ?? []).map((row) => [row.planning_application_id, row]));
+  const opportunityByApplication = new Map((opportunities ?? []).map((row) => [row.planning_application_id, row]));
 
   const relatedOpportunities = visibleApplications
     .map((application) => {
@@ -171,13 +157,8 @@ export async function getOpportunityRelationshipIntelligence(input: {
     .filter((row): row is NonNullable<typeof row> => row !== null)
     .slice(0, 6);
 
-  const estimatedTradeValueHigh = (opportunities ?? []).reduce(
-    (sum, row) => sum + Number(row.estimated_trade_value_high ?? 0),
-    0,
-  );
-  const postcodeDistricts = new Set(
-    visibleApplications.map((row) => row.postcode_district).filter(Boolean),
-  ).size;
+  const estimatedTradeValueHigh = (opportunities ?? []).reduce((sum, row) => sum + Number(row.estimated_trade_value_high ?? 0), 0);
+  const postcodeDistricts = new Set(visibleApplications.map((row) => row.postcode_district).filter(Boolean)).size;
   const approvedProjects = visibleApplications.filter((row) => row.status === "approved").length;
 
   return {
