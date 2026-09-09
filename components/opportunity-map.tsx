@@ -95,7 +95,7 @@ export function OpportunityMap({
   }, [viewport]);
 
   useEffect(() => {
-    if (tradeOptions.length > 0 && !tradeOptions.some((trade) => trade.slug === tradeSlug)) {
+    if (tradeSlug && tradeOptions.length > 0 && !tradeOptions.some((trade) => trade.slug === tradeSlug)) {
       setTradeSlug(tradeOptions[0].slug);
     }
   }, [tradeOptions, tradeSlug]);
