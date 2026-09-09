@@ -14,7 +14,7 @@ export const FAQ_ITEMS = [
   {
     question: "What is a territory?",
     answer:
-      "Today, a territory is one postcode district for one trade category. That gives one business exclusive access to the matching opportunity feed in that area. We are designing adjacent-area packs for businesses that cover a wider city or county.",
+      "Today, a territory is one postcode district for one trade category. That keeps the feed exclusive to that trade while allowing the same district to serve a roofer, plumber or other specialist separately. Choose only the live districts you actually serve; volume pricing reduces the unit price as your coverage grows.",
   },
   {
     question: "Are the values guaranteed?",
@@ -43,7 +43,7 @@ export function FaqSection({ compact = false }: { compact?: boolean }) {
 
   return (
     <section id="faq" className="bg-soft-surface px-6 py-20 sm:py-24">
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-7xl">
         <div className="max-w-2xl">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Questions, answered</p>
           <h2 className="mt-4 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">
