@@ -36,7 +36,32 @@ To activate published planning-contact lookup:
 
 The lookup is explicit/on-demand because contact-bearing records are metered. The adapter requests `include_contact=true` only for a user-triggered lookup. Applicant names are context only; MyTradeBox does not attempt consumer email/mobile enrichment.
 
-## 3. Companies House — structured company context
+## 3. TwentyCI / TwentyAPI — property and recency intelligence
+
+Used for property-level context on unlocked opportunities. This is deliberately separate from contact enrichment.
+
+Implemented flow:
+1. User opens an unlocked opportunity.
+2. MyTradeBox can match the planning project address + full postcode to a TwentyCI property/UPRN.
+3. A match must pass a confidence threshold before any enrichment is persisted.
+4. MyTradeBox retrieves the available property record, detailed property attributes, trigger history, transaction history and Likely To Sell signal.
+5. Normalised intelligence is cached for 7 days to control API usage.
+6. The opportunity shows property value/context, latest property-market trigger, transaction recency and property activity guidance.
+7. Deep Research consumes the saved property intelligence when available.
+8. Property intelligence never changes electronic-contact permission and is not treated as proof of construction intent.
+
+Configuration (Cloudflare Worker):
+- `PROPERTY_INTELLIGENCE_PROVIDER=twentyci`
+- `TWENTYCI_CLIENT_ID`
+- `TWENTYCI_CLIENT_SECRET`
+- `TWENTYCI_USERNAME`
+- `TWENTYCI_PASSWORD`
+
+TwentyAPI uses OAuth bearer tokens. The adapter obtains and caches an access token and retries once on an authentication expiry. Optional endpoints degrade cleanly if the account does not include that dataset.
+
+Important product rule: TwentyCI is used to improve **property context, recency and prioritisation**, not to infer who lives at an address or to unlock cold homeowner email/mobile marketing.
+
+## 4. Companies House — structured company context
 
 Used only for company/developer-style opportunities and currently feeds Deep Research.
 
@@ -48,7 +73,7 @@ When configured, Deep Research can add company status, registered-office context
 
 No paid B2B enrichment vendor is required for launch. Add one only if production usage proves Plota + Companies House insufficient for high-value company-led opportunities.
 
-## 4. Stannp — homeowner/project-address postal outreach
+## 5. Stannp — homeowner/project-address postal outreach
 
 Implemented flow:
 1. AI generates an introductory letter.
@@ -67,7 +92,7 @@ Configuration:
 
 Until both values exist the postal send UI is hidden.
 
-## 5. Resend — email delivery
+## 6. Resend — email delivery
 
 Already used for platform/notification email architecture. Do not activate the production sender until the MyTradeBox domain is ready.
 
@@ -77,9 +102,9 @@ Configuration:
 - set `RESEND_FROM_EMAIL`
 - optionally `RESEND_REPLY_TO`
 
-This is platform email. Direct marketing email to homeowners is intentionally not part of the contact strategy.
+This is platform email. Direct marketing email to homeowners is intentionally not part of the contact strategy. Business/professional email flows must still respect subscriber type, UK GDPR, suppression and opt-out rules.
 
-## 6. Stripe — billing
+## 7. Stripe — billing
 
 Checkout/webhook architecture is already implemented. Use Stripe test credentials for UAT, then replace with live credentials at production cutover.
 
@@ -87,7 +112,7 @@ Configuration:
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
 
-## 7. Early Signals
+## 8. Early Signals
 
 The normalized `market_signals` and `market_signal_trade_matches` models exist, but no Early Signals navigation is exposed. Keep `MARKET_SIGNAL_PROVIDER=none` until a source is proven to add incremental, actionable work beyond planning data.
 
@@ -99,13 +124,14 @@ No consumer contact-enrichment vendor is required.
 No generic B2B enrichment subscription is required.
 No separate address-validation vendor is required because Stannp validates UK addresses before send.
 
-The minimum advanced-feature stack is therefore:
-- Plota
-- OpenAI
-- Supabase
-- Stannp
-- Companies House
-- Resend
-- Stripe
+The advanced-feature stack is therefore:
+- Plota — planning + planning-professional contact layer
+- TwentyCI — property/recency intelligence
+- OpenAI — AI, RAG and Deep Research
+- Supabase — application/data layer
+- Stannp — physical mail
+- Companies House — corporate context
+- Resend — platform/permissioned email
+- Stripe — billing
 
-Only Plota/Stannp/Resend/Stripe need commercial account activation for their respective production functions; Companies House is a public-data API integration and OpenAI is usage billed.
+The closed-loop response/QuoteLink layer sits above these providers and should remain MyTradeBox-owned rather than delegated to a data vendor.
