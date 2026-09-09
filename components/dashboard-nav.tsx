@@ -13,11 +13,24 @@ const NAV_ITEMS = [
   { href: "/settings", label: "Settings", icon: "settings" },
 ] as const;
 
-export function DashboardNav({ mobile = false }: { mobile?: boolean }) {
+export function DashboardNav({
+  mobile = false,
+  collapsed = false,
+}: {
+  mobile?: boolean;
+  collapsed?: boolean;
+}) {
   const pathname = usePathname();
 
   return (
-    <nav className={mobile ? "flex min-w-max items-center gap-2 px-4 py-3" : "space-y-1 px-3 py-4"} aria-label="Workspace navigation">
+    <nav
+      className={
+        mobile
+          ? "flex min-w-max items-center gap-2 px-4 py-3"
+          : "space-y-1 px-3 py-4"
+      }
+      aria-label="Workspace navigation"
+    >
       {NAV_ITEMS.map((item) => {
         const active = isActive(pathname, item.href);
 
@@ -25,6 +38,8 @@ export function DashboardNav({ mobile = false }: { mobile?: boolean }) {
           <Link
             key={item.href}
             href={item.href}
+            title={collapsed ? item.label : undefined}
+            aria-label={collapsed ? item.label : undefined}
             className={
               mobile
                 ? `inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition ${
@@ -32,14 +47,20 @@ export function DashboardNav({ mobile = false }: { mobile?: boolean }) {
                       ? "border-signal-orange/20 bg-signal-orange/10 text-charcoal"
                       : "border-light-grey bg-white text-slate hover:border-signal-orange/30 hover:text-charcoal"
                   }`
-                : `group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
-                    active ? "bg-signal-orange/10 text-charcoal" : "text-slate hover:bg-soft-surface hover:text-charcoal"
+                : `group flex items-center rounded-xl py-2.5 text-sm font-medium transition ${
+                    collapsed ? "justify-center px-2" : "gap-3 px-3"
+                  } ${
+                    active
+                      ? "bg-signal-orange/10 text-charcoal"
+                      : "text-slate hover:bg-soft-surface hover:text-charcoal"
                   }`
             }
           >
             <NavIcon name={item.icon} active={active} />
-            <span>{item.label}</span>
-            {!mobile && active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-signal-orange" />}
+            <span className={collapsed ? "sr-only" : undefined}>{item.label}</span>
+            {!mobile && !collapsed && active && (
+              <span className="ml-auto h-1.5 w-1.5 rounded-full bg-signal-orange" />
+            )}
           </Link>
         );
       })}
@@ -53,7 +74,9 @@ function isActive(pathname: string, href: string): boolean {
 }
 
 function NavIcon({ name, active }: { name: string; active: boolean }) {
-  const className = `h-[18px] w-[18px] shrink-0 ${active ? "text-signal-orange" : "text-slate/70"}`;
+  const className = `h-[18px] w-[18px] shrink-0 ${
+    active ? "text-signal-orange" : "text-slate/70"
+  }`;
 
   if (name === "overview") {
     return (
