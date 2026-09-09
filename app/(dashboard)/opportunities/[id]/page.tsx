@@ -354,6 +354,12 @@ function LockedBrief({ teaser }: { teaser: OpportunityTeaser }) {
         <LockedOpportunityPreview
           title="Claim to reveal the full brief"
           body="The address, planning reference, project summary, AI interpretation, value estimate and recommended next move are reserved for the territory holder."
+          teaser={{
+            projectType: teaser.project_type,
+            status: teaser.planning_status,
+            estimatedTradeValueLow: teaser.estimated_trade_value_low,
+            estimatedTradeValueHigh: teaser.estimated_trade_value_high,
+          }}
         />
       </div>
 
