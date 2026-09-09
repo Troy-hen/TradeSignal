@@ -71,7 +71,7 @@ export function Logo({
   const wordmarkClass =
     "whitespace-nowrap font-sans text-xl font-semibold tracking-[-0.03em] " +
     (wordmarkClassName ?? "");
-  const wordmarkTone = fixedLightTone ? "text-white" : "text-[#1f2937] dark:text-white";
+  const wordmarkTone = fixedLightTone ? "text-white" : "text-charcoal";
   const dividerTone = fixedLightTone ? "bg-white/40" : "bg-[#cbd5e1] dark:bg-white/30";
 
   return (
