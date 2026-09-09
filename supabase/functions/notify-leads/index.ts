@@ -9,6 +9,8 @@ import {
   territoryAvailableEmail,
   outsideTerritoryEmail,
   announcementEmail,
+  nearbyOpportunityDigestEmail,
+  type NearbyOpportunitySummary,
   welcomeEmail,
   followUpReminderEmail,
   type MatchSummary,
@@ -59,9 +61,10 @@ Deno.serve(async (req: Request) => {
   });
   const appUrl = Deno.env.get("NEXT_PUBLIC_APP_URL") ?? "http://localhost:3000";
 
-  const results = { newLeadEmails: 0, approvalAlerts: 0, followUpReminders: 0, followUpSuppressed: 0, queuedNotifications: 0, errors: 0 };
+  const results = { newLeadEmails: 0, approvalAlerts: 0, followUpReminders: 0, followUpSuppressed: 0, nearbyOpportunityEmails: 0, queuedNotifications: 0, errors: 0 };
 
   await processNewLeadMatches(admin, appUrl, cadence, results);
+  await processNearbyOpportunityAlerts(admin, appUrl, cadence, results);
   await processApprovalAlerts(admin, appUrl, results);
   await processFollowUpReminders(admin, appUrl, results);
   await processQueuedNotifications(admin, appUrl, results);
@@ -186,6 +189,92 @@ async function processNewLeadMatches(admin: any, appUrl: string, cadence: Cadenc
       results.errors++;
       // notified_at stays null on failure — naturally retried next tick.
     }
+  }
+}
+
+// Nearby upsell emails are deliberately opt-in and weekly-only. The same
+// service-role-only database helper powers the in-platform notification card,
+// keeping the email payload aggregate-only and free of applicant details.
+// deno-lint-ignore no-explicit-any
+async function processNearbyOpportunityAlerts(admin: any, appUrl: string, cadence: Cadence, results: Record<string, number>) {
+  if (cadence !== "weekly") return;
+
+  const { data: prefs } = await admin
+    .from("notification_preferences")
+    .select("company_id, channel_email, nearby_opportunity_alerts_enabled")
+    .eq("nearby_opportunity_alerts_enabled", true)
+    .is("user_id", null)
+    .limit(250);
+  if (!prefs || prefs.length === 0) return;
+
+  const companyIds = [...new Set(prefs.map((pref: { company_id: string }) => pref.company_id))];
+  const { data: companies } = await admin.from("companies").select("id, trading_name, billing_email").in("id", companyIds);
+  const companyById = new Map((companies ?? []).map((company: { id: string }) => [company.id, company]));
+  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  for (const pref of prefs as Array<{ company_id: string; channel_email: boolean }>) {
+    if (pref.channel_email === false) continue;
+    const company = companyById.get(pref.company_id);
+    if (!company) continue;
+
+    const { data: previous } = await admin
+      .from("notification_log")
+      .select("id")
+      .eq("company_id", pref.company_id)
+      .eq("notification_type", "nearby_opportunity_digest")
+      .gte("created_at", since)
+      .limit(1);
+    if (previous && previous.length > 0) continue;
+
+    const { data: nearby, error } = await admin.rpc("browse_nearby_opportunities_for_company", {
+      p_company_id: pref.company_id,
+      p_limit: 12,
+    });
+    if (error || !nearby || nearby.length === 0) {
+      if (error) results.errors++;
+      continue;
+    }
+
+    const opportunities: NearbyOpportunitySummary[] = nearby.map((row: {
+      postcode_district: string;
+      post_town: string;
+      trade_category_name: string;
+      trade_category_slug: string;
+      teaser_project_type: string | null;
+      teaser_status: string | null;
+      teaser_estimated_trade_value_low: number | null;
+      teaser_estimated_trade_value_high: number | null;
+    }) => ({
+      district: row.postcode_district,
+      postTown: row.post_town,
+      tradeName: row.trade_category_name,
+      projectType: row.teaser_project_type,
+      status: row.teaser_status,
+      valueLow: row.teaser_estimated_trade_value_low,
+      valueHigh: row.teaser_estimated_trade_value_high,
+      detailUrl: appUrl + "/territories/" + encodeURIComponent(row.postcode_district) + "/" + encodeURIComponent(row.trade_category_slug),
+    }));
+    const template = nearbyOpportunityDigestEmail({
+      companyName: company.trading_name,
+      opportunities,
+      dashboardUrl: appUrl + "/notifications",
+    });
+    const sendResult = await sendEmail({ to: company.billing_email, subject: template.subject, html: template.html });
+
+    await admin.from("notification_log").insert({
+      company_id: pref.company_id,
+      notification_type: "nearby_opportunity_digest",
+      status: sendResult.success ? "sent" : "failed",
+      subject: template.subject,
+      email_html: template.html,
+      provider_message_id: sendResult.success ? sendResult.messageId : null,
+      sent_at: sendResult.success ? new Date().toISOString() : null,
+      error_message: sendResult.success ? null : sendResult.error,
+      metadata: { opportunity_count: opportunities.length },
+    });
+
+    if (sendResult.success) results.nearbyOpportunityEmails++;
+    else results.errors++;
   }
 }
 
