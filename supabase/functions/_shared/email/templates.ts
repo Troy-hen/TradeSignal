@@ -9,7 +9,7 @@ const CHARCOAL = "#1F2937";
 const SLATE = "#64748B";
 const LIGHT_GREY = "#E5E7EB";
 const SOFT_SURFACE = "#F8FAFC";
-const APP_URL = (Deno.env.get("NEXT_PUBLIC_APP_URL") ?? "").replace(/\\/+$/, "");
+const rawAppUrl = Deno.env.get("NEXT_PUBLIC_APP_URL") ?? "";\nconst APP_URL = rawAppUrl.endsWith("/") ? rawAppUrl.slice(0, -1) : rawAppUrl;
 const LOGO_URL = APP_URL ? APP_URL + "/brand/mytradebox-wordmark-light.png" : null;
 
 function escapeHtml(value: unknown): string {
@@ -22,7 +22,7 @@ function escapeHtml(value: unknown): string {
 }
 
 function safeUrl(value: string): string {
-  return /^https?:\\/\\//i.test(value) ? escapeHtml(value) : "#";
+  return value.startsWith("https://") || value.startsWith("http://") ? escapeHtml(value) : "#";
 }
 
 function shell(preheader: string, bodyHtml: string): string {
