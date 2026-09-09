@@ -82,9 +82,10 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     subtitle: `${application.postcode_district ?? opportunity.postcode_district} · ${trade?.name ?? "Trade"} · generated ${new Date().toLocaleDateString("en-GB")}`,
     sections,
   });
+  const pdfBody = new Uint8Array(pdf).buffer;
 
   const safeDistrict = String(application.postcode_district ?? opportunity.postcode_district ?? "opportunity").replace(/[^a-z0-9-]/gi, "-");
-  return new NextResponse(pdf, {
+  return new NextResponse(pdfBody, {
     headers: {
       "Content-Type": "application/pdf",
       "Content-Disposition": `attachment; filename="mytradebox-${safeDistrict}-${id.slice(0, 8)}.pdf"`,
