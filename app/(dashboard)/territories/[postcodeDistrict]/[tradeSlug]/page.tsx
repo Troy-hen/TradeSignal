@@ -152,7 +152,7 @@ export default async function TerritoryDetailPage({
             </div>
           ) : (
             <LockedOpportunityPreview
-              title="Specific opportunities are locked"
+              title="See the opportunity shape"
               body="Claim the territory to reveal actual projects, addresses, planning references, AI interpretation and the recommended next move."
             />
           )}
