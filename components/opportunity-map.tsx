@@ -175,7 +175,7 @@ export function OpportunityMap({
                   <MapMetric label="Opportunities" value={String(selected.opportunity_count)} />
                   <MapMetric label="Estimated trade value" value={formatGbp(selected.estimated_trade_value_low, selected.estimated_trade_value_high)} />
                   <MapMetric label="Territory" value={selected.territory_status === "available" ? "Available" : "Claimed"} />
-                  <MapMetric label="Monthly price" value={formatGbp(selected.monthly_price_pence / 100)} />
+                  <MapMetric label="Monthly price" value={formatMonthlyGbp(selected.monthly_price_pence)} />
                 </dl>
                 <Link
                   href={"/territories/" + encodeURIComponent(selected.postcode_district) + "/" + encodeURIComponent(selected.trade_slug)}
@@ -202,6 +202,15 @@ function MapMetric({ label, value }: { label: string; value: string }) {
       <dd className="font-semibold text-charcoal">{value}</dd>
     </div>
   );
+}
+
+function formatMonthlyGbp(pence: number): string {
+  return new Intl.NumberFormat("en-GB", {
+    style: "currency",
+    currency: "GBP",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(pence / 100);
 }
 
 function formatGbp(low: number, high?: number): string {
