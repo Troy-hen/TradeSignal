@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCompanyOpportunities } from "@/lib/data/opportunities";
 import { OpportunityRow } from "@/components/opportunity-row";
 import type { Database } from "@/lib/types/database";
+import type { OpportunityActionFilter } from "@/lib/data/opportunities";
 
 type OpportunityBucket = Database["public"]["Enums"]["opportunity_bucket"];
 
@@ -15,6 +16,16 @@ const BUCKETS: { value: OpportunityBucket | ""; label: string; helper: string }[
   { value: "low", label: "Low", helper: "Below 50" },
 ];
 const VALID_BUCKETS = new Set<string>(["hot", "strong", "possible", "low"]);
+const ACTIONS: { value: OpportunityActionFilter | ""; label: string }[] = [
+  { value: "", label: "All stages" },
+  { value: "new", label: "New" },
+  { value: "saved", label: "Saved" },
+  { value: "contacted", label: "Contacted" },
+  { value: "quoted", label: "Quoted" },
+  { value: "won", label: "Won" },
+  { value: "lost", label: "Lost" },
+];
+const VALID_ACTIONS = new Set<string>(["new", "saved", "contacted", "quoted", "won", "lost"]);
 
 export default async function OpportunitiesPage({
   searchParams,
@@ -22,17 +33,19 @@ export default async function OpportunitiesPage({
   searchParams: Promise<{ bucket?: string }>;
 }) {
   const company = await requireCurrentCompany();
-  const { bucket } = await searchParams;
+  const { bucket, action } = await searchParams;
   const validBucket = bucket && VALID_BUCKETS.has(bucket) ? (bucket as OpportunityBucket) : undefined;
+  const validAction = action && VALID_ACTIONS.has(action) ? (action as OpportunityActionFilter) : undefined;
   const supabase = await createClient();
 
   const [{ data: activeClaims }, opportunities] = await Promise.all([
     supabase.from("territory_claims").select("id").eq("company_id", company.id).eq("status", "active").limit(1),
-    getCompanyOpportunities(company.id, { bucket: validBucket, limit: 200 }),
+    getCompanyOpportunities(company.id, { bucket: validBucket, action: validAction, limit: 300 }),
   ]);
 
   const hasActiveClaims = (activeClaims?.length ?? 0) > 0;
   const selectedBucket = bucket && VALID_BUCKETS.has(bucket) ? bucket : "";
+  const selectedAction = action && VALID_ACTIONS.has(action) ? action : "";
 
   return (
     <div className="space-y-8">
@@ -56,25 +69,52 @@ export default async function OpportunitiesPage({
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-semibold text-charcoal">Filter by opportunity score</p>
-            <p className="mt-1 text-xs text-slate">Start with Hot when you want the highest-intent work first.</p>
+            <p className="mt-1 text-xs text-slate">Start with Hot when you want the highest-intent work first, then use the pipeline stage to focus on the next action.</p>
           </div>
           <p className="text-xs font-medium text-slate">{opportunities.length} {opportunities.length === 1 ? "opportunity" : "opportunities"}</p>
         </div>
         <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
-          {BUCKETS.map((item) => (
-            <Link
-              key={item.value}
-              href={item.value ? `/opportunities?bucket=${item.value}` : "/opportunities"}
-              className={`flex min-w-max items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition ${
-                selectedBucket === item.value
-                  ? "border-signal-orange bg-signal-orange text-white"
-                  : "border-light-grey bg-white text-charcoal hover:border-signal-orange/40"
-              }`}
-            >
-              <span>{item.label}</span>
-              <span className={selectedBucket === item.value ? "text-white/70" : "text-slate"}>{item.helper}</span>
-            </Link>
-          ))}
+          {BUCKETS.map((item) => {
+            const params = new URLSearchParams();
+            if (item.value) params.set("bucket", item.value);
+            if (selectedAction) params.set("action", selectedAction);
+            const href = params.toString() ? "/opportunities?" + params.toString() : "/opportunities";
+            return (
+              <Link
+                key={item.value}
+                href={href}
+                className={`flex min-w-max items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition ${
+                  selectedBucket === item.value
+                    ? "border-signal-orange bg-signal-orange text-white"
+                    : "border-light-grey bg-white text-charcoal hover:border-signal-orange/40"
+                }`}
+              >
+                <span>{item.label}</span>
+                <span className={selectedBucket === item.value ? "text-white/70" : "text-slate"}>{item.helper}</span>
+              </Link>
+            );
+          })}
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2 border-t border-light-grey pt-4">
+          {ACTIONS.map((item) => {
+            const params = new URLSearchParams();
+            if (selectedBucket) params.set("bucket", selectedBucket);
+            if (item.value) params.set("action", item.value);
+            const href = params.toString() ? "/opportunities?" + params.toString() : "/opportunities";
+            return (
+              <Link
+                key={item.value}
+                href={href}
+                className={`rounded-xl border px-3 py-2 text-xs font-semibold transition ${
+                  selectedAction === item.value
+                    ? "border-charcoal bg-charcoal text-white"
+                    : "border-light-grey bg-white text-charcoal hover:border-signal-orange/40"
+                }`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
         </div>
       </section>
 
