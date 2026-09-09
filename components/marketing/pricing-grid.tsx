@@ -56,6 +56,21 @@ export function PricingGrid({ compact = false }: { items?: PricingItem[]; compac
           )}
         </div>
 
+        <div className="mt-8 flex flex-col gap-4 rounded-2xl border border-success/20 bg-success/5 p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-charcoal">Free Explorer · £0/month</p>
+            <p className="mt-1 text-sm leading-6 text-slate">
+              Preview local planning activity, counts, estimated value and territory availability before you buy. No card required.
+            </p>
+          </div>
+          <Link
+            href="/territories"
+            className="inline-flex shrink-0 items-center justify-center rounded-xl border border-success/30 px-4 py-2.5 text-sm font-semibold text-charcoal transition hover:bg-white"
+          >
+            Explore free
+          </Link>
+        </div>
+
         <div className="mt-9 grid gap-5 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.65fr)]">
           <article className="flex flex-col rounded-2xl border border-signal-orange/30 bg-charcoal p-6 text-white">
             <p className="text-sm font-semibold text-signal-orange">Universal starting price</p>
