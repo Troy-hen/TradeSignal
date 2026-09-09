@@ -71,11 +71,6 @@ export default async function DataCoveragePage({
             A transparent view of the councils, postcode districts and planning dates currently loaded into MyTradeBox.
           </p>
         </div>
-        <div className="rounded-2xl border border-light-grey bg-white px-4 py-3 text-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.11em] text-slate">Data source</p>
-          <p className="mt-1 font-semibold text-charcoal">{snapshot.provider === "plota" ? "Plota" : snapshot.provider}</p>
-          <p className="mt-1 text-xs text-slate">Public planning data</p>
-        </div>
       </div>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
