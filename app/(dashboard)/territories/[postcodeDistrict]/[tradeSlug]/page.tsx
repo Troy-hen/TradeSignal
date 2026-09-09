@@ -34,8 +34,12 @@ export default async function TerritoryDetailPage({
 
   if (!trade) notFound();
 
-  const [{ data: availability }, company] = await Promise.all([
+  const [{ data: availability }, { data: teaserData }, company] = await Promise.all([
     supabase.rpc("check_territory_availability", {
+      p_postcode_district: district,
+      p_trade_slug: trade.slug,
+    }),
+    supabase.rpc("browse_territory_teaser", {
       p_postcode_district: district,
       p_trade_slug: trade.slug,
     }),
@@ -43,6 +47,7 @@ export default async function TerritoryDetailPage({
   ]);
 
   const stats = Array.isArray(availability) ? availability[0] : availability;
+  const teaser = Array.isArray(teaserData) ? teaserData[0] : teaserData;
   if (!stats) notFound();
 
   let isOwnClaim = false;
@@ -154,6 +159,16 @@ export default async function TerritoryDetailPage({
             <LockedOpportunityPreview
               title="See the opportunity shape"
               body="Claim the territory to reveal actual projects, addresses, planning references, AI interpretation and the recommended next move."
+              teaser={
+                teaser
+                  ? {
+                      projectType: teaser.project_type,
+                      status: teaser.planning_status,
+                      estimatedTradeValueLow: teaser.estimated_trade_value_low,
+                      estimatedTradeValueHigh: teaser.estimated_trade_value_high,
+                    }
+                  : null
+              }
             />
           )}
         </div>
