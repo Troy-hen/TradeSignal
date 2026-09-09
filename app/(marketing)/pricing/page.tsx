@@ -1,60 +1,33 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
-import { FALLBACK_PRICING, PricingGrid, type PricingItem } from "@/components/marketing/pricing-grid";
+import { PricingGrid } from "@/components/marketing/pricing-grid";
 
 export const metadata: Metadata = {
   title: "Pricing",
   description: "Simple monthly pricing for exclusive MyTradeBox trade territories.",
 };
 
-async function getPricing(): Promise<PricingItem[]> {
-  try {
-    const supabase = await createClient();
-    const { data } = await supabase
-      .from("trade_categories")
-      .select("slug, name, description, default_monthly_price_pence")
-      .eq("is_active", true)
-      .order("display_order");
-
-    if (data && data.length > 0) {
-      return data.map((trade) => ({
-        slug: trade.slug,
-        name: trade.name,
-        description: trade.description,
-        monthlyPricePence: trade.default_monthly_price_pence,
-      }));
-    }
-  } catch {
-    // The marketing page has a safe fallback when the data service is unavailable.
-  }
-
-  return FALLBACK_PRICING;
-}
-
-export default async function PricingPage() {
-  const pricing = await getPricing();
-
+export default function PricingPage() {
   return (
     <div className="bg-soft-surface">
       <section className="bg-charcoal px-6 py-20 text-white sm:py-28">
         <div className="mx-auto max-w-4xl lg:px-2">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Pricing</p>
           <h1 className="mt-5 text-4xl font-bold tracking-tight sm:text-6xl">
-            Pay for the local signal you can act on.
+            One clear price for every trade and territory.
           </h1>
           <p className="mt-6 max-w-2xl text-base leading-7 text-white/70 sm:text-lg">
-            No credit packs and no shared lead auction. Start at £29.99 for one postcode district, add coverage around your service area and see the exact monthly total before checkout.
+            Start at £29.99/month for your first postcode district, regardless of trade or location. Add districts around your service area and the unit price reduces automatically as your coverage grows.
           </p>
         </div>
       </section>
 
-      <PricingGrid items={pricing} />
+      <PricingGrid />
 
       <section className="bg-white px-6 py-20 sm:py-24">
         <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-3 lg:px-2">
           <InfoCard title="What is included" body="Exclusive access to your trade-specific opportunity feed, live aggregate totals, planning context, indicative value, source links and practical next actions." />
-          <InfoCard title="How coverage works" body="Each trade has its own coverage plan. The first district is £29.99/month, additional districts are discounted by volume, and you can add or remove districts to fit your service area." />
+          <InfoCard title="How coverage pricing works" body="Every trade starts at the same £29.99 for its first postcode district. Add or remove districts inside that trade plan and the unit price steps down by volume. Verified county bundles receive an additional 20% discount." />
           <InfoCard title="What is not promised" body="Planning applications can change, estimates are indicative and a signal is not a guaranteed enquiry. MyTradeBox helps you find and prioritise opportunities earlier." />
         </div>
       </section>
