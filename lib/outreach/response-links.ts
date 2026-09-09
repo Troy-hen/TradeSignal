@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 export type ResponseAudience = "homeowner" | "professional" | "business" | "unknown";
 export type ResponseChannel = "letter" | "email";
+export type QuoteLinkEventType = "page_viewed" | "call_clicked" | "whatsapp_clicked" | "quote_started" | "quote_requested" | "not_interested";
 
 export type ResolvedQuoteLink = {
   id: string;
@@ -87,7 +88,7 @@ export async function resolveQuoteLink(token: string): Promise<ResolvedQuoteLink
   };
 }
 
-export async function recordQuoteLinkEvent(link: ResolvedQuoteLink, eventType: "page_viewed" | "call_clicked" | "quote_started" | "quote_requested" | "not_interested", metadata: Record<string, unknown> = {}) {
+export async function recordQuoteLinkEvent(link: ResolvedQuoteLink, eventType: QuoteLinkEventType, metadata: Record<string, unknown> = {}) {
   const admin = createAdminClient() as unknown as SupabaseClient;
   const now = new Date().toISOString();
   await admin.from("outreach_response_events").insert({
