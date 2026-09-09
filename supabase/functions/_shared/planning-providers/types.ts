@@ -88,10 +88,10 @@ export interface NormalisedApplication {
 }
 
 export interface PlanningDataProvider {
-  fetchNewApplications(params: { since?: string; cursor?: string }): AsyncGenerator<RawApplication[]>;
+  fetchNewApplications(params: { since?: string; dateTo?: string; cursor?: string }): AsyncGenerator<RawApplication[]>;
   fetchUpdatedApplications(params: { since: string; cursor?: string }): AsyncGenerator<RawApplication[]>;
   getApplication(providerId: string): Promise<RawApplication | null>;
-  searchByPostcode(postcodeOrDistrict: string, opts?: { radius?: number; maxPages?: number }): Promise<RawApplication[]>;
+  searchByPostcode(postcodeOrDistrict: string, opts?: { radius?: number; maxPages?: number; dateFrom?: string; dateTo?: string }): Promise<RawApplication[]>;
   searchByDate(dateFrom: string, dateTo: string): Promise<RawApplication[]>;
   normaliseApplication(raw: RawApplication): Promise<NormalisedApplication>;
 }
