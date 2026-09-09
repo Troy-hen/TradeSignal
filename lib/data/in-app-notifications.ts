@@ -43,7 +43,7 @@ export async function getInAppNotifications(companyId: string): Promise<InAppNot
       .eq("status", "sent")
       .gte("created_at", since)
       .order("created_at", { ascending: false })
-      .limit(15),
+      .limit(25),
     supabase.rpc("browse_nearby_opportunities", { p_limit: 3 }),
   ]);
 
@@ -54,20 +54,29 @@ export async function getInAppNotifications(companyId: string): Promise<InAppNot
     : { data: [] as LeadMatchRow[] };
   const opportunityByMatch = new Map(((matchData ?? []) as LeadMatchRow[]).map((row) => [row.id, row.application_trade_opportunity_id]));
 
-  const logged = logs.map((row) => notificationFromLog(row, row.lead_match_id ? opportunityByMatch.get(row.lead_match_id) ?? null : null));
+  const logged = logs.map((row) => {
+    const metadata = isRecord(row.metadata) ? row.metadata : {};
+    const metadataOpportunityId = typeof metadata.opportunity_id === "string" ? metadata.opportunity_id : null;
+    const opportunityId = row.lead_match_id ? opportunityByMatch.get(row.lead_match_id) ?? metadataOpportunityId : metadataOpportunityId;
+    return notificationFromLog(row, opportunityId);
+  });
   const nearby = ((Array.isArray(nearbyData) ? nearbyData : []) as NearbyRow[]).map(notificationFromNearby);
 
   const seenTitles = new Set<string>();
   return [...logged, ...nearby]
     .sort((a, b) => b.priority - a.priority || Date.parse(b.createdAt) - Date.parse(a.createdAt))
     .filter((item) => {
+      if (item.eyebrow === "Quote request") return true;
       const key = item.title.trim().toLowerCase();
       if (seenTitles.has(key)) return false;
       seenTitles.add(key);
       return true;
     })
     .slice(0, 10)
-    .map(({ priority: _priority, ...item }) => item);
+    .map(({ priority, ...item }) => {
+      void priority;
+      return item;
+    });
 }
 
 function notificationFromLog(row: NotificationLogRow, opportunityId: string | null): RankedNotification {
@@ -76,6 +85,13 @@ function notificationFromLog(row: NotificationLogRow, opportunityId: string | nu
   const fallbackTitle = notificationLabel(type);
   const opportunityHref = opportunityId ? "/opportunities/" + encodeURIComponent(opportunityId) : "/opportunities";
 
+  if (type === "quote_request") {
+    const responder = typeof metadata.responder_name === "string" ? metadata.responder_name : null;
+    const audience = typeof metadata.audience_type === "string" ? metadata.audience_type : null;
+    const preferred = typeof metadata.preferred_contact_method === "string" ? notificationLabel(metadata.preferred_contact_method) : null;
+    const detail = [responder ? `${responder} requested contact` : "A recipient requested contact", audience ? `via ${notificationLabel(audience)} outreach` : null, preferred ? `prefers ${preferred.toLowerCase()}` : null].filter(Boolean).join(" · ");
+    return ranked(110, row, "success", "Quote request", row.subject ?? "New quote request", detail, opportunityHref, opportunityId ? "Open request" : "View requests");
+  }
   if (type === "payment_failed") return ranked(100, row, "warning", "Billing", row.subject ?? "Action needed on your subscription", "Review your billing details to keep territory access active.", "/billing", "Review billing");
   if (type === "approval_alert") return ranked(90, row, "signal", "Planning approved", row.subject ?? fallbackTitle, "A matched application has moved into an important contact window.", opportunityHref, opportunityId ? "Open opportunity" : "View opportunities");
   if (type === "new_lead_instant") return ranked(80, row, "signal", "New opportunity", row.subject ?? fallbackTitle, "A high-priority opportunity has been matched to your coverage.", opportunityHref, opportunityId ? "Open opportunity" : "Open opportunities");
