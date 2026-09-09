@@ -34,7 +34,7 @@ export function NotificationInbox({ notifications }: { notifications: Notificati
 
   if (notifications.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-light-grey bg-soft-surface p-5 text-sm text-slate">
+      <div className="min-w-0 rounded-2xl border border-dashed border-light-grey bg-soft-surface p-5 text-sm leading-6 text-slate">
         No notification emails have been attempted yet. New opportunity and account alerts will appear here after delivery is attempted.
       </div>
     );
@@ -42,28 +42,28 @@ export function NotificationInbox({ notifications }: { notifications: Notificati
 
   return (
     <>
-      <div className="overflow-hidden rounded-2xl border border-light-grey">
-        <ul className="divide-y divide-light-grey">
+      <div className="min-w-0 overflow-hidden rounded-2xl border border-light-grey">
+        <ul className="min-w-0 divide-y divide-light-grey">
           {notifications.map((notification) => {
             const status = notificationStatus(notification.status);
             const subject = notification.subject ?? notificationLabel(notification.notification_type);
 
             return (
-              <li key={notification.id}>
+              <li key={notification.id} className="min-w-0">
                 <button
                   type="button"
-                  className="flex w-full flex-col gap-3 p-4 text-left transition hover:bg-soft-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-signal-orange sm:flex-row sm:items-center sm:justify-between"
+                  className="flex w-full min-w-0 flex-col gap-3 p-4 text-left transition hover:bg-soft-surface focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-signal-orange sm:flex-row sm:items-center sm:justify-between"
                   onClick={() => setSelected(notification)}
                   aria-label={`View email: ${subject}`}
                 >
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-semibold text-charcoal">{subject}</span>
-                    <span className="mt-1 block text-xs text-slate">
+                  <span className="min-w-0 flex-1">
+                    <span className="block break-words text-sm font-semibold leading-5 text-charcoal sm:truncate">{subject}</span>
+                    <span className="mt-1 block break-words text-xs leading-5 text-slate">
                       {notificationLabel(notification.notification_type)} · {formatDateTime(notification.sent_at ?? notification.created_at)}
                     </span>
-                    {notification.error_message && <span className="mt-1 block text-xs text-danger">{notification.error_message}</span>}
+                    {notification.error_message && <span className="mt-1 block break-words text-xs leading-5 text-danger">{notification.error_message}</span>}
                   </span>
-                  <span className="flex shrink-0 items-center gap-3">
+                  <span className="flex min-w-0 flex-wrap items-center gap-2 sm:shrink-0 sm:justify-end">
                     <span className="text-xs font-semibold text-signal-orange">View email →</span>
                     <span className={`inline-flex w-fit items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ${status.className}`}>
                       <span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} />
@@ -79,7 +79,7 @@ export function NotificationInbox({ notifications }: { notifications: Notificati
 
       {selected && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-charcoal/60 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-charcoal/60 p-0 backdrop-blur-sm sm:items-center sm:p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="notification-email-title"
@@ -87,11 +87,11 @@ export function NotificationInbox({ notifications }: { notifications: Notificati
             if (event.target === event.currentTarget) setSelected(null);
           }}
         >
-          <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-light-grey bg-white shadow-2xl">
-            <div className="flex items-start justify-between gap-4 border-b border-light-grey p-5 sm:p-6">
-              <div className="min-w-0">
+          <div className="flex max-h-[94vh] w-full min-w-0 flex-col overflow-hidden rounded-t-3xl border border-light-grey bg-white shadow-2xl sm:max-w-3xl sm:rounded-3xl">
+            <div className="flex min-w-0 items-start justify-between gap-3 border-b border-light-grey p-4 sm:p-6">
+              <div className="min-w-0 flex-1">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Email delivery</p>
-                <h2 id="notification-email-title" className="mt-2 truncate text-lg font-bold tracking-tight text-charcoal sm:text-xl">
+                <h2 id="notification-email-title" className="mt-2 break-words text-base font-bold leading-6 tracking-tight text-charcoal sm:text-xl">
                   {selected.subject ?? notificationLabel(selected.notification_type)}
                 </h2>
                 <p className="mt-1 text-xs text-slate">{formatDateTime(selected.sent_at ?? selected.created_at)}</p>
@@ -109,10 +109,10 @@ export function NotificationInbox({ notifications }: { notifications: Notificati
                 title={selected.subject ?? "Email content"}
                 srcDoc={selected.email_html}
                 sandbox=""
-                className="h-[min(70vh,640px)] w-full bg-white"
+                className="h-[min(72vh,640px)] w-full min-w-0 bg-white"
               />
             ) : (
-              <div className="m-5 rounded-2xl border border-dashed border-light-grey bg-soft-surface p-6 text-sm leading-6 text-slate sm:m-6">
+              <div className="m-4 rounded-2xl border border-dashed border-light-grey bg-soft-surface p-5 text-sm leading-6 text-slate sm:m-6">
                 This historical event was logged before MyTradeBox retained email content, so its message is not available to preview.
               </div>
             )}
