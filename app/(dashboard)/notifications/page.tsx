@@ -1,16 +1,7 @@
 import Link from "next/link";
 import { requireCurrentCompany } from "@/lib/auth/get-current-company";
 import { createClient } from "@/lib/supabase/server";
-
-type NotificationRow = {
-  id: string;
-  notification_type: string;
-  status: string;
-  subject: string | null;
-  sent_at: string | null;
-  created_at: string;
-  error_message: string | null;
-};
+import { NotificationInbox, type NotificationInboxRow } from "@/components/notification-inbox";
 
 type ReminderRow = {
   id: string;
@@ -42,7 +33,7 @@ export default async function NotificationsPage() {
   const [{ data: notificationData }, { data: reminderData }] = await Promise.all([
     supabase
       .from("notification_log")
-      .select("id, notification_type, status, subject, sent_at, created_at, error_message")
+      .select("id, notification_type, status, subject, sent_at, created_at, error_message, email_html")
       .eq("company_id", company.id)
       .order("created_at", { ascending: false })
       .limit(50),
@@ -55,7 +46,7 @@ export default async function NotificationsPage() {
       .limit(25),
   ]);
 
-  const notifications = (notificationData ?? []) as NotificationRow[];
+  const notifications = (notificationData ?? []) as NotificationInboxRow[];
   const reminders = (reminderData ?? []) as ReminderRow[];
   const matchIds = [...new Set(reminders.map((reminder) => reminder.lead_match_id))];
   const matchRows: MatchRow[] = [];
@@ -163,55 +154,13 @@ export default async function NotificationsPage() {
             </div>
             <p className="text-xs text-slate">Latest 50 events</p>
           </div>
-          <p className="mt-2 text-sm leading-6 text-slate">
-            Sent means Resend accepted the message. It does not confirm that the email was opened.
-          </p>
           <div className="mt-6">
-            {notifications.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-light-grey bg-soft-surface p-5 text-sm text-slate">
-                No notification emails have been attempted yet. New opportunity and account alerts will appear here after delivery is attempted.
-              </div>
-            ) : (
-              <div className="overflow-hidden rounded-2xl border border-light-grey">
-                <ul className="divide-y divide-light-grey">
-                  {notifications.map((notification) => {
-                    const status = notificationStatus(notification.status);
-                    return (
-                      <li key={notification.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-charcoal">
-                            {notification.subject ?? notificationLabel(notification.notification_type)}
-                          </p>
-                          <p className="mt-1 text-xs text-slate">
-                            {notificationLabel(notification.notification_type)} · {formatDateTime(notification.sent_at ?? notification.created_at)}
-                          </p>
-                          {notification.error_message && <p className="mt-1 text-xs text-danger">{notification.error_message}</p>}
-                        </div>
-                        <span className={`inline-flex w-fit items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold ${status.className}`}>
-                          <span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} />
-                          {status.label}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            )}
+            <NotificationInbox notifications={notifications} />
           </div>
         </section>
       </div>
     </div>
   );
-}
-
-function notificationLabel(value: string): string {
-  return value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
-
-function notificationStatus(status: string): { label: string; className: string; dot: string } {
-  if (status === "sent") return { label: "Sent", className: "bg-success/10 text-success", dot: "bg-success" };
-  if (status === "queued") return { label: "Queued", className: "bg-warning/10 text-warning", dot: "bg-warning" };
-  return { label: "Failed", className: "bg-danger/10 text-danger", dot: "bg-danger" };
 }
 
 function formatDateTime(value: string): string {
