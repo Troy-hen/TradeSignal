@@ -169,6 +169,7 @@ async function processNewLeadMatches(admin: any, appUrl: string, cadence: Cadenc
         notification_type: notificationType,
         status: "sent",
         subject: template.subject,
+        email_html: template.html,
         provider_message_id: sendResult.messageId,
         sent_at: new Date().toISOString(),
       });
@@ -179,6 +180,7 @@ async function processNewLeadMatches(admin: any, appUrl: string, cadence: Cadenc
         notification_type: notificationType,
         status: "failed",
         subject: template.subject,
+        email_html: template.html,
         error_message: sendResult.error,
       });
       results.errors++;
@@ -282,6 +284,7 @@ async function processFollowUpReminders(admin: any, appUrl: string, results: Rec
       notification_type: "follow_up_reminder",
       status: sendResult.success ? "sent" : "failed",
       subject: template.subject,
+      email_html: template.html,
       provider_message_id: sendResult.success ? sendResult.messageId : null,
       sent_at: sendResult.success ? new Date().toISOString() : null,
       error_message: sendResult.success ? null : sendResult.error,
@@ -350,6 +353,7 @@ async function processApprovalAlerts(admin: any, appUrl: string, results: Record
           notification_type: "approval_alert",
           status: sendResult.success ? "sent" : "failed",
           subject: template.subject,
+          email_html: template.html,
           provider_message_id: sendResult.success ? sendResult.messageId : null,
           sent_at: sendResult.success ? new Date().toISOString() : null,
           error_message: sendResult.success ? null : sendResult.error,
@@ -463,6 +467,7 @@ async function processQueuedNotifications(admin: any, appUrl: string, results: R
       .update({
         status: sendResult.success ? "sent" : "failed",
         subject: template.subject,
+        email_html: template.html,
         provider_message_id: sendResult.success ? sendResult.messageId : null,
         sent_at: sendResult.success ? new Date().toISOString() : null,
         error_message: sendResult.success ? null : sendResult.error,
