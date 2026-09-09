@@ -1,3 +1,4 @@
+import { createClient } from "jsr:@supabase/supabase-js@2";
 import { normalizeOcdsPackage } from "./ocds.ts";
 import type { MarketSignalProvider, NormalizedMarketSignal } from "./types.ts";
 
@@ -66,18 +67,50 @@ async function fetchJson(url: string): Promise<unknown> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 20_000);
   try {
-    // Keep the request deliberately plain. Several government output APIs
-    // apply WAF rules to crawler-like user-agent strings even though the
-    // OCDS endpoints themselves are public and unauthenticated.
     const response = await fetch(url, { headers: { Accept: "application/json" }, signal: controller.signal });
-    if (!response.ok) {
-      const retryAfter = response.headers.get("Retry-After");
-      throw new Error(`HTTP ${response.status}${retryAfter ? ` retry-after=${retryAfter}` : ""}`);
-    }
-    return await response.json();
+    if (response.ok) return await response.json();
+
+    // GOV.UK's public OCDS endpoints currently return 403 from the Supabase
+    // Edge egress network while the same unauthenticated request succeeds
+    // through the project's Postgres network. Use the allowlisted pg_net
+    // bridge only for that network-specific rejection; never proxy arbitrary
+    // hosts or silently mask normal upstream failures.
+    if (response.status === 403) return await fetchJsonViaPgNet(url);
+
+    const retryAfter = response.headers.get("Retry-After");
+    throw new Error(`HTTP ${response.status}${retryAfter ? ` retry-after=${retryAfter}` : ""}`);
   } finally { clearTimeout(timeout); }
 }
 
+async function fetchJsonViaPgNet(url: string): Promise<unknown> {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!supabaseUrl || !serviceRoleKey) throw new Error("pg_net fallback unavailable: Supabase service credentials missing");
+
+  const admin = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } });
+  const { data: requestId, error: queueError } = await admin.rpc("queue_public_market_signal_fetch", { p_url: url });
+  if (queueError || requestId === null || requestId === undefined) {
+    throw new Error(`pg_net fetch queue failed: ${queueError?.message ?? "no request id"}`);
+  }
+
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    if (attempt > 0) await sleep(125);
+    const { data, error } = await admin.rpc("read_public_market_signal_fetch", { p_request_id: requestId });
+    if (error) throw new Error(`pg_net response read failed: ${error.message}`);
+    const row = Array.isArray(data) ? data[0] as { status_code?: number; content?: string; timed_out?: boolean; error_msg?: string | null } | undefined : undefined;
+    if (!row) continue;
+    if (row.timed_out) throw new Error("pg_net government API request timed out");
+    if (row.error_msg) throw new Error(`pg_net government API request failed: ${row.error_msg}`);
+    if (!row.status_code) continue;
+    if (row.status_code < 200 || row.status_code >= 300) throw new Error(`HTTP ${row.status_code} via pg_net`);
+    if (!row.content) throw new Error("Government API returned an empty response via pg_net");
+    try { return JSON.parse(row.content); }
+    catch { throw new Error("Government API returned invalid JSON via pg_net"); }
+  }
+  throw new Error("Timed out waiting for pg_net government API response");
+}
+
+function sleep(ms: number) { return new Promise((resolve) => setTimeout(resolve, ms)); }
 function normalizeSince(value?: string | null): string | null { if (!value) return daysAgo(3); const parsed = new Date(value); return Number.isFinite(parsed.getTime()) ? parsed.toISOString() : daysAgo(3); }
 function daysAgo(days: number) { const date = new Date(); date.setUTCDate(date.getUTCDate() - days); return date.toISOString(); }
 function withoutMillis(value: string) { return value.replace(/\.\d{3}Z$/, ""); }
