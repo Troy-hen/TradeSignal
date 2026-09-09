@@ -40,10 +40,16 @@ export async function GET(request: Request) {
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("check_territory_availability", {
-    p_postcode_district: postcodeDistrict,
-    p_trade_slug: parsed.data.trade,
-  });
+  const [{ data, error }, { data: teaserData, error: teaserError }] = await Promise.all([
+    supabase.rpc("check_territory_availability", {
+      p_postcode_district: postcodeDistrict,
+      p_trade_slug: parsed.data.trade,
+    }),
+    supabase.rpc("browse_territory_teaser", {
+      p_postcode_district: postcodeDistrict,
+      p_trade_slug: parsed.data.trade,
+    }),
+  ]);
 
   if (error) {
     const message = error.message ?? "";
@@ -60,5 +66,6 @@ export async function GET(request: Request) {
   }
 
   const result = Array.isArray(data) ? data[0] : data;
-  return NextResponse.json({ ok: true, ...result });
+  const teaser = teaserError ? null : Array.isArray(teaserData) ? teaserData[0] ?? null : teaserData;
+  return NextResponse.json({ ok: true, ...result, teaser });
 }
