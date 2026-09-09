@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, type PointerEvent, type ReactNode, type WheelEvent } from "react";
+import { useMemo, useRef, useState, type PointerEvent, type ReactNode, type WheelEvent } from "react";
 
 export type OpportunityMapPoint = {
   postcode_district: string;
@@ -56,13 +56,26 @@ export function OpportunityMap({
   );
   const [tradeSlug, setTradeSlug] = useState(tradeOptions[0]?.slug ?? "");
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
+  const activeTradeSlug =
+    tradeSlug === "" || tradeOptions.some((trade) => trade.slug === tradeSlug)
+      ? tradeSlug
+      : tradeOptions[0]?.slug ?? "";
   const filteredPoints = useMemo(
-    () => points.filter((point) => !tradeSlug || point.trade_slug === tradeSlug),
-    [points, tradeSlug],
+    () => points.filter((point) => !activeTradeSlug || point.trade_slug === activeTradeSlug),
+    [activeTradeSlug, points],
   );
   const [viewport, setViewport] = useState<MapViewport>(() => fitViewport(filteredPoints));
+  const [viewportKey, setViewportKey] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const panState = useRef<PanState | null>(null);
+  const filterKey = useMemo(
+    () =>
+      activeTradeSlug +
+      ":" +
+      filteredPoints.map((point) => point.postcode_district + "," + point.latitude + "," + point.longitude).join("|"),
+    [activeTradeSlug, filteredPoints],
+  );
+  const visibleViewport = viewportKey === filterKey ? viewport : fitViewport(filteredPoints);
 
   const selected =
     filteredPoints.find((point) => point.postcode_district === selectedDistrict) ??
@@ -70,10 +83,10 @@ export function OpportunityMap({
     null;
 
   const tileData = useMemo(() => {
-    const center = project(viewport.latitude, viewport.longitude, viewport.zoom);
+    const center = project(visibleViewport.latitude, visibleViewport.longitude, visibleViewport.zoom);
     const centerTileX = Math.floor(center.x / TILE_SIZE);
     const centerTileY = Math.floor(center.y / TILE_SIZE);
-    const tileCount = 2 ** viewport.zoom;
+    const tileCount = 2 ** visibleViewport.zoom;
 
     return {
       center,
@@ -88,22 +101,19 @@ export function OpportunityMap({
           y: tileY,
           offsetX: tileX * TILE_SIZE - center.x,
           offsetY: tileY * TILE_SIZE - center.y,
-          zoom: viewport.zoom,
+          zoom: visibleViewport.zoom,
         };
       }).filter((tile) => tile.y >= 0 && tile.y < tileCount),
     };
-  }, [viewport]);
+  }, [visibleViewport]);
 
-  useEffect(() => {
-    if (tradeSlug && tradeOptions.length > 0 && !tradeOptions.some((trade) => trade.slug === tradeSlug)) {
-      setTradeSlug(tradeOptions[0].slug);
-    }
-  }, [tradeOptions, tradeSlug]);
-
-  useEffect(() => {
-    setViewport(fitViewport(filteredPoints));
-    setSelectedDistrict(null);
-  }, [tradeSlug, filteredPoints]);
+  function updateViewport(next: MapViewport | ((current: MapViewport) => MapViewport)) {
+    setViewport((current) => {
+      const base = viewportKey === filterKey ? current : fitViewport(filteredPoints);
+      return typeof next === "function" ? next(base) : next;
+    });
+    setViewportKey(filterKey);
+  }
 
   function selectTrade(value: string) {
     setTradeSlug(value);
@@ -115,19 +125,19 @@ export function OpportunityMap({
 
   function focusSelected() {
     if (!selected) return;
-    setViewport({
+    updateViewport({
       latitude: selected.latitude,
       longitude: selected.longitude,
-      zoom: Math.max(viewport.zoom, 10),
+      zoom: Math.max(visibleViewport.zoom, 10),
     });
   }
 
   function resetViewport() {
-    setViewport(fitViewport(filteredPoints));
+    updateViewport(fitViewport(filteredPoints));
   }
 
   function changeZoom(delta: number) {
-    setViewport((current) => ({
+    updateViewport((current) => ({
       ...current,
       zoom: clamp(current.zoom + delta, MIN_ZOOM, MAX_ZOOM),
     }));
@@ -135,7 +145,7 @@ export function OpportunityMap({
 
   function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
     if (event.target instanceof HTMLElement && event.target.closest("button")) return;
-    const center = project(viewport.latitude, viewport.longitude, viewport.zoom);
+    const center = project(visibleViewport.latitude, visibleViewport.longitude, visibleViewport.zoom);
     panState.current = {
       pointerId: event.pointerId,
       startX: event.clientX,
@@ -153,9 +163,9 @@ export function OpportunityMap({
     const nextCenter = unproject(
       current.centerX - (event.clientX - current.startX),
       current.centerY - (event.clientY - current.startY),
-      viewport.zoom,
+      visibleViewport.zoom,
     );
-    setViewport((currentViewport) => ({
+    updateViewport((currentViewport) => ({
       ...currentViewport,
       latitude: nextCenter.latitude,
       longitude: nextCenter.longitude,
@@ -189,7 +199,7 @@ export function OpportunityMap({
         <label className="block min-w-[190px]">
           <span className="text-xs font-semibold uppercase tracking-[0.11em] text-slate">Trade view</span>
           <select
-            value={tradeSlug}
+            value={activeTradeSlug}
             onChange={(event) => selectTrade(event.target.value)}
             className="mt-2 w-full rounded-xl border border-light-grey bg-white px-3 py-2.5 text-sm font-medium text-charcoal outline-none focus:border-signal-orange"
           >
@@ -267,7 +277,7 @@ export function OpportunityMap({
 
             {filteredPoints.map((point) => {
               const active = selected?.postcode_district === point.postcode_district;
-              const pointPixel = project(point.latitude, point.longitude, viewport.zoom);
+              const pointPixel = project(point.latitude, point.longitude, visibleViewport.zoom);
               const size = Math.min(56, 26 + Math.log2(point.opportunity_count + 1) * 8);
               const tone =
                 point.territory_status === "available"
