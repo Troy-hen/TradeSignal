@@ -103,7 +103,7 @@ export function PricingGrid({ compact = false }: { items?: PricingItem[]; compac
             <div className="mt-5 rounded-2xl border border-signal-orange/20 bg-signal-orange/5 p-4">
               <p className="text-sm font-semibold text-charcoal">County coverage</p>
               <p className="mt-1 text-sm leading-6 text-slate">
-                Verified county bundles receive 20% off the tiered postcode subtotal. You keep control of the individual districts in the bundle and can adjust coverage to fit your budget.
+                Once verified county coverage is enabled for your area, county bundles receive 20% off the tiered postcode subtotal. You keep control of the individual districts in the bundle and can adjust coverage to fit your budget.
               </p>
             </div>
           </div>
