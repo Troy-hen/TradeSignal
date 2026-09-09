@@ -10,79 +10,79 @@ const FALLBACK_TRADES: PricingItem[] = [
     "slug": "general-builder",
     "name": "General Builder",
     "description": "Extensions, conversions and whole-project builds",
-    "monthlyPricePence": 9900
+    "monthlyPricePence": 2999
   },
   {
     "slug": "groundworks",
     "name": "Groundworks",
     "description": "Excavation, foundations, drainage and site preparation",
-    "monthlyPricePence": 7900
+    "monthlyPricePence": 2999
   },
   {
     "slug": "roofing",
     "name": "Roofing",
     "description": "Re-roofing, roof extensions and roofline work",
-    "monthlyPricePence": 7900
+    "monthlyPricePence": 2999
   },
   {
     "slug": "structural-steel",
     "name": "Structural Steel",
     "description": "Steel beams and structural alterations",
-    "monthlyPricePence": 6900
+    "monthlyPricePence": 2999
   },
   {
     "slug": "windows-doors",
     "name": "Windows & Doors",
     "description": "Replacement and new windows, doors and glazing",
-    "monthlyPricePence": 6900
+    "monthlyPricePence": 2999
   },
   {
     "slug": "landscaping",
     "name": "Landscaping",
     "description": "Gardens, patios, boundaries and external works",
-    "monthlyPricePence": 5900
+    "monthlyPricePence": 2999
   },
   {
     "slug": "electrical",
     "name": "Electrical",
     "description": "Rewiring, consumer units, EV charging and new circuits",
-    "monthlyPricePence": 7900
+    "monthlyPricePence": 2999
   },
   {
     "slug": "plumbing-heating",
     "name": "Plumbing & Heating",
     "description": "Boilers, heating systems, bathrooms and heat pumps",
-    "monthlyPricePence": 7900
+    "monthlyPricePence": 2999
   },
   {
     "slug": "brickwork",
     "name": "Brickwork",
     "description": "Blockwork, brickwork and masonry",
-    "monthlyPricePence": 6900
+    "monthlyPricePence": 2999
   },
   {
     "slug": "demolition",
     "name": "Demolition",
     "description": "Full or partial demolition and strip-out",
-    "monthlyPricePence": 5900
+    "monthlyPricePence": 2999
   },
   {
     "slug": "loft-conversion",
     "name": "Loft Conversion",
     "description": "Loft conversions and roof-space development",
-    "monthlyPricePence": 6900
+    "monthlyPricePence": 2999
   },
   {
     "slug": "driveways",
     "name": "Driveways",
     "description": "Driveways, hardstanding and parking areas",
-    "monthlyPricePence": 5900
+    "monthlyPricePence": 2999
   },
   {
     "slug": "renewables",
     "name": "Renewables",
     "description": "Solar PV, heat pumps and renewable installations",
-    "monthlyPricePence": 6900
+    "monthlyPricePence": 2999
   }
 ];
 
