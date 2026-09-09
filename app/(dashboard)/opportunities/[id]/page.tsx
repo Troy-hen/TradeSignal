@@ -8,9 +8,12 @@ import { LockedOpportunityPreview } from "@/components/locked-opportunity-previe
 import { LeadActionPanel } from "@/components/lead-action-panel";
 import { FollowUpPanel } from "@/components/follow-up-panel";
 import { ContactEnrichmentPanel } from "@/components/contact-enrichment-panel";
+import { PropertyIntelligencePanel } from "@/components/property-intelligence-panel";
 import { listLeadFollowUps } from "@/lib/actions/lead-follow-ups";
 import { OutreachAssistant } from "@/components/outreach-assistant";
 import { getOpportunityRelationshipIntelligence } from "@/lib/data/opportunity-intelligence";
+import { getStoredPropertyIntelligence } from "@/lib/data/property-intelligence";
+import { isPropertyIntelligenceConfigured } from "@/lib/property-intelligence";
 import type { Database } from "@/lib/types/database";
 import { formatMonthlyGbp } from "@/lib/coverage/pricing";
 
@@ -73,7 +76,7 @@ async function PaidBrief({ opportunity, companyId }: { opportunity: Opportunity;
 
   const leadMatchId = matchState?.lead_match_id ?? null;
   const currentAction = matchState?.current_action ?? null;
-  const [followUps, relationshipIntelligence] = await Promise.all([
+  const [followUps, relationshipIntelligence, propertyIntelligence] = await Promise.all([
     leadMatchId ? listLeadFollowUps(leadMatchId) : Promise.resolve([]),
     getOpportunityRelationshipIntelligence({
       planningApplicationId: application.id,
@@ -81,7 +84,9 @@ async function PaidBrief({ opportunity, companyId }: { opportunity: Opportunity;
       applicantName: application.applicant_name,
       agentCompany: application.agent_company,
     }),
+    getStoredPropertyIntelligence(companyId, opportunity.id),
   ]);
+  const propertyIntelligenceConfigured = isPropertyIntelligenceConfigured();
 
   if (leadMatchId && currentAction === null) {
     try {
@@ -130,6 +135,12 @@ async function PaidBrief({ opportunity, companyId }: { opportunity: Opportunity;
         classification={classification}
         opportunity={opportunity}
         keyFacts={formatKeyFacts(classification.key_facts)}
+      />
+
+      <PropertyIntelligencePanel
+        opportunityId={opportunity.id}
+        configured={propertyIntelligenceConfigured}
+        initialIntelligence={propertyIntelligence}
       />
 
       <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
