@@ -7,6 +7,9 @@ import {
   approvalAlertEmail,
   paymentFailedEmail,
   territoryAvailableEmail,
+  outsideTerritoryEmail,
+  announcementEmail,
+  welcomeEmail,
   type MatchSummary,
 } from "../_shared/email/templates.ts";
 
@@ -286,6 +289,50 @@ async function processQueuedNotifications(admin: any, appUrl: string, results: R
           });
         }
       }
+    } else if (row.notification_type === "outside_territory") {
+      const meta = row.metadata as {
+        postcode_district?: string;
+        trade_name?: string;
+        opportunity_score?: number | null;
+        estimated_trade_value_low?: number | null;
+        estimated_trade_value_high?: number | null;
+        preview_url?: string;
+      } | null;
+
+      if (meta?.postcode_district && meta.trade_name && meta.preview_url) {
+        template = outsideTerritoryEmail({
+          companyName: company.trading_name,
+          district: meta.postcode_district,
+          tradeName: meta.trade_name,
+          score: meta.opportunity_score ?? null,
+          valueLow: meta.estimated_trade_value_low ?? null,
+          valueHigh: meta.estimated_trade_value_high ?? null,
+          previewUrl: meta.preview_url,
+        });
+      }
+    } else if (row.notification_type === "announcement") {
+      const meta = row.metadata as {
+        title?: string;
+        message?: string;
+        cta_label?: string;
+        cta_url?: string;
+      } | null;
+
+      if (meta?.title && meta.message) {
+        template = announcementEmail({
+          companyName: company.trading_name,
+          title: meta.title,
+          message: meta.message,
+          ctaLabel: meta.cta_label,
+          ctaUrl: meta.cta_url,
+        });
+      }
+    } else if (row.notification_type === "welcome") {
+      const meta = row.metadata as { dashboard_url?: string } | null;
+      template = welcomeEmail({
+        companyName: company.trading_name,
+        dashboardUrl: meta?.dashboard_url ?? appUrl + "/dashboard",
+      });
     }
 
     if (!template) {
