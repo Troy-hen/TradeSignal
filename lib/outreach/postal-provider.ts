@@ -1,4 +1,5 @@
 import "server-only";
+import { StannpPostalOutreachProvider } from "./stannp-provider";
 
 export type PostalRecipient = {
   name?: string | null;
@@ -16,6 +17,16 @@ export type PostalLetterRequest = {
   reference: string;
 };
 
+export type PostalLetterPreview = {
+  previewUrl: string | null;
+  estimatedCostPence: number | null;
+};
+
+export type PostalAddressValidation = {
+  valid: boolean;
+  normalized: PostalRecipient | null;
+};
+
 export type PostalLetterResult = {
   providerJobId: string;
   status: "queued" | "sent";
@@ -25,6 +36,8 @@ export type PostalLetterResult = {
 
 export interface PostalOutreachProvider {
   readonly name: string;
+  validateAddress(recipient: PostalRecipient): Promise<PostalAddressValidation>;
+  previewLetter(request: PostalLetterRequest): Promise<PostalLetterPreview>;
   sendLetter(request: PostalLetterRequest): Promise<PostalLetterResult>;
   getStatus(providerJobId: string): Promise<{
     status: "queued" | "sent" | "delivered" | "failed" | "cancelled";
@@ -35,11 +48,18 @@ export interface PostalOutreachProvider {
 
 /**
  * A postal provider must be explicitly configured before the product exposes
- * a Send letter action. This keeps generated outreach and paid delivery as
- * separate concerns and prevents a UI button from implying delivery exists.
+ * a Send letter action. Generated outreach and paid delivery remain separate
+ * until the provider key is present.
  */
 export function getPostalOutreachProvider(): PostalOutreachProvider | null {
   const configured = process.env.POSTAL_OUTREACH_PROVIDER?.trim().toLowerCase();
   if (!configured || configured === "none") return null;
+
+  if (configured === "stannp") {
+    const apiKey = process.env.STANNP_API_KEY;
+    if (!apiKey) throw new Error("POSTAL_OUTREACH_PROVIDER=stannp requires STANNP_API_KEY");
+    return new StannpPostalOutreachProvider(apiKey);
+  }
+
   throw new Error(`Unsupported POSTAL_OUTREACH_PROVIDER: ${configured}`);
 }
