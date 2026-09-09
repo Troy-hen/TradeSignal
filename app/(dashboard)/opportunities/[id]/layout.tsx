@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { requireCurrentCompany } from "@/lib/auth/get-current-company";
 import { OpportunityResearchPanel } from "@/components/opportunity-research-panel";
+import { OpportunityActivityTimeline } from "@/components/opportunity-activity-timeline";
 
 type ResearchReport = {
   id: string;
@@ -29,8 +30,8 @@ export default async function OpportunityDetailLayout({ children, params }: { ch
   const supabase = await createClient();
   const db = supabase as unknown as SupabaseClient;
 
-  // RLS makes this null for a teaser-only opportunity. Deep Research therefore
-  // appears only when the workspace is entitled to the full opportunity brief.
+  // RLS makes this null for a teaser-only opportunity. Research/activity is
+  // therefore shown only when the workspace is entitled to the full brief.
   const { data: unlocked } = await supabase
     .from("application_trade_opportunities")
     .select("id")
@@ -53,6 +54,7 @@ export default async function OpportunityDetailLayout({ children, params }: { ch
     <>
       {children}
       <OpportunityResearchPanel opportunityId={id} initialReport={(report as ResearchReport | null) ?? null} />
+      <OpportunityActivityTimeline opportunityId={id} companyId={company.id} />
     </>
   );
 }
