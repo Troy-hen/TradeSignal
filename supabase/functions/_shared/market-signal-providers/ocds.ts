@@ -2,6 +2,11 @@ import type { MarketSignalType, NormalizedMarketSignal } from "./types.ts";
 
 type JsonRecord = Record<string, unknown>;
 
+type DeliveryContext = {
+  addresses: JsonRecord[];
+  descriptions: string[];
+};
+
 export async function normalizeOcdsPackage(input: {
   source: string;
   payload: unknown;
@@ -25,6 +30,7 @@ export async function normalizeOcdsPackage(input: {
 async function normalizeRelease(source: string, release: JsonRecord, sourceBaseUrl: string): Promise<NormalizedMarketSignal | null> {
   const tender = asRecord(release.tender);
   const planning = asRecord(release.planning);
+  const planningProject = asRecord(planning.project);
   const awards = asArray(release.awards).map(asRecord);
   const parties = asArray(release.parties).map(asRecord);
   const buyer = asRecord(release.buyer);
@@ -32,7 +38,7 @@ async function normalizeRelease(source: string, release: JsonRecord, sourceBaseU
   const signalType = detectSignalType(tags, tender, awards);
   if (!signalType) return null;
 
-  const title = firstString(tender.title, planning.project?.title, release.title, release.description) ?? "Public procurement opportunity";
+  const title = firstString(tender.title, planningProject.title, release.title, release.description) ?? "Public procurement opportunity";
   const summary = firstString(tender.description, planning.rationale, release.description);
   const publishedAt = firstString(release.date, release.publishedDate);
   const sourceUpdatedAt = publishedAt;
@@ -43,18 +49,47 @@ async function normalizeRelease(source: string, release: JsonRecord, sourceBaseU
   const buyerParty = findParty(parties, firstString(buyer.id));
   const buyerName = firstString(buyer.name, buyerParty?.name);
   const buyerIdentifier = firstString(asRecord(buyerParty?.identifier).id, buyer.id);
-  const supplierName = awards.flatMap((award) => asArray(award.suppliers).map(asRecord)).map((supplier) => firstString(supplier.name)).find(Boolean) ?? null;
+  const supplierName = awards
+    .flatMap((award) => asArray(award.suppliers).map(asRecord))
+    .map((supplier) => firstString(supplier.name))
+    .find(Boolean) ?? null;
 
   const tenderItems = asArray(tender.items).map(asRecord);
   const releaseItems = asArray(release.items).map(asRecord);
   const items = tenderItems.length ? tenderItems : releaseItems;
   const cpvCodes = collectCpvCodes(tender, items);
-  const addresses = collectAddresses(release, tender, items, buyerParty);
-  const postcodes = unique(addresses.map((address) => firstString(address.postalCode)).filter(isString));
-  const regions = unique(addresses.flatMap((address) => [firstString(address.region), ...asStringArray(address.regionCode)]).filter(isString));
-  const postcodeDistrict = postcodes.map(extractPostcodeDistrict).find(Boolean) ?? null;
-  const locationText = unique(addresses.flatMap((address) => [firstString(address.locality), firstString(address.region), firstString(address.postalCode)]).filter(isString)).join(", ") || null;
-  const locationConfidence = postcodeDistrict ? "exact_postcode" : regions.length ? "delivery_region" : addresses.length ? "buyer_address" : "unresolved";
+
+  // Territory ownership must follow the place where the work is delivered,
+  // never the buyer's HQ. A council/NHS office postcode is still useful
+  // relationship context, but it cannot assign a region-wide contract to a
+  // postcode district that happens to contain the buyer's office.
+  const delivery = collectDeliveryContext(release, tender, items);
+  const deliveryPostcodes = unique(delivery.addresses.map((address) => firstString(address.postalCode)).filter(isString));
+  const deliveryRegions = unique(
+    delivery.addresses
+      .flatMap((address) => [firstString(address.region), ...asStringArray(address.regionCode)])
+      .filter(isString),
+  );
+  const postcodeDistrict = deliveryPostcodes.map(extractPostcodeDistrict).find(Boolean) ?? null;
+
+  const buyerAddress = asRecord(buyerParty?.address);
+  const buyerContext = [firstString(buyerAddress.locality), firstString(buyerAddress.region), firstString(buyerAddress.postalCode)].filter(isString);
+  const deliveryText = unique([
+    ...delivery.descriptions,
+    ...delivery.addresses.flatMap((address) => [firstString(address.locality), firstString(address.region), firstString(address.postalCode)]).filter(isString),
+  ]);
+  const locationText = deliveryText.length > 0
+    ? deliveryText.join(", ")
+    : buyerContext.length > 0
+      ? `Delivery location not stated; buyer based in ${buyerContext.join(", ")}`
+      : null;
+  const locationConfidence: NormalizedMarketSignal["locationConfidence"] = postcodeDistrict
+    ? "exact_postcode"
+    : deliveryText.length > 0
+      ? "delivery_region"
+      : buyerContext.length > 0
+        ? "buyer_address"
+        : "unresolved";
 
   const tenderValue = asRecord(tender.value);
   const planningBudget = asRecord(planning.budget);
@@ -69,7 +104,7 @@ async function normalizeRelease(source: string, release: JsonRecord, sourceBaseU
   const procurementStage = signalType === "contract_award" ? "award" : signalType === "public_pipeline" ? "planning" : "tender";
   const noticeType = tags.join(",") || procurementStage;
   const sourceUrl = buildSourceUrl(source, sourceBaseUrl, firstString(release.id), externalOcid);
-  const hashPayload = { title, summary, tags, amount, deadlineAt, buyerName, supplierName, postcodes, cpvCodes };
+  const hashPayload = { title, summary, tags, amount, deadlineAt, buyerName, supplierName, deliveryPostcodes, deliveryRegions, cpvCodes };
 
   return {
     source,
@@ -95,8 +130,8 @@ async function normalizeRelease(source: string, release: JsonRecord, sourceBaseU
     contractStartDate,
     contractEndDate,
     cpvCodes,
-    deliveryPostcodes: postcodes,
-    deliveryRegions: regions,
+    deliveryPostcodes,
+    deliveryRegions,
     contact,
     valueCurrency: currency,
     locationConfidence,
@@ -134,21 +169,31 @@ function collectCpvCodes(tender: JsonRecord, items: JsonRecord[]): string[] {
   return unique(codes);
 }
 
-function collectAddresses(release: JsonRecord, tender: JsonRecord, items: JsonRecord[], buyerParty?: JsonRecord): JsonRecord[] {
-  const output: JsonRecord[] = [];
+function collectDeliveryContext(release: JsonRecord, tender: JsonRecord, items: JsonRecord[]): DeliveryContext {
+  const addresses: JsonRecord[] = [];
+  const descriptions: string[] = [];
   const pushAddress = (value: unknown) => {
     const address = asRecord(value);
-    if (Object.keys(address).length) output.push(address);
+    if (Object.keys(address).length) addresses.push(address);
   };
+  const pushDescription = (value: unknown) => {
+    const description = firstString(value);
+    if (description) descriptions.push(description);
+  };
+
   for (const item of items) {
     for (const address of asArray(item.deliveryAddresses)) pushAddress(address);
     const deliveryLocation = asRecord(item.deliveryLocation);
     pushAddress(deliveryLocation.address);
+    pushDescription(deliveryLocation.description);
   }
   for (const address of asArray(tender.deliveryAddresses)) pushAddress(address);
   for (const address of asArray(release.deliveryAddresses)) pushAddress(address);
-  if (output.length === 0 && buyerParty) pushAddress(buyerParty.address);
-  return output;
+  for (const location of asArray(tender.deliveryLocations).map(asRecord)) {
+    pushAddress(location.address);
+    pushDescription(location.description);
+  }
+  return { addresses, descriptions: unique(descriptions) };
 }
 
 function extractContact(party?: JsonRecord): Record<string, unknown> {
@@ -177,8 +222,8 @@ function buildSourceUrl(source: string, base: string, releaseId: string | null, 
 
 export function extractPostcodeDistrict(postcode: string | null): string | null {
   if (!postcode) return null;
-  const normalized = postcode.trim().toUpperCase().replace(/\s+/g, " ");
-  const match = normalized.match(/^([A-Z]{1,2}\d{1,2}[A-Z]?)(?:\s|$)/);
+  const normalized = postcode.trim().toUpperCase().replace(/\s+/g, " ").replace(/\.$/, "");
+  const match = normalized.match(/^([A-Z]{1,2}\d{1,2}[A-Z]?)(?:\s|\d|$)/);
   return match?.[1] ?? null;
 }
 
