@@ -37,9 +37,10 @@ export function LeadActionPanel({ leadMatchId, currentAction }: { leadMatchId: s
   }
 
   return (
-    <div>
-      <p className="mb-3 text-sm text-slate">Keep the opportunity moving through your pipeline as you take action.</p>
-      <div className="flex flex-wrap gap-2">
+    <div className="rounded-2xl bg-charcoal p-5 text-white sm:p-6">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-signal-orange">Next action</p>
+      <p className="mt-2 text-sm leading-6 text-white/65">Keep the opportunity moving through your pipeline as you take action.</p>
+      <div className="mt-4 flex flex-wrap gap-2">
         {ACTIONS.map((a) => (
           <button
             key={a.value}
@@ -49,7 +50,7 @@ export function LeadActionPanel({ leadMatchId, currentAction }: { leadMatchId: s
             className={`rounded-xl border px-3.5 py-2 text-sm font-semibold transition disabled:opacity-60 ${
               currentAction === a.value
                 ? "border-signal-orange bg-signal-orange text-white"
-                : "border-light-grey bg-white text-charcoal hover:border-signal-orange/50 hover:bg-soft-surface"
+                : "border-white/15 bg-white/10 text-white hover:border-signal-orange/60 hover:bg-white/15"
             }`}
           >
             {a.label}
@@ -57,8 +58,8 @@ export function LeadActionPanel({ leadMatchId, currentAction }: { leadMatchId: s
         ))}
       </div>
       {showWonInput && (
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <label className="text-sm text-slate" htmlFor="contract-value">
+        <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-white/10 bg-white/5 p-3">
+          <label className="text-sm text-white/65" htmlFor="contract-value">
             Contract value (£, optional):
           </label>
           <input
@@ -66,7 +67,7 @@ export function LeadActionPanel({ leadMatchId, currentAction }: { leadMatchId: s
             type="number"
             value={contractValue}
             onChange={(e) => setContractValue(e.target.value)}
-            className="w-32 rounded-xl border border-light-grey px-3 py-2 text-sm focus:border-signal-orange focus:outline-none focus:ring-2 focus:ring-signal-orange/15"
+            className="w-32 rounded-xl border border-white/15 bg-white px-3 py-2 text-sm text-charcoal focus:border-signal-orange focus:outline-none focus:ring-2 focus:ring-signal-orange/15"
           />
           <button
             type="button"
@@ -78,7 +79,7 @@ export function LeadActionPanel({ leadMatchId, currentAction }: { leadMatchId: s
           </button>
         </div>
       )}
-      {error && <p className="mt-2 text-sm text-danger">{error}</p>}
+      {error && <p className="mt-3 text-sm text-danger">{error}</p>}
     </div>
   );
 }
