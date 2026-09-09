@@ -170,8 +170,7 @@ export function announcementEmail(params: {
   ctaLabel?: string;
   ctaUrl?: string;
 }): { subject: string; html: string } {
-  const messageHtml = escapeHtml(params.message).replace(/\
-/g, "<br>");
+  const messageHtml = escapeHtml(params.message).replace(/\n/g, "<br>");
   const body = [
     '<p style="margin:0 0 16px;font-size:15px;line-height:23px;color:' + CHARCOAL + ';">Hi ' + escapeHtml(params.companyName) + ",</p>",
     '<h1 style="margin:0 0 16px;font-size:24px;line-height:31px;color:' + CHARCOAL + ';">' + escapeHtml(params.title) + "</h1>",
