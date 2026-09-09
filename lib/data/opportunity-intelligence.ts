@@ -1,4 +1,5 @@
 import "server-only";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { deriveContactStrategy, type ContactStrategy } from "@/lib/contact-intelligence/strategy";
 
@@ -7,6 +8,20 @@ export type OpportunityRelationshipIntelligence = {
   agentCompany: string | null;
   projectAddress: string | null;
   contactStrategy: ContactStrategy;
+  planningContacts: Array<{
+    id: string;
+    provider: string;
+    entityType: string;
+    personName: string | null;
+    organisationName: string | null;
+    jobTitle: string | null;
+    email: string | null;
+    phone: string | null;
+    website: string | null;
+    sourceUrl: string | null;
+    purpose: string | null;
+    retrievedAt: string;
+  }>;
   organisation: {
     name: string;
     visibleProjects: number;
@@ -38,13 +53,23 @@ export async function getOpportunityRelationshipIntelligence(input: {
   agentCompany: string | null;
 }): Promise<OpportunityRelationshipIntelligence> {
   const supabase = await createClient();
+  const db = supabase as unknown as SupabaseClient;
   const organisationName = input.agentCompany?.trim() || null;
 
-  const { data: currentApplication } = await supabase
-    .from("planning_applications")
-    .select("address_text, is_commercial, application_type, proposal_description")
-    .eq("id", input.planningApplicationId)
-    .maybeSingle();
+  const [{ data: currentApplication }, { data: contactRows }] = await Promise.all([
+    supabase
+      .from("planning_applications")
+      .select("address_text, is_commercial, application_type, proposal_description")
+      .eq("id", input.planningApplicationId)
+      .maybeSingle(),
+    db
+      .from("contact_intelligence_records")
+      .select("id,provider,entity_type,person_name,organisation_name,job_title,email,phone,website,source_url,purpose,retrieved_at")
+      .eq("planning_application_id", input.planningApplicationId)
+      .eq("suppression_status", "active")
+      .order("retrieved_at", { ascending: false })
+      .limit(12),
+  ]);
 
   const contactStrategy = deriveContactStrategy({
     applicantName: input.applicantName,
@@ -54,11 +79,27 @@ export async function getOpportunityRelationshipIntelligence(input: {
     proposalDescription: currentApplication?.proposal_description ?? null,
   });
 
+  const planningContacts = (contactRows ?? []).map((row: Record<string, unknown>) => ({
+    id: String(row.id),
+    provider: String(row.provider),
+    entityType: String(row.entity_type),
+    personName: typeof row.person_name === "string" ? row.person_name : null,
+    organisationName: typeof row.organisation_name === "string" ? row.organisation_name : null,
+    jobTitle: typeof row.job_title === "string" ? row.job_title : null,
+    email: typeof row.email === "string" ? row.email : null,
+    phone: typeof row.phone === "string" ? row.phone : null,
+    website: typeof row.website === "string" ? row.website : null,
+    sourceUrl: typeof row.source_url === "string" ? row.source_url : null,
+    purpose: typeof row.purpose === "string" ? row.purpose : null,
+    retrievedAt: String(row.retrieved_at),
+  }));
+
   const base = {
     applicantName: input.applicantName,
     agentCompany: input.agentCompany,
     projectAddress: currentApplication?.address_text ?? null,
     contactStrategy,
+    planningContacts,
   };
 
   if (!organisationName) {
