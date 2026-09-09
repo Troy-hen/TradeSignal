@@ -46,6 +46,7 @@ export default async function SettingsPage() {
               instantAlertMinScore={prefs?.instant_alert_min_score ?? 90}
               digestMinScore={prefs?.digest_min_score ?? 0}
               approvalAlertsEnabled={prefs?.approval_alerts_enabled ?? true}
+              nearbyOpportunityAlertsEnabled={prefs?.nearby_opportunity_alerts_enabled ?? false}
             />
           </div>
         ) : (
