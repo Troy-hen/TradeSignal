@@ -11,7 +11,7 @@ export default function PricingPage() {
   return (
     <div className="bg-soft-surface">
       <section className="bg-charcoal px-6 py-20 text-white sm:py-28">
-        <div className="mx-auto max-w-4xl lg:px-2">
+        <div className="mx-auto max-w-7xl lg:px-2">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Pricing</p>
           <h1 className="mt-5 text-4xl font-bold tracking-tight sm:text-6xl">
             Preview free. Own a local patch from £29.99/month.
@@ -34,7 +34,7 @@ export default function PricingPage() {
       </section>
 
       <section className="bg-soft-surface px-6 py-16">
-        <div className="mx-auto flex max-w-4xl flex-col gap-5 rounded-3xl border border-signal-orange/20 bg-signal-orange/5 p-7 sm:p-9 md:flex-row md:items-center md:justify-between">
+        <div className="mx-auto flex max-w-7xl flex-col gap-5 rounded-3xl border border-signal-orange/20 bg-signal-orange/5 p-7 sm:p-9 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-lg font-semibold text-charcoal">See what is available in your area.</p>
             <p className="mt-1 text-sm leading-6 text-slate">Preview the local signal first, then decide whether the territory is worth owning.</p>
