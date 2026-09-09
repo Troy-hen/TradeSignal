@@ -18,7 +18,7 @@ export default async function TerritoriesPage() {
   };
   const { data: mapRows } = await mapDb.rpc("browse_opportunity_map", {
     p_trade_slug: null,
-    p_limit: 300,
+    p_limit: 2000,
   });
   const mapPoints = (mapRows ?? []).map((point) => ({
     ...point,
