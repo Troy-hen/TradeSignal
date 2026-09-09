@@ -53,17 +53,25 @@ export function ClaimTerritoryButton({
   }
 
   return (
-    <div>
-      <button
-        type="button"
-        onClick={handleClaim}
-        disabled={isLoading}
-        aria-busy={isLoading}
-        className="rounded-md bg-signal-orange px-6 py-3 font-semibold text-white transition hover:brightness-95 disabled:opacity-60"
-      >
-        {isLoading ? "Starting checkout…" : "Claim " + postcodeDistrict + " — " + priceLabel + "/month"}
-      </button>
-      {error && <p role="alert" className="mt-2 text-sm text-danger">{error}</p>}
+    <div className="rounded-2xl bg-charcoal p-5 text-white sm:flex sm:items-center sm:justify-between sm:gap-5">
+      <div>
+        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-signal-orange">Ready to unlock?</p>
+        <p className="mt-2 text-sm leading-6 text-white/65">
+          Secure exclusive access to {postcodeDistrict} and reveal the full opportunity brief.
+        </p>
+      </div>
+      <div className="mt-4 shrink-0 sm:mt-0">
+        <button
+          type="button"
+          onClick={handleClaim}
+          disabled={isLoading}
+          aria-busy={isLoading}
+          className="w-full rounded-xl bg-signal-orange px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#e95f00] disabled:opacity-60 sm:w-auto"
+        >
+          {isLoading ? "Starting checkout…" : "Claim " + postcodeDistrict + " — " + priceLabel + "/month"}
+        </button>
+        {error && <p role="alert" className="mt-2 max-w-sm text-sm text-danger">{error}</p>}
+      </div>
     </div>
   );
 }
