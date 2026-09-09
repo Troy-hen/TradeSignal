@@ -73,7 +73,7 @@ export function DashboardShell({
   }
 
   return (
-    <div className="flex min-h-screen bg-soft-surface">
+    <div className="flex min-h-screen min-w-0 overflow-x-hidden bg-soft-surface">
       <aside
         className={"sticky top-0 hidden h-screen shrink-0 border-r border-light-grey bg-white transition-[width] duration-200 lg:flex " + (
           collapsed ? "w-[76px]" : "w-[272px]"
@@ -128,8 +128,8 @@ export function DashboardShell({
           <span className="h-9 w-9" aria-hidden="true" />
         </header>
 
-        <main className="flex-1 px-4 py-7 sm:px-6 lg:px-10 lg:py-10">
-          <div className="mx-auto max-w-7xl">{children}</div>
+        <main className="min-w-0 flex-1 overflow-x-hidden px-4 py-7 sm:px-6 lg:px-10 lg:py-10">
+          <div className="mx-auto min-w-0 max-w-7xl">{children}</div>
         </main>
       </div>
     </div>
@@ -150,8 +150,8 @@ function SidebarContent({
   onToggle: () => void;
 }) {
   return (
-    <div className="flex min-h-screen w-full flex-col">
-      <div className={"border-b border-light-grey px-4 py-5 " + (
+    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden">
+      <div className={"shrink-0 border-b border-light-grey px-4 py-5 " + (
         collapsed ? "flex flex-col items-center gap-4" : "flex items-center justify-between gap-3"
       )}>
         <Link href="/dashboard" aria-label="MyTradeBox overview" onClick={mobile ? onToggle : undefined}>
@@ -178,7 +178,7 @@ function SidebarContent({
         )}
       </div>
 
-      <div className={"border-b border-light-grey py-5 " + (
+      <div className={"shrink-0 border-b border-light-grey py-5 " + (
         collapsed ? "px-3" : "px-5"
       )}>
         {!collapsed && (
@@ -204,9 +204,11 @@ function SidebarContent({
         </div>
       </div>
 
-      <DashboardNav collapsed={collapsed} />
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain py-1">
+        <DashboardNav collapsed={collapsed} />
+      </div>
 
-      <div className={"mt-auto border-t border-light-grey " + (
+      <div className={"shrink-0 border-t border-light-grey " + (
         collapsed ? "space-y-2 p-3" : "space-y-1 p-5"
       )}>
         <ThemeToggle collapsed={collapsed} />
