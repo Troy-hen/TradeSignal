@@ -1,6 +1,6 @@
 import type { NormalisedApplication, PlanningDataProvider, RawApplication } from "../types.ts";
 import { normaliseApplication } from "../normalise.ts";
-import { PlotaClient } from "./client.ts";
+import { PlotaApiError, PlotaClient } from "./client.ts";
 import type { PlotaApplication, PlotaListMeta } from "./types.ts";
 
 export class PlotaTierLimitationError extends Error {
@@ -9,8 +9,6 @@ export class PlotaTierLimitationError extends Error {
     this.name = "PlotaTierLimitationError";
   }
 }
-
-const PRO_PLUS_TIERS = new Set(["pro", "business", "enterprise"]);
 
 function toRawApplication(app: PlotaApplication): RawApplication {
   const appealStatus =
@@ -47,12 +45,10 @@ function toRawApplication(app: PlotaApplication): RawApplication {
     dwellingCount: app.dwelling_count ?? null,
     isCommercial: commercial,
     floorspaceSqm: app.floorspace_sqm ?? null,
-    // include_contact is never requested as true, so these are always
-    // absent in practice — GDPR minimisation by not asking, not by filtering.
+    // Contact-bearing fields are absent from normal ingestion because
+    // include_contact=true is reserved for explicit, metered contact lookups.
     applicantName: app.applicant_name ?? null,
     agentCompany: app.agent_company ?? null,
-    // Plota's contract doesn't supply a factual project value — distinct
-    // from the AI's own estimates computed later.
     estimatedValueGbp: null,
     sourceUrl: app.links?.council ?? app.links?.plota ?? null,
     changedAt: app.changed_at ?? null,
@@ -61,15 +57,12 @@ function toRawApplication(app: PlotaApplication): RawApplication {
 }
 
 /**
- * Uses Plota's Demo-safe read path: bearer auth, ten-row pages and cursor
- * pagination. The optional plan tier is intentionally not required for Demo
- * operation; it only controls whether the change-feed path is attempted.
+ * Uses Plota's bounded cursor-paginated read path. Plan capabilities are
+ * detected from the API itself so upgrading a key later needs no plan-tier
+ * environment variable or code change.
  */
 export class PlotaPlanningProvider implements PlanningDataProvider {
-  constructor(
-    private readonly client: PlotaClient,
-    private readonly planTier = "demo",
-  ) {}
+  constructor(private readonly client: PlotaClient) {}
 
   async *fetchNewApplications({ since, dateTo, cursor }: { since?: string; dateTo?: string; cursor?: string }): AsyncGenerator<RawApplication[]> {
     for await (const page of this.client.paginate("/applications", { date_from: since, date_to: dateTo, cursor })) {
@@ -78,17 +71,22 @@ export class PlotaPlanningProvider implements PlanningDataProvider {
   }
 
   /**
-   * changed_since is Pro+ only. On the Demo key this throws immediately and
-   * the ingestion function falls back to rotating individual pending rows.
+   * changed_since is available on higher Plota tiers. We optimistically try
+   * the endpoint and translate an entitlement rejection into a stable domain
+   * error so ingestion can fall back to rotating undecided applications.
    */
   async *fetchUpdatedApplications({ since, cursor }: { since: string; cursor?: string }): AsyncGenerator<RawApplication[]> {
-    if (!PRO_PLUS_TIERS.has(this.planTier)) {
-      throw new PlotaTierLimitationError(
-        `changed_since is not available on the Plota "${this.planTier}" plan — fall back to re-checking individual undecided applications via getApplication().`,
-      );
-    }
-    for await (const page of this.client.paginate("/applications", { changed_since: since, cursor })) {
-      yield page.map(toRawApplication);
+    try {
+      for await (const page of this.client.paginate("/applications", { changed_since: since, cursor })) {
+        yield page.map(toRawApplication);
+      }
+    } catch (error) {
+      if (error instanceof PlotaApiError && (error.status === 401 || error.status === 403)) {
+        throw new PlotaTierLimitationError(
+          "Plota changed_since is not enabled for this API key; fall back to re-checking undecided applications.",
+        );
+      }
+      throw error;
     }
   }
 
@@ -103,8 +101,6 @@ export class PlotaPlanningProvider implements PlanningDataProvider {
   ): Promise<RawApplication[]> {
     const trimmed = postcodeOrDistrict.trim().toUpperCase();
     const maxPages = Math.max(1, Math.min(opts?.maxPages ?? 1, 20));
-    // A space means a full postcode ("NR15 1AB") -> nearby search; no space
-    // means a bare district ("NR15") -> the plain list endpoint.
     const path = /\s/.test(trimmed) ? "/applications/nearby" : "/applications";
     const searchParams = /\s/.test(trimmed)
       ? {
