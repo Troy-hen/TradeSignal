@@ -10,7 +10,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <header className="border-b border-light-grey bg-charcoal">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
-            <Logo />
+            <Logo tone="light" />
             <span className="rounded bg-signal-orange px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-white">
               Admin
             </span>
