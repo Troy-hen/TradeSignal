@@ -19,7 +19,6 @@ type LetterData = {
   status?: string;
   tracking_ref?: string | null;
 };
-
 type AddressData = {
   address1?: string;
   address2?: string;
@@ -37,37 +36,27 @@ export class StannpPostalOutreachProvider implements PostalOutreachProvider {
   constructor(private readonly apiKey: string) {}
 
   async validateAddress(recipient: PostalRecipient): Promise<PostalAddressValidation> {
-    const body = new URLSearchParams({
-      address1: recipient.addressLine1,
-      postcode: recipient.postcode,
-      country: recipient.country ?? "GB",
-    });
+    const body = new URLSearchParams({ address1: recipient.addressLine1, postcode: recipient.postcode, country: recipient.country ?? "GB" });
     if (recipient.addressLine2) body.set("address2", recipient.addressLine2);
     if (recipient.city) body.set("city", recipient.city);
-
     const response = await this.request<AddressData>("/addresses/validate", body);
     const data = response.data ?? {};
     return {
       valid: data.is_valid === true,
-      normalized: data.address1 && data.postcode
-        ? {
-            name: recipient.name ?? null,
-            addressLine1: data.address1,
-            addressLine2: data.address2 ?? data.address3 ?? null,
-            city: data.city ?? recipient.city ?? null,
-            postcode: data.postcode,
-            country: data.country ?? recipient.country ?? "GB",
-          }
-        : null,
+      normalized: data.address1 && data.postcode ? {
+        name: recipient.name ?? null,
+        addressLine1: data.address1,
+        addressLine2: data.address2 ?? data.address3 ?? null,
+        city: data.city ?? recipient.city ?? null,
+        postcode: data.postcode,
+        country: data.country ?? recipient.country ?? "GB",
+      } : null,
     };
   }
 
   async previewLetter(request: PostalLetterRequest): Promise<PostalLetterPreview> {
     const data = await this.createLetter(request, true);
-    return {
-      previewUrl: data.pdf ?? data.pdf_file ?? null,
-      estimatedCostPence: toPence(data.cost),
-    };
+    return { previewUrl: data.pdf ?? data.pdf_file ?? null, estimatedCostPence: toPence(data.cost) };
   }
 
   async sendLetter(request: PostalLetterRequest): Promise<PostalLetterResult> {
@@ -124,7 +113,10 @@ export class StannpPostalOutreachProvider implements PostalOutreachProvider {
     });
 
     const payload = (await response.json().catch(() => ({}))) as StannpResponse<T>;
-    if (!response.ok || payload.success === false) {
+    // Stannp returns the original successful response with HTTP 409 for an
+    // idempotent retry. Treat that as success rather than risking a duplicate send.
+    const idempotentReplay = response.status === 409 && payload.success === true && payload.data !== undefined;
+    if ((!response.ok && !idempotentReplay) || payload.success === false) {
       throw new Error(payload.error ?? payload.message ?? `Stannp API failed with status ${response.status}`);
     }
     return payload;
@@ -132,11 +124,7 @@ export class StannpPostalOutreachProvider implements PostalOutreachProvider {
 }
 
 function textToHtml(value: string) {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/\r?\n/g, "<br>");
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\r?\n/g, "<br>");
 }
 
 function toPence(value: string | number | null | undefined) {
