@@ -9,6 +9,12 @@ import {
 } from "@/lib/actions/outreach";
 
 type Channel = "letter" | "phone" | "doorstep";
+type Capabilities = { postalOutreach?: boolean };
+type PostalPreview = {
+  preview?: { previewUrl?: string | null; estimatedCostPence?: number | null };
+  recipient?: { name?: string | null; addressLine1?: string; postcode?: string };
+  recipientLabel?: string;
+};
 
 export function OutreachAssistant({ opportunityId }: { opportunityId: string }) {
   const [isPending, startTransition] = useTransition();
@@ -16,12 +22,20 @@ export function OutreachAssistant({ opportunityId }: { opportunityId: string }) 
   const [usage, setUsage] = useState<OutreachUsage | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [channel, setChannel] = useState<Channel>("letter");
+  const [postalEnabled, setPostalEnabled] = useState(false);
+  const [postalPreview, setPostalPreview] = useState<PostalPreview | null>(null);
+  const [postalBusy, setPostalBusy] = useState(false);
+  const [postalMessage, setPostalMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     getOutreachStatus(opportunityId).then((result) => {
       if (!cancelled && result.data) setUsage(result.data);
     });
+    fetch("/api/capabilities", { cache: "no-store" })
+      .then((response) => response.ok ? response.json() : null)
+      .then((data: Capabilities | null) => { if (!cancelled) setPostalEnabled(Boolean(data?.postalOutreach)); })
+      .catch(() => {});
     return () => { cancelled = true; };
   }, [opportunityId]);
 
@@ -41,6 +55,8 @@ export function OutreachAssistant({ opportunityId }: { opportunityId: string }) 
 
   function handleGenerate() {
     setError(null);
+    setPostalPreview(null);
+    setPostalMessage(null);
     startTransition(async () => {
       const result = await generateOutreach(opportunityId);
       if (result.error) {
@@ -62,6 +78,56 @@ export function OutreachAssistant({ opportunityId }: { opportunityId: string }) 
     anchor.download = `mytradebox-${channel}-draft.txt`;
     anchor.click();
     URL.revokeObjectURL(url);
+  }
+
+  async function previewPostalLetter() {
+    if (!selectedText || postalBusy) return;
+    setPostalBusy(true);
+    setPostalMessage(null);
+    try {
+      const response = await fetch(`/api/opportunities/${opportunityId}/postal/preview`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: selectedText }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setPostalMessage(data.error === "postal_address_not_validated" ? "The project address could not be validated for postal delivery." : "Letter preview could not be created.");
+        return;
+      }
+      setPostalPreview(data as PostalPreview);
+    } catch {
+      setPostalMessage("Letter preview could not be created.");
+    } finally {
+      setPostalBusy(false);
+    }
+  }
+
+  async function sendPostalLetter() {
+    if (!selectedText || !postalPreview || postalBusy) return;
+    const cost = postalPreview.preview?.estimatedCostPence;
+    const price = typeof cost === "number" ? ` Estimated cost: ${formatPence(cost)}.` : "";
+    if (!window.confirm(`Send this letter for printing and postage?${price}`)) return;
+
+    setPostalBusy(true);
+    setPostalMessage(null);
+    try {
+      const response = await fetch(`/api/opportunities/${opportunityId}/postal/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: selectedText }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        setPostalMessage("The letter was not sent. No successful delivery was recorded.");
+        return;
+      }
+      setPostalMessage(`Letter ${data.status === "sent" ? "sent" : "queued"}${typeof data.costPence === "number" ? ` · ${formatPence(data.costPence)}` : ""}.`);
+    } catch {
+      setPostalMessage("The letter was not sent. Please try again.");
+    } finally {
+      setPostalBusy(false);
+    }
   }
 
   return (
@@ -109,7 +175,29 @@ export function OutreachAssistant({ opportunityId }: { opportunityId: string }) 
                 <button type="button" onClick={downloadDraft} className="rounded-xl border border-light-grey bg-white px-4 py-2.5 text-sm font-semibold text-charcoal transition hover:border-signal-orange/40">Download draft ↓</button>
                 <button type="button" onClick={() => navigator.clipboard?.writeText(selectedText)} className="rounded-xl border border-light-grey bg-white px-4 py-2.5 text-sm font-semibold text-charcoal transition hover:border-signal-orange/40">Copy text</button>
               </div>
-              <p className="mt-3 text-xs leading-5 text-slate">Review and personalise before using. Sending/tracking will be added here when an outbound provider is connected.</p>
+
+              {channel === "letter" && postalEnabled && (
+                <div className="mt-5 rounded-2xl border border-signal-orange/20 bg-signal-orange/[0.03] p-4">
+                  <p className="text-sm font-semibold text-charcoal">Print & post with MyTradeBox</p>
+                  <p className="mt-1 text-xs leading-5 text-slate">The project address is validated before anything can be sent. Previewing is free; live delivery always requires an explicit confirmation.</p>
+                  {!postalPreview ? (
+                    <button type="button" onClick={previewPostalLetter} disabled={postalBusy} className="mt-3 rounded-xl bg-signal-orange px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-50">
+                      {postalBusy ? "Preparing preview…" : "Preview posted letter"}
+                    </button>
+                  ) : (
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {postalPreview.preview?.previewUrl && <a href={postalPreview.preview.previewUrl} target="_blank" rel="noreferrer" className="rounded-xl border border-light-grey bg-white px-4 py-2.5 text-xs font-semibold text-charcoal">Open PDF preview ↗</a>}
+                      <button type="button" onClick={sendPostalLetter} disabled={postalBusy} className="rounded-xl bg-signal-orange px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-50">
+                        {postalBusy ? "Sending…" : `Confirm & send${typeof postalPreview.preview?.estimatedCostPence === "number" ? ` · ${formatPence(postalPreview.preview.estimatedCostPence)}` : ""}`}
+                      </button>
+                      <button type="button" onClick={() => setPostalPreview(null)} className="px-2 py-2 text-xs font-semibold text-slate">Re-preview</button>
+                    </div>
+                  )}
+                  {postalMessage && <p className="mt-3 text-xs font-medium text-slate">{postalMessage}</p>}
+                </div>
+              )}
+
+              {!postalEnabled && <p className="mt-3 text-xs leading-5 text-slate">Review and personalise before using. Postal delivery controls appear automatically when a mail provider is connected.</p>}
             </>
           ) : (
             <div className="mt-5 flex min-h-[230px] items-center justify-center rounded-2xl border border-dashed border-light-grey bg-soft-surface p-6 text-center">
@@ -127,4 +215,8 @@ export function OutreachAssistant({ opportunityId }: { opportunityId: string }) 
 
 function ChannelButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return <button type="button" onClick={onClick} className={active ? "rounded-xl bg-charcoal px-3 py-2 text-xs font-semibold text-white" : "rounded-xl border border-light-grey bg-white px-3 py-2 text-xs font-semibold text-charcoal transition hover:border-signal-orange/40"}>{children}</button>;
+}
+
+function formatPence(value: number) {
+  return new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP" }).format(value / 100);
 }
