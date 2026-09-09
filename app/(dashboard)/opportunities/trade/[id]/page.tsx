@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { requireCurrentCompany } from "@/lib/auth/get-current-company";
 import { getOwnedMarketSignal } from "@/lib/data/trade-intelligence";
+import { getMarketSignalQuoteRequests } from "@/lib/data/quote-requests";
+import { QuoteRequestsPanel } from "@/components/quote-requests-panel";
 import { MarketSignalActionPanel } from "@/components/market-signal-action-panel";
 import { formatGbpRange } from "@/components/opportunity-badge";
 
@@ -13,7 +16,11 @@ const LABELS: Record<string, string> = {
 
 export default async function TradeOpportunityPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const item = await getOwnedMarketSignal(id);
+  const company = await requireCurrentCompany();
+  const [item, quoteRequests] = await Promise.all([
+    getOwnedMarketSignal(id),
+    getMarketSignalQuoteRequests(company.id, id),
+  ]);
   if (!item) notFound();
 
   const signalLabel = LABELS[item.signal_type] ?? "Trade opportunity";
@@ -25,6 +32,8 @@ export default async function TradeOpportunityPage({ params }: { params: Promise
   return (
     <div className="min-w-0 space-y-6">
       <Link href="/opportunities" className="inline-flex text-sm font-semibold text-slate hover:text-charcoal">← Opportunities</Link>
+
+      <QuoteRequestsPanel requests={quoteRequests} />
 
       <section className="overflow-hidden rounded-3xl border border-light-grey bg-white">
         <div className="bg-charcoal p-6 text-white sm:p-8">
