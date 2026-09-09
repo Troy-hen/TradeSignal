@@ -14,10 +14,10 @@ export default function PricingPage() {
         <div className="mx-auto max-w-4xl lg:px-2">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Pricing</p>
           <h1 className="mt-5 text-4xl font-bold tracking-tight sm:text-6xl">
-            One clear price for every trade and territory.
+            Preview free. Own a local patch from £29.99/month.
           </h1>
           <p className="mt-6 max-w-2xl text-base leading-7 text-white/70 sm:text-lg">
-            Start at £29.99/month for your first postcode district, regardless of trade or location. Add districts around your service area and the unit price reduces automatically as your coverage grows.
+            Explore the local signal at £0, then start at £29.99/month for your first postcode district, regardless of trade or location. Add districts around your service area and the unit price reduces automatically as your coverage grows.
           </p>
         </div>
       </section>
@@ -26,6 +26,7 @@ export default function PricingPage() {
 
       <section className="bg-white px-6 py-20 sm:py-24">
         <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-3 lg:px-2">
+          <InfoCard title="Explore before you commit" body="Use the free public checker to preview local planning activity, aggregate totals, indicative value and territory availability. Upgrade only when you want exclusive access to the opportunity feed." />
           <InfoCard title="What is included" body="Exclusive access to your trade-specific opportunity feed, live aggregate totals, planning context, indicative value, source links and practical next actions." />
           <InfoCard title="How coverage pricing works" body="Every trade starts at the same £29.99 for its first postcode district. Add or remove districts inside that trade plan and the unit price steps down by volume. Once verified county coverage is enabled for your area, county bundles receive an additional 20% discount." />
           <InfoCard title="What is not promised" body="Planning applications can change, estimates are indicative and a signal is not a guaranteed enquiry. MyTradeBox helps you find and prioritise opportunities earlier." />
