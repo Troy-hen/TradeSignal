@@ -14,8 +14,10 @@ type ClaimRow = { id: string; company_id: string; status: string };
 export default async function AdminOverviewPage() {
   const typed = createAdminClient();
   const db = typed as unknown as SupabaseClient;
-  const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const now = new Date();
+  const nowIso = now.toISOString();
+  const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+  const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
   const [
     { data: companiesData }, { data: contactsData }, { data: ingestionData }, { data: notificationData },
@@ -61,7 +63,7 @@ export default async function AdminOverviewPage() {
     <div className="space-y-10">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Operations console</p><h1 className="mt-2 text-3xl font-bold tracking-tight text-charcoal">Platform health, customers and conversion.</h1><p className="mt-3 max-w-3xl text-sm leading-6 text-slate">One place to watch acquisition, ingestion, customer coverage, notification delivery and the territory purchase funnel.</p></div>
-        <p className="text-xs text-slate">Updated {formatDate(new Date().toISOString())}</p>
+        <p className="text-xs text-slate">Updated {formatDate(nowIso)}</p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 xl:grid-cols-8">
