@@ -47,10 +47,15 @@ export default async function RoiPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Business case</p>
-        <h1 className="mt-3 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">Your return on signal.</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-slate sm:text-base">A simple view of what MyTradeBox is worth to {company.trading_name}.</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Business case</p>
+          <h1 className="mt-3 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">Your return on signal.</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate sm:text-base">A simple view of what MyTradeBox is worth to {company.trading_name}.</p>
+        </div>
+        <a href="/api/roi/pdf" className="inline-flex self-start rounded-xl border border-light-grey bg-white px-4 py-2.5 text-sm font-semibold text-charcoal transition hover:border-signal-orange/40 hover:text-signal-orange sm:self-auto">
+          Download ROI PDF ↓
+        </a>
       </div>
 
       <section className="rounded-3xl bg-charcoal p-6 text-white sm:p-8">
@@ -69,8 +74,7 @@ export default async function RoiPage() {
       </dl>
 
       <p className="max-w-3xl text-sm leading-6 text-slate">
-        Won figures use the contract value you record when marking an opportunity Won, falling back to its indicative
-        estimate if no value was entered. Pipeline, quoted and won totals are estimates, not accounting records.
+        Won figures use the contract value you record when marking an opportunity Won, falling back to its indicative estimate if no value was entered. Pipeline, quoted and won totals are estimates, not accounting records.
       </p>
     </div>
   );
