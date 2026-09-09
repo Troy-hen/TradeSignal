@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import {
   generateOutreach,
   getOutreachStatus,
@@ -8,43 +8,35 @@ import {
   type OutreachUsage,
 } from "@/lib/actions/outreach";
 
+type Channel = "letter" | "phone" | "doorstep";
+
 export function OutreachAssistant({ opportunityId }: { opportunityId: string }) {
   const [isPending, startTransition] = useTransition();
   const [content, setContent] = useState<OutreachContent | null>(null);
   const [usage, setUsage] = useState<OutreachUsage | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [channel, setChannel] = useState<Channel>("letter");
 
   useEffect(() => {
     let cancelled = false;
     getOutreachStatus(opportunityId).then((result) => {
       if (!cancelled && result.data) setUsage(result.data);
     });
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [opportunityId]);
 
-  const limitReached =
-    usage !== null &&
-    (usage.remaining_generations <= 0 ||
-      usage.daily_remaining <= 0 ||
-      usage.monthly_remaining <= 0);
+  const limitReached = usage !== null && (usage.remaining_generations <= 0 || usage.daily_remaining <= 0 || usage.monthly_remaining <= 0);
+  const limitMessage = usage === null ? null : usage.remaining_generations <= 0 ? "Two drafts are allowed per opportunity." : usage.daily_remaining <= 0 ? "Your workspace has reached today's outreach limit." : usage.monthly_remaining <= 0 ? "Your workspace has reached this month's outreach limit." : null;
 
-  const limitMessage =
-    usage === null
-      ? null
-      : usage.remaining_generations <= 0
-        ? "Two drafts are allowed per opportunity."
-        : usage.daily_remaining <= 0
-          ? "Your workspace has reached today's outreach limit."
-          : usage.monthly_remaining <= 0
-            ? "Your workspace has reached this month's outreach limit."
-            : null;
+  const selectedText = useMemo(() => {
+    if (!content) return null;
+    if (channel === "phone") return content.phone_opener;
+    if (channel === "doorstep") return content.doorstep_script;
+    return content.intro_letter;
+  }, [channel, content]);
 
   function refreshUsage() {
-    getOutreachStatus(opportunityId).then((result) => {
-      if (result.data) setUsage(result.data);
-    });
+    getOutreachStatus(opportunityId).then((result) => { if (result.data) setUsage(result.data); });
   }
 
   function handleGenerate() {
@@ -61,60 +53,78 @@ export function OutreachAssistant({ opportunityId }: { opportunityId: string }) 
     });
   }
 
+  function downloadDraft() {
+    if (!selectedText) return;
+    const blob = new Blob([selectedText], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `mytradebox-${channel}-draft.txt`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
-    <div className="rounded-md border border-light-grey bg-white p-4">
-      <h3 className="font-semibold text-charcoal">Outreach Assistant</h3>
-      <p className="mt-1 text-sm text-slate">
-        AI-drafted copy based only on the facts on this page — no applicant name or contact details are ever
-        used. Review and personalise before sending; nothing is sent automatically.
-      </p>
-
-      <p className="mt-3 text-xs font-medium text-slate">
-        {usage
-          ? String(usage.used_generations) +
-            " of 2 drafts used for this opportunity · " +
-            String(usage.daily_remaining) +
-            " left today · " +
-            String(usage.monthly_remaining) +
-            " left this month"
-          : "Checking your outreach allowance…"}
-      </p>
-
-      <button
-        type="button"
-        onClick={handleGenerate}
-        disabled={isPending || limitReached}
-        aria-busy={isPending}
-        className="mt-3 rounded-md bg-signal-orange px-4 py-2 text-sm font-semibold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-      >
-        {isPending
-          ? "Generating…"
-          : limitReached
-            ? "Generation limit reached"
-            : content
-              ? "Generate another draft"
-              : "Generate outreach copy"}
-      </button>
-
-      {limitReached && limitMessage && <p className="mt-2 text-sm text-slate">{limitMessage}</p>}
-      {error && <p className="mt-2 text-sm text-danger">{error}</p>}
-
-      {content && (
-        <div className="mt-4 space-y-4">
-          <OutreachBlock label="Introductory letter" text={content.intro_letter} />
-          <OutreachBlock label="Phone call opener" text={content.phone_opener} />
-          <OutreachBlock label="Doorstep script" text={content.doorstep_script} />
+    <section className="overflow-hidden rounded-3xl border border-light-grey bg-white">
+      <div className="grid lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)]">
+        <div className="bg-charcoal p-5 text-white sm:p-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Contact this opportunity</p>
+          <h2 className="mt-2 text-xl font-bold tracking-tight">Turn the intelligence into a useful first move.</h2>
+          <p className="mt-3 text-sm leading-6 text-white/60">
+            MyTradeBox drafts outreach from the project facts already on this brief. Nothing is sent automatically, and no applicant contact details are injected into the prompt.
+          </p>
+          <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.06] p-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/45">Allowance</p>
+            <p className="mt-2 text-sm font-semibold text-white">
+              {usage ? `${usage.used_generations} of 2 drafts used · ${usage.daily_remaining} left today` : "Checking your outreach allowance…"}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleGenerate}
+            disabled={isPending || limitReached}
+            aria-busy={isPending}
+            className="mt-4 w-full rounded-xl bg-signal-orange px-4 py-3 text-sm font-semibold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isPending ? "Generating…" : limitReached ? "Generation limit reached" : content ? "Generate fresh drafts" : "Generate outreach drafts"}
+          </button>
+          {limitReached && limitMessage && <p className="mt-2 text-xs text-white/55">{limitMessage}</p>}
+          {error && <p className="mt-2 text-sm text-danger">{error}</p>}
         </div>
-      )}
-    </div>
+
+        <div className="min-w-0 p-5 sm:p-6">
+          <div className="flex flex-wrap gap-2">
+            <ChannelButton active={channel === "letter"} onClick={() => setChannel("letter")}>Letter</ChannelButton>
+            <ChannelButton active={channel === "phone"} onClick={() => setChannel("phone")}>Phone opener</ChannelButton>
+            <ChannelButton active={channel === "doorstep"} onClick={() => setChannel("doorstep")}>Doorstep</ChannelButton>
+          </div>
+
+          {selectedText ? (
+            <>
+              <div className="mt-5 rounded-2xl border border-light-grey bg-soft-surface p-4 sm:p-5">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate">Draft</p>
+                <pre className="mt-3 whitespace-pre-wrap break-words font-sans text-sm leading-6 text-charcoal">{selectedText}</pre>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button type="button" onClick={downloadDraft} className="rounded-xl border border-light-grey bg-white px-4 py-2.5 text-sm font-semibold text-charcoal transition hover:border-signal-orange/40">Download draft ↓</button>
+                <button type="button" onClick={() => navigator.clipboard?.writeText(selectedText)} className="rounded-xl border border-light-grey bg-white px-4 py-2.5 text-sm font-semibold text-charcoal transition hover:border-signal-orange/40">Copy text</button>
+              </div>
+              <p className="mt-3 text-xs leading-5 text-slate">Review and personalise before using. Sending/tracking will be added here when an outbound provider is connected.</p>
+            </>
+          ) : (
+            <div className="mt-5 flex min-h-[230px] items-center justify-center rounded-2xl border border-dashed border-light-grey bg-soft-surface p-6 text-center">
+              <div>
+                <p className="text-sm font-semibold text-charcoal">Generate once, then choose the right channel.</p>
+                <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate">You will get a concise introductory letter, a phone opener and a doorstep script from the same opportunity context.</p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }
 
-function OutreachBlock({ label, text }: { label: string; text: string }) {
-  return (
-    <div>
-      <p className="text-xs font-semibold uppercase tracking-wide text-slate">{label}</p>
-      <pre className="mt-1 whitespace-pre-wrap rounded-md bg-soft-surface p-3 font-sans text-sm text-charcoal">{text}</pre>
-    </div>
-  );
+function ChannelButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return <button type="button" onClick={onClick} className={active ? "rounded-xl bg-charcoal px-3 py-2 text-xs font-semibold text-white" : "rounded-xl border border-light-grey bg-white px-3 py-2 text-xs font-semibold text-charcoal transition hover:border-signal-orange/40"}>{children}</button>;
 }
