@@ -11,6 +11,7 @@ import {
 type Channel = "letter" | "phone" | "doorstep";
 type Capabilities = { postalOutreach?: boolean };
 type PostalPreview = {
+  deliveryId?: string;
   preview?: { previewUrl?: string | null; estimatedCostPence?: number | null };
   recipient?: { name?: string | null; addressLine1?: string; postcode?: string };
   recipientLabel?: string;
@@ -34,7 +35,12 @@ export function OutreachAssistant({ opportunityId }: { opportunityId: string }) 
     });
     fetch("/api/capabilities", { cache: "no-store" })
       .then((response) => response.ok ? response.json() : null)
-      .then((data: Capabilities | null) => { if (!cancelled) setPostalEnabled(Boolean(data?.postalOutreach)); })
+      .then((data: Capabilities | null) => {
+        if (cancelled) return;
+        const enabled = Boolean(data?.postalOutreach);
+        setPostalEnabled(enabled);
+        if (enabled) fetch("/api/outreach/postal/sync", { method: "POST" }).catch(() => {});
+      })
       .catch(() => {});
     return () => { cancelled = true; };
   }, [opportunityId]);
@@ -104,7 +110,7 @@ export function OutreachAssistant({ opportunityId }: { opportunityId: string }) 
   }
 
   async function sendPostalLetter() {
-    if (!selectedText || !postalPreview || postalBusy) return;
+    if (!selectedText || !postalPreview?.deliveryId || postalBusy) return;
     const cost = postalPreview.preview?.estimatedCostPence;
     const price = typeof cost === "number" ? ` Estimated cost: ${formatPence(cost)}.` : "";
     if (!window.confirm(`Send this letter for printing and postage?${price}`)) return;
@@ -115,14 +121,14 @@ export function OutreachAssistant({ opportunityId }: { opportunityId: string }) 
       const response = await fetch(`/api/opportunities/${opportunityId}/postal/send`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: selectedText }),
+        body: JSON.stringify({ content: selectedText, deliveryId: postalPreview.deliveryId }),
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
         setPostalMessage("The letter was not sent. No successful delivery was recorded.");
         return;
       }
-      setPostalMessage(`Letter ${data.status === "sent" ? "sent" : "queued"}${typeof data.costPence === "number" ? ` · ${formatPence(data.costPence)}` : ""}.`);
+      setPostalMessage(`Letter ${data.status === "sent" ? "sent" : data.status === "delivered" ? "delivered" : "queued"}${typeof data.costPence === "number" ? ` · ${formatPence(data.costPence)}` : ""}.`);
     } catch {
       setPostalMessage("The letter was not sent. Please try again.");
     } finally {
@@ -145,13 +151,7 @@ export function OutreachAssistant({ opportunityId }: { opportunityId: string }) 
               {usage ? `${usage.used_generations} of 2 drafts used · ${usage.daily_remaining} left today` : "Checking your outreach allowance…"}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={handleGenerate}
-            disabled={isPending || limitReached}
-            aria-busy={isPending}
-            className="mt-4 w-full rounded-xl bg-signal-orange px-4 py-3 text-sm font-semibold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-          >
+          <button type="button" onClick={handleGenerate} disabled={isPending || limitReached} aria-busy={isPending} className="mt-4 w-full rounded-xl bg-signal-orange px-4 py-3 text-sm font-semibold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60">
             {isPending ? "Generating…" : limitReached ? "Generation limit reached" : content ? "Generate fresh drafts" : "Generate outreach drafts"}
           </button>
           {limitReached && limitMessage && <p className="mt-2 text-xs text-white/55">{limitMessage}</p>}
@@ -187,7 +187,7 @@ export function OutreachAssistant({ opportunityId }: { opportunityId: string }) 
                   ) : (
                     <div className="mt-3 flex flex-wrap items-center gap-2">
                       {postalPreview.preview?.previewUrl && <a href={postalPreview.preview.previewUrl} target="_blank" rel="noreferrer" className="rounded-xl border border-light-grey bg-white px-4 py-2.5 text-xs font-semibold text-charcoal">Open PDF preview ↗</a>}
-                      <button type="button" onClick={sendPostalLetter} disabled={postalBusy} className="rounded-xl bg-signal-orange px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-50">
+                      <button type="button" onClick={sendPostalLetter} disabled={postalBusy || !postalPreview.deliveryId} className="rounded-xl bg-signal-orange px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-50">
                         {postalBusy ? "Sending…" : `Confirm & send${typeof postalPreview.preview?.estimatedCostPence === "number" ? ` · ${formatPence(postalPreview.preview.estimatedCostPence)}` : ""}`}
                       </button>
                       <button type="button" onClick={() => setPostalPreview(null)} className="px-2 py-2 text-xs font-semibold text-slate">Re-preview</button>
