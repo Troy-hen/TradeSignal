@@ -344,7 +344,7 @@ function LockedBrief({ teaser }: { teaser: OpportunityTeaser }) {
 
       <div className="mt-4 rounded-3xl border border-light-grey bg-white p-6 sm:p-8">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Opportunity preview</p>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight text-charcoal sm:text-3xl">Opportunity details locked</h1>
+        <h1 className="mt-2 text-2xl font-bold tracking-tight text-charcoal sm:text-3xl">See the opportunity brief</h1>
         <p className="mt-3 text-sm text-slate">
           {teaser.postcode_district} · {teaser.trade_category_name}
         </p>
@@ -352,7 +352,7 @@ function LockedBrief({ teaser }: { teaser: OpportunityTeaser }) {
 
       <div className="mt-6">
         <LockedOpportunityPreview
-          title="Claim this territory to see the brief"
+          title="Claim to reveal the full brief"
           body="The address, planning reference, project summary, AI interpretation, value estimate and recommended next move are reserved for the territory holder."
         />
       </div>
