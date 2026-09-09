@@ -31,13 +31,15 @@ export function OutreachAssistant({ opportunityId }: { opportunityId: string }) 
       usage.monthly_remaining <= 0);
 
   const limitMessage =
-    usage?.remaining_generations <= 0
-      ? "Two drafts are allowed per opportunity."
-      : usage?.daily_remaining <= 0
-        ? "Your workspace has reached today's outreach limit."
-        : usage?.monthly_remaining <= 0
-          ? "Your workspace has reached this month's outreach limit."
-          : null;
+    usage === null
+      ? null
+      : usage.remaining_generations <= 0
+        ? "Two drafts are allowed per opportunity."
+        : usage.daily_remaining <= 0
+          ? "Your workspace has reached today's outreach limit."
+          : usage.monthly_remaining <= 0
+            ? "Your workspace has reached this month's outreach limit."
+            : null;
 
   function refreshUsage() {
     getOutreachStatus(opportunityId).then((result) => {
