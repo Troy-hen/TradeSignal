@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/lib/types/database";
 
 type OpportunityBucket = Database["public"]["Enums"]["opportunity_bucket"];
+export type OpportunityActionFilter = "new" | "saved" | "contacted" | "quoted" | "won" | "lost";
 
 export interface OpportunityListItem {
   leadMatchId: string;
@@ -39,7 +40,7 @@ export interface OpportunityListItem {
  */
 export async function getCompanyOpportunities(
   companyId: string,
-  opts?: { bucket?: OpportunityBucket; limit?: number },
+  opts?: { bucket?: OpportunityBucket; action?: OpportunityActionFilter; limit?: number },
 ): Promise<OpportunityListItem[]> {
   const supabase = await createClient();
 
@@ -52,7 +53,12 @@ export async function getCompanyOpportunities(
 
   if (!matches || matches.length === 0) return [];
 
-  const oppIds = matches
+  const visibleMatches = opts?.action
+    ? matches.filter((match) => (opts.action === "new" ? match.current_action === null : match.current_action === opts.action))
+    : matches;
+  if (visibleMatches.length === 0) return [];
+
+  const oppIds = visibleMatches
     .map((m) => m.application_trade_opportunity_id)
     .filter((id): id is string => id !== null);
   if (oppIds.length === 0) return [];
@@ -87,7 +93,7 @@ export async function getCompanyOpportunities(
   const appById = new Map((applications ?? []).map((a) => [a.id, a]));
 
   const items: OpportunityListItem[] = [];
-  for (const m of matches) {
+  for (const m of visibleMatches) {
     if (!m.application_trade_opportunity_id || !m.lead_match_id) continue;
     const opp = oppById.get(m.application_trade_opportunity_id);
     if (!opp) continue; // excluded by the bucket filter, or not (yet) RLS-visible
