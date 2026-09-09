@@ -23,7 +23,7 @@ const csp = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data:",
+  "img-src 'self' data: https://tile.openstreetmap.org",
   "font-src 'self' data:",
   `connect-src 'self' ${supabaseOrigin} ${supabaseWsOrigin}`.trim(),
   "frame-src https://checkout.stripe.com https://billing.stripe.com",
