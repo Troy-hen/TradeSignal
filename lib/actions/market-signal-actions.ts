@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { requireCurrentCompany } from "@/lib/auth/get-current-company";
 
 const schema = z.object({
@@ -23,9 +24,6 @@ export async function recordMarketSignalAction(input: {
 
   const company = await requireCurrentCompany();
   const supabase = await createClient();
-
-  // Entitlement is resolved by the RLS-backed detail function: if the company
-  // does not own the signal's district/trade combination this returns no row.
   const { data: entitled } = await supabase.rpc("get_owned_market_signal", { p_match_id: parsed.data.matchId });
   if (!Array.isArray(entitled) || entitled.length === 0) return { error: "This opportunity is not available in your coverage." };
 
@@ -43,12 +41,22 @@ export async function recordMarketSignalAction(input: {
   if (parsed.data.action === "won") row.won_at = now;
   if (parsed.data.action === "lost") row.lost_at = now;
 
-  const { error } = await supabase
-    .from("market_signal_company_states")
-    .upsert(row, { onConflict: "company_id,market_signal_trade_match_id" });
+  const { error } = await supabase.from("market_signal_company_states").upsert(row, { onConflict: "company_id,market_signal_trade_match_id" });
   if (error) {
     console.error("market signal action failed", error);
     return { error: "Could not update this opportunity. Please try again." };
+  }
+
+  const requestStatus = quoteRequestStatus(parsed.data.action);
+  if (requestStatus) {
+    const admin = createAdminClient();
+    const { error: syncError } = await admin
+      .from("quote_requests")
+      .update({ status: requestStatus, updated_at: now })
+      .eq("company_id", company.id)
+      .eq("market_signal_trade_match_id", parsed.data.matchId)
+      .in("status", ["new", "contacted", "quote_scheduled", "quoted"]);
+    if (syncError) console.error("Commercial quote request workflow sync failed", syncError);
   }
 
   revalidatePath("/opportunities");
@@ -56,4 +64,12 @@ export async function recordMarketSignalAction(input: {
   revalidatePath("/dashboard");
   revalidatePath("/roi");
   return {};
+}
+
+function quoteRequestStatus(action: "new" | "saved" | "contacted" | "bid_planned" | "bid_submitted" | "quoted" | "won" | "lost") {
+  if (action === "contacted") return "contacted";
+  if (action === "quoted" || action === "bid_submitted") return "quoted";
+  if (action === "won") return "won";
+  if (action === "lost") return "lost";
+  return null;
 }
