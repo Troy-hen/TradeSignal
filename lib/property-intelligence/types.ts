@@ -14,6 +14,13 @@ export type PropertyTransaction = {
   price: number | null;
 };
 
+export type PropertyPlanningRecord = {
+  planningId: string;
+  address: string | null;
+  receivedDate: string | null;
+  decision: string | null;
+};
+
 export type PropertyIntelligenceSnapshot = {
   provider: string;
   uprn: string;
@@ -38,6 +45,7 @@ export type PropertyIntelligenceSnapshot = {
   activityReasons: string[];
   triggerHistory: PropertyTrigger[];
   transactionHistory: PropertyTransaction[];
+  planningHistory: PropertyPlanningRecord[];
 };
 
 export interface PropertyIntelligenceProvider {
