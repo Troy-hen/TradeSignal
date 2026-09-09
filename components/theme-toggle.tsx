@@ -15,16 +15,20 @@ export function ThemeToggle({ collapsed = false }: { collapsed?: boolean }) {
   const [theme, setTheme] = useState<Theme>("light");
 
   useEffect(() => {
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    const preferred: Theme =
-      stored === "dark" || stored === "light"
-        ? stored
-        : window.matchMedia("(prefers-color-scheme: dark)").matches
-          ? "dark"
-          : "light";
+    const preferenceFrame = window.requestAnimationFrame(() => {
+      const stored = window.localStorage.getItem(STORAGE_KEY);
+      const preferred: Theme =
+        stored === "dark" || stored === "light"
+          ? stored
+          : window.matchMedia("(prefers-color-scheme: dark)").matches
+            ? "dark"
+            : "light";
 
-    setTheme(preferred);
-    applyTheme(preferred);
+      setTheme(preferred);
+      applyTheme(preferred);
+    });
+
+    return () => window.cancelAnimationFrame(preferenceFrame);
   }, []);
 
   function toggleTheme() {
