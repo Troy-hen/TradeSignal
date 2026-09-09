@@ -29,10 +29,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     .limit(1)
     .maybeSingle();
 
-  return NextResponse.json({
-    configured: Boolean(getPropertyIntelligenceProvider()),
-    intelligence: data ?? null,
-  });
+  return NextResponse.json({ configured: Boolean(getPropertyIntelligenceProvider()), intelligence: data ?? null });
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -40,9 +37,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const company = await requireCurrentCompany();
   const supabase = await createClient();
   const db = supabase as unknown as SupabaseClient;
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
 
   const provider = getPropertyIntelligenceProvider();
@@ -86,10 +81,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   try {
-    const snapshot = await provider.enrichProperty({
-      address: application.address_text,
-      postcode: application.postcode,
-    });
+    const snapshot = await provider.enrichProperty({ address: application.address_text, postcode: application.postcode });
     if (!snapshot) {
       return NextResponse.json(
         { error: "property_not_matched", message: "The project address could not be matched confidently to a TwentyCI property record." },
@@ -130,6 +122,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           timing_reasons: snapshot.activityReasons,
           trigger_history: snapshot.triggerHistory,
           transaction_history: snapshot.transactionHistory,
+          planning_history: snapshot.planningHistory,
           retrieved_at: now.toISOString(),
           expires_at: expiresAt,
           updated_at: now.toISOString(),
@@ -150,6 +143,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         uprn: snapshot.uprn,
         match_confidence: snapshot.matchConfidence,
         timing_signal: snapshot.activitySignal,
+        property_planning_records: snapshot.planningHistory.length,
       },
       created_by: user.id,
     });
@@ -163,31 +157,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
 function safeSelect() {
   return [
-    "id",
-    "provider",
-    "uprn",
-    "match_method",
-    "match_confidence",
-    "matched_address",
-    "postcode",
-    "estimated_value_gbp",
-    "value_min_gbp",
-    "value_max_gbp",
-    "avm_confidence",
-    "bedrooms",
-    "bathrooms",
-    "garden",
-    "parking",
-    "latest_trigger_type",
-    "latest_trigger_date",
-    "last_transaction_date",
-    "last_transaction_price_gbp",
-    "likely_to_sell_percentile",
-    "timing_signal",
-    "timing_reasons",
-    "trigger_history",
-    "transaction_history",
-    "retrieved_at",
-    "expires_at",
+    "id", "provider", "uprn", "match_method", "match_confidence", "matched_address", "postcode",
+    "estimated_value_gbp", "value_min_gbp", "value_max_gbp", "avm_confidence", "bedrooms", "bathrooms",
+    "garden", "parking", "latest_trigger_type", "latest_trigger_date", "last_transaction_date",
+    "last_transaction_price_gbp", "likely_to_sell_percentile", "timing_signal", "timing_reasons",
+    "trigger_history", "transaction_history", "planning_history", "retrieved_at", "expires_at",
   ].join(",");
 }
