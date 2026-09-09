@@ -3,10 +3,12 @@ import { z } from "zod";
 import { requireCurrentCompany } from "@/lib/auth/get-current-company";
 import { getAssistantOpenAI, resolveTradeSlug, retrieveKnowledge, searchOpportunityTeasers } from "@/lib/assistant/retrieval";
 import { getWorkspaceSnapshot } from "@/lib/assistant/workspace-tools";
+import { getCurrentOpportunityContext, opportunityIdFromContextPath } from "@/lib/assistant/opportunity-context";
 
 const requestSchema = z.object({
   message: z.string().trim().min(1).max(4000),
   history: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(4000) })).max(12).default([]),
+  contextPath: z.string().max(500).nullable().optional(),
 });
 
 const workspaceIntentSchema = z.enum(["none", "priorities", "coverage", "expansion", "roi", "followups"]);
@@ -31,7 +33,8 @@ export async function POST(request: Request) {
   try {
     const planner = await planRetrieval(openai, body.data.message, body.data.history);
     const needsWorkspace = planner.workspaceIntent !== "none";
-    const [knowledge, opportunityResults, workspace] = await Promise.all([
+    const currentOpportunityId = opportunityIdFromContextPath(body.data.contextPath);
+    const [knowledge, opportunityResults, workspace, currentOpportunity] = await Promise.all([
       planner.needsKnowledge ? retrieveKnowledge(body.data.message, 6) : Promise.resolve([]),
       planner.needsOpportunitySearch && planner.location
         ? resolveTradeSlug(planner.trade).then((tradeSlug) => searchOpportunityTeasers({
@@ -39,6 +42,7 @@ export async function POST(request: Request) {
           }))
         : Promise.resolve([]),
       needsWorkspace ? getWorkspaceSnapshot(company.id) : Promise.resolve(null),
+      currentOpportunityId ? getCurrentOpportunityContext(company.id, currentOpportunityId) : Promise.resolve(null),
     ]);
 
     const totalMatches = opportunityResults[0]?.total_matches ?? 0;
@@ -54,6 +58,7 @@ export async function POST(request: Request) {
         results: opportunityResults,
       } : null,
       workspace: workspaceEvidence,
+      currentOpportunity,
     };
 
     const response = await openai.responses.create({
@@ -61,7 +66,7 @@ export async function POST(request: Request) {
       input: [
         {
           role: "system",
-          content: `You are Ask MyTradeBox, a concise commercial assistant for UK trade businesses. Answer only from the supplied evidence and ordinary non-sensitive reasoning. Never invent live MyTradeBox data. If live opportunity evidence is present, explicitly distinguish owned/full results from teaser results. Teaser results must never be embellished with addresses, planning references, applicant details, full summaries, AI reasoning or recommended actions. If workspace evidence is present, turn it into a decision: prioritise the strongest next actions instead of simply repeating metrics. When there are more results than returned, say how many total matched and that you are showing the strongest subset. Use pounds sterling and UK terminology. Keep answers practical and short.`,
+          content: `You are Ask MyTradeBox, a concise commercial assistant for UK trade businesses. Answer only from the supplied evidence and ordinary non-sensitive reasoning. Never invent live MyTradeBox data. If live opportunity evidence is present, explicitly distinguish owned/full results from teaser results. Teaser results must never be embellished with addresses, planning references, applicant details, full summaries, AI reasoning or recommended actions. If workspace evidence is present, turn it into a decision: prioritise the strongest next actions instead of simply repeating metrics. If currentOpportunity evidence is present and the user refers to "this opportunity", "this property", "here" or similar, use that evidence as the current-page context. TwentyCI property intelligence is property-level context only: it does not identify the homeowner, prove construction intent, or grant permission to email/text an individual. A Likely To Sell percentile is movement context only. When there are more results than returned, say how many total matched and that you are showing the strongest subset. Use pounds sterling and UK terminology. Keep answers practical and short.`,
         },
         ...body.data.history.slice(-6).map((item) => ({ role: item.role, content: item.content } as const)),
         { role: "user", content: `QUESTION:\n${body.data.message}\n\nGROUNDING EVIDENCE:\n${JSON.stringify(evidence)}` },
@@ -98,6 +103,7 @@ export async function POST(request: Request) {
         knowledgeHits: knowledge.length,
         liveOpportunitySearch: planner.needsOpportunitySearch,
         workspaceIntent: planner.workspaceIntent,
+        currentOpportunity: Boolean(currentOpportunity),
       },
     });
   } catch (error) {
@@ -125,7 +131,7 @@ async function planRetrieval(
     input: [
       {
         role: "system",
-        content: `Return JSON only. Decide which grounded retrieval sources are needed. needsKnowledge=true for questions about how MyTradeBox works, terminology, workflow, scoring, territories, notifications, ROI methodology, exports or outreach. needsOpportunitySearch=true when the user asks to find, show, count, compare, summarise or inspect market opportunities in a supplied place, trade or planning status. workspaceIntent=priorities when they ask what to focus on, best leads, top opportunities or today's priorities; coverage for questions about what they own; expansion for where they should buy/expand next; roi for their actual pipeline/wins/spend/return; followups for reminders or what needs chasing; otherwise none. Extract a UK location exactly as supplied where possible. Extract a plain-language trade if supplied. Status must be one of submitted, validated, under_consideration, decision_expected, approved, rejected, withdrawn, appeal_lodged, unknown or null. Use limit 12 unless explicitly fewer; never exceed 25.`,
+        content: `Return JSON only. Decide which grounded retrieval sources are needed. needsKnowledge=true for questions about how MyTradeBox works, terminology, workflow, scoring, territories, notifications, ROI methodology, exports, outreach, property intelligence or contactability. needsOpportunitySearch=true when the user asks to find, show, count, compare, summarise or inspect market opportunities in a supplied place, trade or planning status. workspaceIntent=priorities when they ask what to focus on, best leads, top opportunities or today's priorities; coverage for questions about what they own; expansion for where they should buy/expand next; roi for their actual pipeline/wins/spend/return; followups for reminders or what needs chasing; otherwise none. Extract a UK location exactly as supplied where possible. Extract a plain-language trade if supplied. Status must be one of submitted, validated, under_consideration, decision_expected, approved, rejected, withdrawn, appeal_lodged, unknown or null. Use limit 12 unless explicitly fewer; never exceed 25.`,
       },
       ...history.slice(-4).map((item) => ({ role: item.role, content: item.content } as const)),
       { role: "user", content: message },
