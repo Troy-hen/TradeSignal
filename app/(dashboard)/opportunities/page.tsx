@@ -30,7 +30,7 @@ const VALID_ACTIONS = new Set<string>(["new", "saved", "contacted", "quoted", "w
 export default async function OpportunitiesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ bucket?: string }>;
+  searchParams: Promise<{ bucket?: string; action?: string }>;
 }) {
   const company = await requireCurrentCompany();
   const { bucket, action } = await searchParams;
