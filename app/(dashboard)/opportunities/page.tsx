@@ -30,6 +30,10 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
   const selectedBucket = bucket && VALID_BUCKETS.has(bucket) ? bucket : "";
   const selectedAction = action && VALID_ACTIONS.has(action) ? action : "";
   const filtered = Boolean(selectedBucket || selectedAction);
+  const exportParams = new URLSearchParams();
+  if (selectedBucket) exportParams.set("bucket", selectedBucket);
+  if (selectedAction) exportParams.set("action", selectedAction);
+  const exportHref = `/api/opportunities/export${exportParams.toString() ? "?" + exportParams.toString() : ""}`;
 
   return (
     <div className="min-w-0 space-y-8">
@@ -39,9 +43,14 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
           <h1 className="mt-3 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">Work worth chasing.</h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-slate sm:text-base">Every planning opportunity matched to the territories your business owns, ranked by the signal that matters.</p>
         </div>
-        <Link href="/territories" className="inline-flex shrink-0 items-center justify-center self-start rounded-xl bg-charcoal px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-signal-orange sm:self-auto">
-          Explore territories <span className="ml-2">→</span>
-        </Link>
+        <div className="flex shrink-0 flex-wrap gap-2 self-start sm:self-auto">
+          <a href={exportHref} className="inline-flex items-center justify-center rounded-xl border border-light-grey bg-white px-4 py-2.5 text-sm font-semibold text-charcoal transition hover:border-signal-orange/40 hover:text-signal-orange">
+            Export CSV ↓
+          </a>
+          <Link href="/territories" className="inline-flex items-center justify-center rounded-xl bg-charcoal px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-signal-orange">
+            Explore territories <span className="ml-2">→</span>
+          </Link>
+        </div>
       </div>
 
       <section className="rounded-3xl border border-light-grey bg-white p-4 sm:p-5">
