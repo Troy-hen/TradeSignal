@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getCurrentCompany } from "@/lib/auth/get-current-company";
+import { getInAppNotifications } from "@/lib/data/in-app-notifications";
 import { Logo } from "@/components/logo";
 import { DashboardShell } from "@/components/dashboard-shell";
 
@@ -10,12 +11,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
     return <PublicShell>{children}</PublicShell>;
   }
 
+  const inAppNotifications = await getInAppNotifications(company.id);
+
   return (
     <DashboardShell
       company={{
         trading_name: company.trading_name,
         role: company.role,
       }}
+      notifications={inAppNotifications}
     >
       {children}
     </DashboardShell>
