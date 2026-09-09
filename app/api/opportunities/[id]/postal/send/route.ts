@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireCurrentCompany } from "@/lib/auth/get-current-company";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getPostalOpportunityContext } from "@/lib/outreach/postal-context";
 import { getPostalOutreachProvider } from "@/lib/outreach/postal-provider";
 
@@ -22,6 +23,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const supabase = await createClient();
   const db = supabase as unknown as SupabaseClient;
+  const admin = createAdminClient() as unknown as SupabaseClient;
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "unauthenticated" }, { status: 401 });
 
@@ -41,7 +43,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (!validation.valid) return NextResponse.json({ error: "postal_address_not_validated" }, { status: 422 });
     const recipient = validation.normalized ?? context.recipient;
 
-    const { data: existing } = await db
+    const { data: existing } = await admin
       .from("outreach_deliveries")
       .select("id,provider_job_id,status,cost_pence,tracking_url,content_snapshot")
       .eq("id", body.data.deliveryId)
@@ -64,9 +66,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: "delivery_content_mismatch" }, { status: 409 });
     }
 
-    let delivery = existing;
-    if (!delivery) {
-      const { data: inserted, error: insertError } = await db
+    if (!existing) {
+      const { error: insertError } = await admin
         .from("outreach_deliveries")
         .insert({
           id: body.data.deliveryId,
@@ -80,11 +81,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           recipient_address: recipient,
           content_snapshot: body.data.content,
           created_by: user.id,
-        })
-        .select("id,provider_job_id,status,cost_pence,tracking_url,content_snapshot")
-        .single();
-      if (insertError || !inserted) return NextResponse.json({ error: "delivery_create_failed" }, { status: 500 });
-      delivery = inserted;
+        });
+      if (insertError) return NextResponse.json({ error: "delivery_create_failed" }, { status: 500 });
     }
 
     const result = await provider.sendLetter({
@@ -95,7 +93,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     });
     const now = new Date().toISOString();
 
-    await db
+    const { error: updateError } = await admin
       .from("outreach_deliveries")
       .update({
         provider_job_id: result.providerJobId,
@@ -107,8 +105,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       })
       .eq("id", body.data.deliveryId)
       .eq("company_id", company.id);
+    if (updateError) throw updateError;
 
-    const { data: priorEvent } = await db
+    const { data: priorEvent } = await admin
       .from("opportunity_activity_events")
       .select("id")
       .eq("company_id", company.id)
@@ -118,7 +117,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       .maybeSingle();
 
     if (!priorEvent) {
-      await db.from("opportunity_activity_events").insert({
+      await admin.from("opportunity_activity_events").insert({
         company_id: company.id,
         opportunity_id: id,
         lead_match_id: leadMatch?.id ?? null,
