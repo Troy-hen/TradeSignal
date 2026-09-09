@@ -4,6 +4,7 @@ import { requireCurrentCompany } from "@/lib/auth/get-current-company";
 import { createClient } from "@/lib/supabase/server";
 import { getAssistantOpenAI, retrieveKnowledge } from "@/lib/assistant/retrieval";
 import { getOpportunityRelationshipIntelligence } from "@/lib/data/opportunity-intelligence";
+import { getStoredPropertyIntelligence } from "@/lib/data/property-intelligence";
 import { getCompaniesHouseCompanySummary } from "@/lib/company-intelligence/companies-house";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -62,7 +63,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
     ? relationship.agentCompany ?? relationship.applicantName
     : null;
 
-  const [knowledge, companyIntelligence] = await Promise.all([
+  const [knowledge, companyIntelligence, propertyIntelligence] = await Promise.all([
     retrieveKnowledge(
       `${trade.name} planning opportunity ${classification.project_type ?? "project"} commercial approach timing`,
       4,
@@ -71,6 +72,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       console.warn("Companies House enrichment unavailable", error);
       return null;
     }),
+    getStoredPropertyIntelligence(company.id, id),
   ]);
 
   const { data: reportRow, error: insertError } = await db
@@ -107,6 +109,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       riskFlags: opportunity.risk_flags,
     },
     relationship,
+    propertyIntelligence,
     companyIntelligence,
     knowledge: knowledge.map((item) => ({ title: item.document_title, content: item.content })),
     sourcePlanningUrl: application.source_url,
@@ -145,7 +148,12 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       opportunity_id: id,
       event_type: "researched",
       channel: "assistant",
-      metadata: { research_report_id: reportRow.id, source_count: sources.length, companies_house: Boolean(companyIntelligence) },
+      metadata: {
+        research_report_id: reportRow.id,
+        source_count: sources.length,
+        companies_house: Boolean(companyIntelligence),
+        property_intelligence: Boolean(propertyIntelligence),
+      },
       created_by: user.id,
     });
 
@@ -167,7 +175,7 @@ async function createResearchResponse(openai: NonNullable<ReturnType<typeof getA
     input: [
       {
         role: "system" as const,
-        content: `You are MyTradeBox commercial research. Produce a grounded sales-research brief for a UK trade business. Use the supplied MyTradeBox evidence as authoritative. Public web research may supplement organisation/project context, but never invent facts or personal contact details. Follow the supplied contactStrategy: do not recommend consumer email/mobile enrichment for homeowner-led opportunities. Companies House officers are registry context, not automatically sales contacts. Focus on what changes the user's next action. Return JSON only with executiveSummary, commercialAssessment, whoToApproach, timing, relationshipSignal, risks, nextActions, externalFindings. Each array must contain short strings. If public research finds nothing useful, say so in externalFindings.`,
+        content: `You are MyTradeBox commercial research. Produce a grounded sales-research brief for a UK trade business. Use the supplied MyTradeBox evidence as authoritative. Public web research may supplement organisation/project context, but never invent facts or personal contact details. Follow the supplied contactStrategy: do not recommend consumer email/mobile enrichment for homeowner-led opportunities. Companies House officers are registry context, not automatically sales contacts. TwentyCI propertyIntelligence is property-level timing and market context only: it does not prove who lives at the property, create permission to contact an individual electronically, or prove construction intent. A Likely To Sell score is movement context, not evidence that planned works will proceed. Use property recency only when it genuinely changes timing or prioritisation. Focus on what changes the user's next action. Return JSON only with executiveSummary, commercialAssessment, whoToApproach, timing, relationshipSignal, risks, nextActions, externalFindings. Each array must contain short strings. If public research finds nothing useful, say so in externalFindings.`,
       },
       { role: "user" as const, content: JSON.stringify(evidence) },
     ],
