@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/logo";
+import { PublicThemeGuard } from "@/components/public-theme-guard";
 
 function currentYear(): number {
   return new Date().getFullYear();
@@ -7,7 +8,9 @@ function currentYear(): number {
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col">
+    <>
+      <PublicThemeGuard />
+      <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-50 border-b border-white/10 bg-charcoal">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 sm:py-5 lg:px-8">
           <Link href="/" aria-label="MyTradeBox home">
@@ -68,6 +71,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
           </div>
         </div>
       </footer>
-    </div>
+      </div>
+    </>
   );
 }
