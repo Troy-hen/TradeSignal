@@ -242,6 +242,9 @@ export function OpportunityMap({
             <div className="absolute inset-0 [background-image:linear-gradient(to_right,rgba(83,110,120,0.1)_1px,transparent_1px),linear-gradient(to_bottom,rgba(83,110,120,0.1)_1px,transparent_1px)] [background-size:42px_42px]" />
             <div className="pointer-events-none absolute inset-0 overflow-hidden">
               {tileData.tiles.map((tile) => (
+                // OSM tiles are already optimised CDN assets; proxying each tile
+                // through Next Image would add latency and unnecessary bandwidth.
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   key={tile.key}
                   src={
