@@ -24,7 +24,7 @@ const RULES: Record<string, TradeRule> = {
   roofing: {
     keywords: ["roof", "roofing", "re-roof", "reroof", "gutter", "rainwater goods", "rooflight", "flat roof", "pitched roof"],
     strongKeywords: ["roof replacement", "roof renewal", "re-roofing", "reroofing", "flat roof renewal", "roof covering"],
-    cpvPrefixes: ["4526", "45261", "452612", "452613", "452614", "452619"], broadShare: [0.04, 0.10], directShare: [0.65, 1.0],
+    cpvPrefixes: ["45261", "452612", "452613", "452614", "452619"], broadShare: [0.04, 0.10], directShare: [0.65, 1.0],
   },
   electrical: {
     keywords: ["electrical", "rewire", "rewiring", "lighting", "fire alarm", "power distribution", "switchgear", "ev charger", "ev charging"],
@@ -37,7 +37,7 @@ const RULES: Record<string, TradeRule> = {
     cpvPrefixes: ["4533", "45331", "45332"], broadShare: [0.08, 0.16], directShare: [0.55, 1.0],
   },
   renewables: {
-    keywords: ["solar", "photovoltaic", " pv ", "heat pump", "renewable", "battery storage", "decarbonisation", "low carbon", "retrofit"],
+    keywords: ["solar", "photovoltaic", "pv", "heat pump", "renewable", "battery storage", "decarbonisation", "low carbon", "retrofit"],
     strongKeywords: ["solar pv", "photovoltaic installation", "heat pump installation", "battery storage"],
     cpvPrefixes: ["0933", "425111", "45261215"], broadShare: [0.05, 0.15], directShare: [0.55, 1.0],
   },
@@ -47,7 +47,7 @@ const RULES: Record<string, TradeRule> = {
     cpvPrefixes: ["45421", "44221"], broadShare: [0.04, 0.10], directShare: [0.55, 1.0],
   },
   groundworks: {
-    keywords: ["groundworks", "ground works", "drainage", "foundation", "excavation", "civil engineering", "civils", "earthworks", "site preparation"],
+    keywords: ["groundworks", "ground works", "drainage", "foundation works", "foundations", "excavation", "civil engineering", "civils", "earthworks", "site preparation"],
     strongKeywords: ["groundworks package", "site preparation works", "drainage works", "foundation works"],
     cpvPrefixes: ["4511", "451112", "4522"], broadShare: [0.05, 0.12], directShare: [0.55, 1.0],
   },
@@ -81,26 +81,29 @@ const RULES: Record<string, TradeRule> = {
     cpvPrefixes: [], broadShare: [0.05, 0.12], directShare: [0.65, 1.0],
   },
   "general-builder": {
-    keywords: ["construction works", "building works", "refurbishment", "renovation", "extension", "alterations", "fit out", "fit-out", "remodelling", "building maintenance", "capital works"],
+    keywords: ["construction works", "building works", "refurbishment", "renovation", "building extension", "extension works", "construction of an extension", "construction of extension", "building alterations", "fit out", "fit-out", "remodelling", "building maintenance", "capital works"],
     strongKeywords: ["general building works", "building refurbishment", "construction contract", "refurbishment works"],
     cpvPrefixes: ["4500", "4521", "4545"], broadShare: [0.25, 0.55], directShare: [0.55, 1.0],
   },
 };
 
 export function matchSignalToTrades(signal: NormalizedMarketSignal, trades: TradeCategory[]): TradeSignalMatch[] {
-  const haystack = ` ${[signal.title, signal.summary, signal.buyerName, signal.noticeType].filter(Boolean).join(" ").toLowerCase()} `;
+  // Buyer names and generic notice metadata are deliberately excluded from the
+  // scope corpus: "NHS Foundation Trust" must not become groundworks, and an
+  // optional contract extension must not become a building extension.
+  const haystack = normalizeText([signal.title, signal.summary].filter(Boolean).join(" "));
   const cpvCodes = signal.cpvCodes ?? [];
   const matches: TradeSignalMatch[] = [];
 
   for (const trade of trades) {
     const rule = RULES[trade.slug];
     if (!rule) continue;
-    const strongKeyword = rule.strongKeywords?.find((keyword) => haystack.includes(keyword.toLowerCase()));
-    const keyword = rule.keywords.find((candidate) => haystack.includes(candidate.toLowerCase()));
-    const cpv = rule.cpvPrefixes?.find((prefix) => cpvCodes.some((code) => code.replace(/\D/g, "").startsWith(prefix.replace(/\D/g, ""))));
+    const strongKeyword = rule.strongKeywords?.find((keyword) => phraseMatch(haystack, keyword));
+    const keyword = rule.keywords.find((candidate) => phraseMatch(haystack, candidate));
+    const cpv = rule.cpvPrefixes?.find((prefix) => cpvCodes.some((code) => digits(code).startsWith(digits(prefix))));
     if (!strongKeyword && !keyword && !cpv) continue;
 
-    const direct = Boolean(strongKeyword) || (Boolean(cpv) && cpvCodes.some((code) => code.startsWith(cpv ?? "")));
+    const direct = Boolean(strongKeyword) || Boolean(cpv);
     let score = strongKeyword ? 94 : cpv ? 88 : 82;
     if (signal.signalType === "public_pipeline") score -= 7;
     if (signal.signalType === "contract_award") score += 2;
@@ -136,6 +139,15 @@ export function matchSignalToTrades(signal: NormalizedMarketSignal, trades: Trad
 
   return matches.sort((a, b) => b.fitScore - a.fitScore);
 }
+
+function phraseMatch(haystack: string, phrase: string) {
+  const needle = normalizeText(phrase);
+  if (!needle) return false;
+  const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`(?:^|[^a-z0-9])${escaped}(?:$|[^a-z0-9])`, "i").test(haystack);
+}
+function normalizeText(value: string) { return value.toLowerCase().replace(/[–—]/g, "-").replace(/\s+/g, " ").trim(); }
+function digits(value: string) { return value.replace(/\D/g, ""); }
 
 function signalReason(type: NormalizedMarketSignal["signalType"]) {
   if (type === "public_pipeline") return "Early public-sector pipeline signal";
