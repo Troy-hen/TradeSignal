@@ -62,7 +62,6 @@ export function PropertyIntelligencePanel({
     );
   }
 
-  const stale = intelligence.expires_at ? Date.parse(intelligence.expires_at) <= Date.now() : false;
   return (
     <section className="mt-6 overflow-hidden rounded-3xl border border-light-grey bg-white">
       <div className="flex flex-col gap-4 bg-soft-surface p-5 sm:flex-row sm:items-start sm:justify-between sm:p-6">
@@ -83,7 +82,7 @@ export function PropertyIntelligencePanel({
             onClick={() => enrich(true)}
             className="inline-flex shrink-0 items-center justify-center rounded-xl border border-light-grey bg-white px-3.5 py-2 text-xs font-semibold text-charcoal transition hover:border-signal-orange/40 hover:text-signal-orange disabled:opacity-50"
           >
-            {loading ? "Refreshing…" : stale ? "Refresh now" : "Refresh"}
+            {loading ? "Refreshing…" : "Refresh"}
           </button>
         )}
       </div>
