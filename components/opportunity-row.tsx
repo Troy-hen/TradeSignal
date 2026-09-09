@@ -19,23 +19,25 @@ export function OpportunityRow({ item }: { item: OpportunityListItem }) {
   return (
     <Link
       href={`/opportunities/${item.opportunityId}`}
-      className="group block rounded-2xl border border-light-grey bg-white p-4 transition hover:-translate-y-0.5 hover:border-signal-orange/40 hover:shadow-[0_12px_32px_rgba(31,41,55,0.08)] sm:p-5"
+      className="group block min-w-0 overflow-hidden rounded-2xl border border-light-grey bg-white p-4 transition hover:-translate-y-0.5 hover:border-signal-orange/40 hover:shadow-[0_12px_32px_rgba(31,41,55,0.08)] sm:p-5"
     >
-      <div className="flex items-start gap-4">
-        <OpportunityBadge bucket={item.bucket} score={item.score} variant="tile" />
+      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+        <div className="shrink-0 self-start">
+          <OpportunityBadge bucket={item.bucket} score={item.score} variant="tile" />
+        </div>
 
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate">
+          <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <p className="break-words text-[10px] font-semibold uppercase tracking-[0.12em] text-slate sm:tracking-[0.14em]">
                 {item.tradeName} · {item.district}
               </p>
-              <h3 className="mt-1 truncate text-base font-semibold tracking-tight text-charcoal sm:text-lg">
+              <h3 className="mt-1 line-clamp-2 text-base font-semibold tracking-tight text-charcoal sm:text-lg">
                 {item.projectType ?? "Planning application"}
               </h3>
             </div>
             <span
-              className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] ${
+              className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] ${
                 item.currentAction ? "bg-soft-surface text-slate" : "bg-signal-orange/10 text-signal-orange"
               }`}
             >
@@ -50,25 +52,25 @@ export function OpportunityRow({ item }: { item: OpportunityListItem }) {
           </div>
 
           {item.summary && (
-            <div className="mt-3 flex gap-2 rounded-xl bg-soft-surface px-3 py-2.5">
-              <span className="mt-0.5 text-signal-orange" aria-hidden="true">✦</span>
-              <p className="line-clamp-2 text-xs leading-5 text-slate">
+            <div className="mt-3 flex min-w-0 gap-2 rounded-xl bg-soft-surface px-3 py-2.5">
+              <span className="mt-0.5 shrink-0 text-signal-orange" aria-hidden="true">✦</span>
+              <p className="min-w-0 line-clamp-2 text-xs leading-5 text-slate">
                 <span className="font-semibold text-charcoal">AI read: </span>{item.summary}
               </p>
             </div>
           )}
 
           {item.recommendedAction && (
-            <p className="mt-3 truncate text-xs text-slate">
+            <p className="mt-3 line-clamp-2 text-xs text-slate">
               <span className="font-semibold text-charcoal">Recommended next move: </span>{item.recommendedAction}
             </p>
           )}
 
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-light-grey pt-3">
-            <span className="text-xs text-slate">
-              Est. trade value <strong className="ml-1 text-sm text-charcoal">{formatGbpRange(item.valueLow, item.valueHigh)}</strong>
+          <div className="mt-4 flex min-w-0 flex-wrap items-center justify-between gap-3 border-t border-light-grey pt-3">
+            <span className="min-w-0 text-xs text-slate">
+              Est. trade value <strong className="ml-1 break-words text-sm text-charcoal">{formatGbpRange(item.valueLow, item.valueHigh)}</strong>
             </span>
-            <span className="text-xs font-semibold text-signal-orange transition group-hover:text-[#e95f00]">Open brief →</span>
+            <span className="shrink-0 text-xs font-semibold text-signal-orange transition group-hover:text-[#e95f00]">Open brief →</span>
           </div>
         </div>
       </div>
