@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { TerritorySearchForm } from "@/components/territory-search-form";
+import { OpportunityMap, type OpportunityMapPoint } from "@/components/opportunity-map";
 
 export default async function TerritoriesPage() {
   const supabase = await createClient();
@@ -8,6 +9,24 @@ export default async function TerritoriesPage() {
     .select("id, slug, name")
     .eq("is_active", true)
     .order("display_order");
+
+  const mapDb = supabase as unknown as {
+    rpc: (
+      functionName: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: OpportunityMapPoint[] | null; error: unknown }>;
+  };
+  const { data: mapRows } = await mapDb.rpc("browse_opportunity_map", {
+    p_trade_slug: null,
+    p_limit: 300,
+  });
+  const mapPoints = (mapRows ?? []).map((point) => ({
+    ...point,
+    opportunity_count: Number(point.opportunity_count),
+    estimated_trade_value_low: Number(point.estimated_trade_value_low ?? 0),
+    estimated_trade_value_high: Number(point.estimated_trade_value_high ?? 0),
+    monthly_price_pence: Number(point.monthly_price_pence ?? 2999),
+  }));
 
   return (
     <div className="space-y-8">
@@ -19,6 +38,8 @@ export default async function TerritoriesPage() {
           exclusive territory is available. Build a wider service area from Coverage once you know what works.
         </p>
       </div>
+
+      <OpportunityMap points={mapPoints} trades={trades ?? []} />
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-start">
         <TerritorySearchForm trades={trades ?? []} />
