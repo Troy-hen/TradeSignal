@@ -108,29 +108,38 @@ export default async function NotificationsPage() {
   const classificationById = new Map(classifications.map((classification) => [classification.id, classification]));
 
   return (
-    <div className="space-y-8">
+    <div className="min-w-0 space-y-8">
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Workspace inbox</p>
         <h1 className="mt-3 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">Notifications.</h1>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-slate sm:text-base">
-          Email delivery, upcoming follow-up reminders and account activity in one place.
+          Follow-up reminders, email delivery and nearby coverage opportunities in one place.
         </p>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-        <section className="rounded-3xl border border-light-grey bg-white p-6 sm:p-8">
+      <section className="min-w-0 rounded-3xl bg-charcoal p-5 text-white sm:p-7">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Stay on top of the signal</p>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight">One place for what needs your attention.</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-white/65">Use reminders for active leads, check delivery history when an alert matters and review nearby territory suggestions when you are ready to expand.</p>
+          </div>
+          <Link href="/settings" className="shrink-0 text-sm font-semibold text-signal-orange hover:text-white">Manage alerts →</Link>
+        </div>
+      </section>
+
+      <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <section className="min-w-0 rounded-3xl border border-light-grey bg-white p-5 sm:p-8">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Next actions</p>
           <h2 className="mt-2 text-2xl font-bold tracking-tight text-charcoal">Follow-up reminders.</h2>
-          <p className="mt-2 text-sm leading-6 text-slate">
-            When a reminder becomes due, the notification worker sends an email to your company billing address and records the delivery here.
-          </p>
-          <div className="mt-6">
+          <p className="mt-2 text-sm leading-6 text-slate">Reminders you set from opportunity briefs appear here until they are due.</p>
+          <div className="mt-6 min-w-0">
             {reminders.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-light-grey bg-soft-surface p-5 text-sm text-slate">
+              <div className="rounded-2xl border border-dashed border-light-grey bg-soft-surface p-5 text-sm leading-6 text-slate">
                 No open follow-up reminders. Add one from an opportunity brief when you need to revisit a lead.
               </div>
             ) : (
-              <ul className="space-y-3">
+              <ul className="min-w-0 space-y-3">
                 {reminders.map((reminder) => {
                   const match = matchById.get(reminder.lead_match_id);
                   const opportunity = match?.application_trade_opportunity_id
@@ -142,16 +151,16 @@ export default async function NotificationsPage() {
                     : undefined;
 
                   return (
-                    <li key={reminder.id} className="rounded-2xl border border-light-grey bg-soft-surface p-4">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="min-w-0">
-                          <p className="font-semibold text-charcoal">
+                    <li key={reminder.id} className="min-w-0 rounded-2xl border border-light-grey bg-soft-surface p-4">
+                      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="min-w-0 flex-1">
+                          <p className="break-words font-semibold text-charcoal">
                             {opportunity?.postcode_district ?? "Opportunity"} · {trade?.name ?? "Trade"}
                           </p>
-                          <p className="mt-1 text-xs text-slate">
+                          <p className="mt-1 break-words text-xs leading-5 text-slate">
                             Due {formatDateTime(reminder.due_at)}{classification?.project_type ? " · " + classification.project_type : ""}
                           </p>
-                          {reminder.note && <p className="mt-3 text-sm leading-6 text-slate">{reminder.note}</p>}
+                          {reminder.note && <p className="mt-3 break-words text-sm leading-6 text-slate">{reminder.note}</p>}
                         </div>
                         {opportunity && (
                           <Link
@@ -170,46 +179,45 @@ export default async function NotificationsPage() {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-light-grey bg-white p-6 sm:p-8">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
+        <section className="min-w-0 rounded-3xl border border-light-grey bg-white p-5 sm:p-8">
+          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Email delivery</p>
               <h2 className="mt-2 text-2xl font-bold tracking-tight text-charcoal">Your inbox.</h2>
             </div>
             <p className="text-xs text-slate">Latest 50 events</p>
           </div>
-          <div className="mt-6">
+          <div className="mt-6 min-w-0">
             <NotificationInbox notifications={notifications} />
           </div>
         </section>
       </div>
 
       {nearbyOpportunities.length > 0 && (
-        <section className="rounded-3xl border border-signal-orange/20 bg-signal-orange/[0.04] p-6 sm:p-8">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
+        <section className="min-w-0 rounded-3xl border border-signal-orange/20 bg-signal-orange/[0.04] p-5 sm:p-8">
+          <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Coverage opportunity</p>
               <h2 className="mt-2 text-2xl font-bold tracking-tight text-charcoal">Nearby districts worth a look.</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate">These available districts are close to territory you already own and contain live planning opportunities. Claim only the areas that fit your service radius.</p>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate">Available districts near territory you already own, based entirely on the planning data already loaded into MyTradeBox.</p>
             </div>
-            <Link href="/settings" className="shrink-0 text-sm font-semibold text-signal-orange hover:text-[#e95f00]">Manage alerts →</Link>
           </div>
-          <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <div className="mt-6 grid min-w-0 gap-3 md:grid-cols-2 xl:grid-cols-3">
             {nearbyOpportunities.map((opportunity) => (
               <Link
                 key={opportunity.postcode_district + ":" + opportunity.trade_category_slug}
                 href={`/territories/${encodeURIComponent(opportunity.postcode_district)}/${encodeURIComponent(opportunity.trade_category_slug)}`}
-                className="rounded-2xl border border-signal-orange/15 bg-white p-4 transition hover:border-signal-orange hover:shadow-[0_12px_30px_rgba(255,106,0,0.12)]"
+                className="min-w-0 rounded-2xl border border-signal-orange/15 bg-white p-4 transition hover:border-signal-orange hover:shadow-[0_12px_30px_rgba(255,106,0,0.12)]"
               >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-bold text-charcoal">{opportunity.postcode_district} · {opportunity.post_town}</p>
-                    <p className="mt-1 text-xs text-slate">{opportunity.trade_category_name} · {opportunity.opportunity_count} live opportunity{opportunity.opportunity_count === 1 ? "" : "ies"}</p>
+                <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <p className="break-words text-sm font-bold text-charcoal">{opportunity.postcode_district} · {opportunity.post_town}</p>
+                    <p className="mt-1 break-words text-xs leading-5 text-slate">{opportunity.trade_category_name} · {opportunity.opportunity_count} live opportunity{opportunity.opportunity_count === 1 ? "" : "ies"}</p>
                   </div>
-                  <span className="rounded-full bg-success/10 px-2.5 py-1 text-[11px] font-semibold text-success">Available</span>
+                  <span className="w-fit shrink-0 rounded-full bg-success/10 px-2.5 py-1 text-[11px] font-semibold text-success">Available</span>
                 </div>
-                <p className="mt-4 text-sm font-semibold text-charcoal">{opportunity.teaser_project_type ?? "Planning opportunity"}</p>
-                <p className="mt-1 text-xs text-slate">{formatStatus(opportunity.teaser_status)} · {formatGbpRange(opportunity.teaser_estimated_trade_value_low, opportunity.teaser_estimated_trade_value_high)}</p>
+                <p className="mt-4 break-words text-sm font-semibold text-charcoal">{opportunity.teaser_project_type ?? "Planning opportunity"}</p>
+                <p className="mt-1 break-words text-xs leading-5 text-slate">{formatStatus(opportunity.teaser_status)} · {formatGbpRange(opportunity.teaser_estimated_trade_value_low, opportunity.teaser_estimated_trade_value_high)}</p>
                 <p className="mt-4 text-xs font-semibold text-signal-orange">Preview and claim →</p>
               </Link>
             ))}
