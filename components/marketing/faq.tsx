@@ -24,7 +24,7 @@ export const FAQ_ITEMS = [
   {
     question: "Do you sell homeowner contact details?",
     answer:
-      "The product is built around public planning information and project context. Contact data is not requested from the planning provider by default. Always make sure your outreach follows applicable privacy, marketing and planning rules.",
+      "The product is built around public planning information and project context. Contact data is not requested from the planning provider by default. Optional enrichment is quota-limited and must retain its source, purpose, lawful basis, retrieval date, expiry and suppression status. Always make sure your outreach follows applicable privacy, marketing and planning rules.",
   },
   {
     question: "Can I cancel?",
