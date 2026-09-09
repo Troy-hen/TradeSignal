@@ -7,6 +7,7 @@ import { ClaimTerritoryButton } from "@/components/claim-territory-button";
 import { LockedOpportunityPreview } from "@/components/locked-opportunity-preview";
 import { LeadActionPanel } from "@/components/lead-action-panel";
 import { FollowUpPanel } from "@/components/follow-up-panel";
+import { ContactEnrichmentPanel } from "@/components/contact-enrichment-panel";
 import { listLeadFollowUps } from "@/lib/actions/lead-follow-ups";
 import { OutreachAssistant } from "@/components/outreach-assistant";
 import type { Database } from "@/lib/types/database";
@@ -191,6 +192,13 @@ async function PaidBrief({ opportunity, companyId }: { opportunity: Opportunity;
           </a>
         )}
       </Section>
+
+      <ContactEnrichmentPanel
+        planningApplicationId={application.id}
+        applicantName={application.applicant_name}
+        agentCompany={application.agent_company}
+        sourceUrl={application.source_url}
+      />
 
       {updates && updates.length > 0 && (
         <Section title="Status history">
