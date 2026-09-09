@@ -10,10 +10,6 @@ type PlotaContactApplication = {
   agent?: string | null;
   agent_email?: string | null;
   agent_phone?: string | null;
-  case_officer?: string | null;
-  case_officer_email?: string | null;
-  case_officer_phone?: string | null;
-  authority?: { name?: string | null } | null;
   links?: { council?: string | null; plota?: string | null } | null;
   data?: unknown;
 };
@@ -27,7 +23,7 @@ export class PlotaContactIntelligenceProvider implements ContactIntelligenceProv
     const supabase = await createClient();
     const { data: application } = await supabase
       .from("planning_applications")
-      .select("provider, provider_application_id, source_url, local_planning_authority")
+      .select("provider, provider_application_id, source_url")
       .eq("id", context.planningApplicationId)
       .maybeSingle();
 
@@ -40,9 +36,7 @@ export class PlotaContactIntelligenceProvider implements ContactIntelligenceProv
       cache: "no-store",
     });
 
-    if (response.status === 403) {
-      throw new Error("Plota Contact Data is not enabled for this API key");
-    }
+    if (response.status === 403) throw new Error("Plota Contact Data is not enabled for this API key");
     if (response.status === 404) return [];
     if (!response.ok) throw new Error(`Plota contact lookup failed with status ${response.status}`);
 
@@ -52,8 +46,9 @@ export class PlotaContactIntelligenceProvider implements ContactIntelligenceProv
     const sourceUrl = record.links?.council ?? record.links?.plota ?? application.source_url ?? context.sourceUrl ?? "https://plota.co.uk";
     const results: ContactCandidate[] = [];
 
-    // Applicant names are useful context, but this adapter intentionally does
-    // not attempt to discover or infer private homeowner email/mobile details.
+    // Applicant name can be returned as planning context, but never with
+    // inferred consumer email/mobile data. The sales-facing lookup route only
+    // persists candidates that actually contain professional contact details.
     if (record.applicant) {
       results.push({
         entityType: "person",
@@ -80,22 +75,9 @@ export class PlotaContactIntelligenceProvider implements ContactIntelligenceProv
       });
     }
 
-    if (record.case_officer || record.case_officer_email || record.case_officer_phone) {
-      results.push({
-        entityType: "person",
-        personName: record.case_officer ?? null,
-        organisationName: record.authority?.name ?? application.local_planning_authority ?? null,
-        jobTitle: "Planning case officer",
-        email: record.case_officer_email ?? null,
-        phone: record.case_officer_phone ?? null,
-        sourceUrl,
-        confidence: 1,
-        lawfulBasis: "Published council professional contact data from the planning register.",
-        purpose: "Planning administration or factual application queries only; not a sales prospect.",
-        raw: { provider: "plota", field: "case_officer" },
-      });
-    }
-
+    // Plota also exposes council case-officer contact details where published.
+    // MyTradeBox intentionally excludes those from the sales contact provider:
+    // case officers are for planning administration, not prospecting.
     return results;
   }
 }
