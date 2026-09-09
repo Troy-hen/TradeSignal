@@ -2,7 +2,9 @@ import Image from "next/image";
 
 type LogoTone = "dark" | "light";
 
-const iconSrc = "/brand/mytradebox-icon.png";
+// The supplied dark asset has white cube sides; the light asset keeps the
+// same geometry but uses charcoal sides so it remains visible on white.
+const darkIconSrc = "/brand/mytradebox-icon.png";
 const lightIconSrc = "/brand/mytradebox-icon-light.png";
 
 export function LogoMark({
@@ -12,10 +14,10 @@ export function LogoMark({
   className?: string;
   tone?: LogoTone;
 }) {
-  const fixedLightTone = tone === "light";
-  const tileClass = fixedLightTone
-    ? "border border-white/70 bg-[#f8fafc]"
-    : "border border-[#e5e7eb] bg-[#f8fafc] dark:border-white/15 dark:bg-[#f8fafc]";
+  const fixedDarkTone = tone === "light";
+  const tileClass = fixedDarkTone
+    ? "border border-white/15 bg-[#1f2937]"
+    : "border border-[#e5e7eb] bg-[#f8fafc] dark:border-white/15 dark:bg-[#1f2937]";
 
   return (
     <span
@@ -26,28 +28,28 @@ export function LogoMark({
         (className ?? "")
       }
     >
-      {fixedLightTone ? (
+      {fixedDarkTone ? (
         <Image
-          src={lightIconSrc}
+          src={darkIconSrc}
           alt=""
-          width={1280}
-          height={1280}
+          width={1254}
+          height={1254}
           className="h-full w-full object-contain"
         />
       ) : (
         <>
           <Image
-            src={iconSrc}
+            src={lightIconSrc}
             alt=""
             width={1254}
             height={1254}
             className="h-full w-full object-contain dark:hidden"
           />
           <Image
-            src={lightIconSrc}
+            src={darkIconSrc}
             alt=""
-            width={1280}
-            height={1280}
+            width={1254}
+            height={1254}
             className="hidden h-full w-full object-contain dark:block"
           />
         </>
