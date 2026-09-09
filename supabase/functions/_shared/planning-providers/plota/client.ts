@@ -23,6 +23,8 @@ export class PlotaClient {
   public requestCount = 0;
   /** Number of successful list pages returned by the latest list/paginate operation. */
   public lastPageCount = 0;
+  /** Cursor after the latest page; useful when a bounded run must resume. */
+  public nextCursor: string | null = null;
 
   constructor(private readonly apiKey: string) {}
 
@@ -80,6 +82,7 @@ export class PlotaClient {
 
     let cursor: string | undefined = initialCursor;
     this.lastPageCount = 0;
+    this.nextCursor = null;
     do {
       const page = await this.request<PlotaListResponse>(path, {
         ...this.listParams(filters),
@@ -87,8 +90,9 @@ export class PlotaClient {
       });
       this.lastMeta = page.meta ?? null;
       this.lastPageCount++;
+      this.nextCursor = page.meta?.next_cursor ?? null;
       yield page.data ?? [];
-      cursor = page.meta?.next_cursor ?? undefined;
+      cursor = this.nextCursor ?? undefined;
     } while (cursor);
   }
 
@@ -96,12 +100,19 @@ export class PlotaClient {
     const page = await this.request<PlotaListResponse>(path, this.listParams(searchParams));
     this.lastMeta = page.meta ?? null;
     this.lastPageCount = 1;
+    this.nextCursor = page.meta?.next_cursor ?? null;
     return page.data ?? [];
   }
 
   async getApplication(id: string): Promise<PlotaApplication | null> {
     try {
-      return await this.request<PlotaApplication>(`/applications/${encodeURIComponent(id)}`);
+      const response = await this.request<PlotaApplication | { data?: PlotaApplication | null }>(
+        `/applications/${encodeURIComponent(id)}`,
+      );
+      if (response && typeof response === "object" && "data" in response) {
+        return (response as { data?: PlotaApplication | null }).data ?? null;
+      }
+      return response as PlotaApplication;
     } catch (err) {
       if (err instanceof PlotaApiError && err.status === 404) return null;
       throw err;
