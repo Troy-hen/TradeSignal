@@ -122,10 +122,9 @@ export function DashboardShell({
           >
             <MenuIcon />
           </button>
-          <Link href="/dashboard" aria-label="MyTradeBox overview">
-            <Logo wordmarkClassName="text-xl" />
+          <Link href="/dashboard" aria-label="MyTradeBox overview" className="inline-flex h-9 w-9 items-center justify-center">
+            <LogoMark className="h-9 w-9" />
           </Link>
-          <span className="h-9 w-9" aria-hidden="true" />
         </header>
 
         <main className="min-w-0 flex-1 overflow-x-hidden px-4 py-7 sm:px-6 lg:px-10 lg:py-10">
@@ -205,7 +204,7 @@ function SidebarContent({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain py-1">
-        <DashboardNav collapsed={collapsed} />
+        <DashboardNav collapsed={collapsed} onNavigate={mobile ? onToggle : undefined} />
       </div>
 
       <div className={"shrink-0 border-t border-light-grey " + (
