@@ -27,6 +27,7 @@ export type StoredPropertyIntelligence = {
   timing_reasons: string[];
   trigger_history: Array<{ type?: string; date?: string | null; price?: number | null; tenure?: string | null }>;
   transaction_history: Array<{ date?: string | null; price?: number | null }>;
+  planning_history: Array<{ planningId?: string; address?: string | null; receivedDate?: string | null; decision?: string | null }>;
   retrieved_at: string;
   expires_at: string | null;
 };
@@ -36,7 +37,7 @@ export async function getStoredPropertyIntelligence(companyId: string, opportuni
   const db = supabase as unknown as SupabaseClient;
   const { data, error } = await db
     .from("property_intelligence_records")
-    .select("id,provider,uprn,match_method,match_confidence,matched_address,postcode,estimated_value_gbp,value_min_gbp,value_max_gbp,avm_confidence,bedrooms,bathrooms,garden,parking,latest_trigger_type,latest_trigger_date,last_transaction_date,last_transaction_price_gbp,likely_to_sell_percentile,timing_signal,timing_reasons,trigger_history,transaction_history,retrieved_at,expires_at")
+    .select("id,provider,uprn,match_method,match_confidence,matched_address,postcode,estimated_value_gbp,value_min_gbp,value_max_gbp,avm_confidence,bedrooms,bathrooms,garden,parking,latest_trigger_type,latest_trigger_date,last_transaction_date,last_transaction_price_gbp,likely_to_sell_percentile,timing_signal,timing_reasons,trigger_history,transaction_history,planning_history,retrieved_at,expires_at")
     .eq("company_id", companyId)
     .eq("opportunity_id", opportunityId)
     .order("retrieved_at", { ascending: false })
@@ -55,6 +56,7 @@ export async function getStoredPropertyIntelligence(companyId: string, opportuni
     timing_reasons: Array.isArray(data.timing_reasons) ? data.timing_reasons.filter((item): item is string => typeof item === "string") : [],
     trigger_history: Array.isArray(data.trigger_history) ? data.trigger_history : [],
     transaction_history: Array.isArray(data.transaction_history) ? data.transaction_history : [],
+    planning_history: Array.isArray(data.planning_history) ? data.planning_history : [],
   } as StoredPropertyIntelligence;
 }
 
