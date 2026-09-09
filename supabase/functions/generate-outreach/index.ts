@@ -6,33 +6,33 @@ import { zodTextFormat } from "npm:openai@7.10.0/helpers/zod";
 
 /**
  * User-triggered (not cron), so this keeps Supabase's default JWT
- * verification enabled (verify_jwt: true at deploy time) rather than the
- * custom CRON_SECRET scheme the other four functions use. Queries run
- * through a client built from the CALLER's own forwarded JWT, never
- * service-role — that's what makes has_active_lead_match() actually gate
- * this: an authenticated user with no active claim on this opportunity's
- * district+trade gets nothing back, the same as any other RLS-protected
- * read.
+ * verification enabled (verify_jwt: true at deploy time).
  *
- * Deliberately never queries applicant_name/agent_company — the model
- * receives no name or contact details, so it has nothing to fabricate a
- * relationship from. Copy is drafted only, never sent.
+ * This function is deliberately limited before the OpenAI request:
+ * two successful/reserved generations per opportunity, 20 per company/day
+ * and 100 per company/month. Reservations are completed as succeeded or
+ * failed so provider errors never silently spend a successful-generation slot.
  *
- * Kept as its own small standalone OpenAI call rather than reusing
- * classify-planning-application's _shared/ai module: that module's
- * interface is shaped around the single Opportunity schema, and
- * generalising it purely to serve this second, much smaller "lightweight
- * assistant" (the spec's own description) risked destabilising an
- * already-deployed, verified function for limited benefit.
+ * The model receives only the explicitly approved opportunity context:
+ * trade, postcode district, project type, planning summary, likely scope and
+ * recommended action. Applicant names, phone numbers, email addresses and
+ * other contact fields are never queried or sent. Copy is drafted only,
+ * never sent automatically.
  */
 
-// Exported so supabase/functions/_shared/ai/schemas.test.ts can validate
-// the real schema directly rather than a duplicated copy.
 export const OutreachSchema = z.object({
   intro_letter: z.string(),
   phone_opener: z.string(),
   doorstep_script: z.string(),
 });
+
+type OutreachReservation = {
+  generation_id: string | null;
+  allowed: boolean;
+  generation_count: number;
+  remaining_generations: number;
+  reason: string | null;
+};
 
 Deno.serve(async (req: Request) => {
   const authHeader = req.headers.get("Authorization");
@@ -80,6 +80,50 @@ Deno.serve(async (req: Request) => {
     `Recommended action: ${opportunity.recommended_action ?? "introduce the business and offer a free quote"}`,
   ].join("\n");
 
+  const { data: reservationData, error: reservationError } = await userClient.rpc(
+    "reserve_outreach_generation",
+    { p_opportunity_id: opportunityId },
+  );
+  const reservation = (Array.isArray(reservationData) ? reservationData[0] : reservationData) as OutreachReservation | null;
+
+  if (reservationError || !reservation) {
+    if (reservationError?.message?.includes("opportunity_not_found")) {
+      return json({ error: "not_found" }, 404);
+    }
+    return json({ error: "usage_guard_unavailable" }, 503);
+  }
+
+  if (!reservation.allowed) {
+    return json({
+      ok: false,
+      error: "usage_limit",
+      reason: reservation.reason,
+      used_generations: reservation.generation_count,
+      remaining_generations: reservation.remaining_generations,
+    });
+  }
+
+  if (!reservation.generation_id) return json({ error: "usage_guard_unavailable" }, 503);
+
+  async function completeGeneration(
+    status: "succeeded" | "failed",
+    options: {
+      inputTokens?: number | null;
+      outputTokens?: number | null;
+      errorCode?: string | null;
+    } = {},
+  ) {
+    await userClient.rpc("complete_outreach_generation", {
+      p_generation_id: reservation.generation_id,
+      p_status: status,
+      p_model: "gpt-5.1",
+      p_input_tokens: options.inputTokens ?? null,
+      p_output_tokens: options.outputTokens ?? null,
+      p_estimated_cost_usd: null,
+      p_error_code: options.errorCode ?? null,
+    });
+  }
+
   try {
     const client = new OpenAI({ apiKey });
     const response = await client.responses.parse({
@@ -103,11 +147,27 @@ Deno.serve(async (req: Request) => {
     });
 
     const parsed = response.output_parsed;
-    if (!parsed) return json({ error: "generation_failed" }, 502);
+    if (!parsed) {
+      await completeGeneration("failed", { errorCode: "invalid_response" });
+      return json({ error: "generation_failed" }, 502);
+    }
 
-    return json({ ok: true, ...parsed });
-  } catch (err) {
-    return json({ error: "generation_failed", message: err instanceof Error ? err.message : String(err) }, 502);
+    await completeGeneration("succeeded", {
+      inputTokens: response.usage?.input_tokens ?? null,
+      outputTokens: response.usage?.output_tokens ?? null,
+    });
+
+    return json({
+      ok: true,
+      ...parsed,
+      usage: {
+        used_generations: reservation.generation_count,
+        remaining_generations: reservation.remaining_generations,
+      },
+    });
+  } catch {
+    await completeGeneration("failed", { errorCode: "provider_error" });
+    return json({ error: "generation_failed" }, 502);
   }
 });
 
