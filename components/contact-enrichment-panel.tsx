@@ -8,20 +8,31 @@ export function ContactEnrichmentPanel({
   intelligence: OpportunityRelationshipIntelligence;
   sourceUrl: string | null;
 }) {
-  const { applicantName, agentCompany, organisation, relatedOpportunities } = intelligence;
+  const { applicantName, agentCompany, organisation, relatedOpportunities, contactStrategy, projectAddress } = intelligence;
 
   return (
     <section className="mt-6 overflow-hidden rounded-3xl border border-light-grey bg-white">
       <div className="grid gap-0 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
         <div className="bg-charcoal p-5 text-white sm:p-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">People & organisations</p>
-          <h2 className="mt-2 text-xl font-bold tracking-tight">Who is connected to this project?</h2>
-          <p className="mt-3 text-sm leading-6 text-white/60">
-            MyTradeBox combines the public planning record with activity already visible inside your owned territories. It never exposes contact data from areas you do not own.
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Best way to approach</p>
+          <h2 className="mt-2 text-xl font-bold tracking-tight">{contactStrategy.headline}</h2>
+          <div className="mt-3 inline-flex rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-xs font-semibold text-white/80">
+            {contactStrategy.label}
+          </div>
+          <p className="mt-4 text-sm leading-6 text-white/60">{contactStrategy.explanation}</p>
+
+          {contactStrategy.primaryChannel === "postal" && projectAddress && (
+            <div className="mt-5 rounded-2xl border border-signal-orange/30 bg-signal-orange/10 p-4">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-signal-orange">Recommended first move</p>
+              <p className="mt-2 text-sm font-semibold text-white">Personalised postal letter</p>
+              <p className="mt-1 text-xs leading-5 text-white/60">
+                Address to <span className="font-semibold text-white/80">{contactStrategy.suggestedRecipient}</span> at the project address. MyTradeBox does not infer a homeowner&apos;s private email or mobile.
+              </p>
+            </div>
+          )}
 
           <div className="mt-5 space-y-3">
-            <IdentityCard label="Applicant" value={applicantName ?? "Not supplied on the planning record"} />
+            <IdentityCard label="Applicant on planning record" value={applicantName ?? "Not supplied on the planning record"} />
             <IdentityCard label="Planning agent / organisation" value={agentCompany ?? "Not supplied on the planning record"} />
           </div>
 
@@ -59,6 +70,15 @@ export function ContactEnrichmentPanel({
                 <Signal label="Districts" value={String(organisation.postcodeDistricts)} />
                 <Signal label="Trade value" value={organisation.estimatedTradeValueHigh > 0 ? formatGbp(organisation.estimatedTradeValueHigh) + "+" : "—"} />
               </dl>
+
+              {contactStrategy.preferPlanningContactData && (
+                <div className="mt-5 rounded-2xl border border-light-grey bg-soft-surface p-4">
+                  <p className="text-sm font-semibold text-charcoal">Planning contact enrichment ready</p>
+                  <p className="mt-1 text-xs leading-5 text-slate">
+                    When Plota Contact Data is enabled, published planning-agent email/phone details will appear here first. Business enrichment is only used as a fallback for company-led opportunities.
+                  </p>
+                </div>
+              )}
 
               {relatedOpportunities.length > 0 ? (
                 <div className="mt-6 border-t border-light-grey pt-5">
@@ -99,7 +119,9 @@ export function ContactEnrichmentPanel({
             <div className="flex h-full min-h-[220px] flex-col justify-center rounded-2xl bg-soft-surface p-5">
               <p className="text-sm font-semibold text-charcoal">No planning organisation supplied.</p>
               <p className="mt-2 text-sm leading-6 text-slate">
-                The project is still actionable from its planning details, score, timing and recommended approach. Organisation intelligence appears automatically when the source record contains an agent or company.
+                {contactStrategy.primaryChannel === "postal"
+                  ? "That is expected for many homeowner-led projects. MyTradeBox keeps the opportunity actionable through project-address postal outreach rather than trying to discover private consumer contact details."
+                  : "The project is still actionable from its planning details, score, timing and recommended approach. Organisation intelligence appears automatically when the source record contains an agent or company."}
               </p>
             </div>
           )}
