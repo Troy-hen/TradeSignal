@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 type Audience = "homeowner" | "professional" | "business" | "unknown";
+type EngagementEvent = "call_clicked" | "whatsapp_clicked" | "quote_started" | "not_interested";
 
 export function QuoteLinkResponse({
   token,
@@ -22,6 +23,8 @@ export function QuoteLinkResponse({
   const [optedOut, setOptedOut] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const whatsappNumber = phone ? normalizeWhatsAppNumber(phone) : null;
+  const whatsappUrl = whatsappNumber ? buildWhatsAppUrl(whatsappNumber, tradingName, projectType, audienceType) : null;
 
   useEffect(() => {
     void fetch(`/api/q/${encodeURIComponent(token)}/event`, {
@@ -32,7 +35,7 @@ export function QuoteLinkResponse({
     }).catch(() => undefined);
   }, [token]);
 
-  async function recordEvent(eventType: "call_clicked" | "quote_started" | "not_interested") {
+  async function recordEvent(eventType: EngagementEvent) {
     await fetch(`/api/q/${encodeURIComponent(token)}/event`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -112,7 +115,7 @@ export function QuoteLinkResponse({
 
   return (
     <div>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className={`grid gap-3 ${phone || whatsappUrl ? "sm:grid-cols-2 lg:grid-cols-3" : "sm:grid-cols-1"}`}>
         {phone && (
           <a
             href={`tel:${phone.replace(/[^+\d]/g, "")}`}
@@ -120,6 +123,17 @@ export function QuoteLinkResponse({
             className="inline-flex min-h-14 items-center justify-center rounded-2xl bg-charcoal px-5 py-3 text-center text-sm font-semibold text-white transition hover:bg-signal-orange"
           >
             Call {tradingName}
+          </a>
+        )}
+        {whatsappUrl && (
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => void recordEvent("whatsapp_clicked")}
+            className="inline-flex min-h-14 items-center justify-center rounded-2xl border border-charcoal/15 bg-white px-5 py-3 text-center text-sm font-semibold text-charcoal transition hover:border-signal-orange/50 hover:text-signal-orange"
+          >
+            WhatsApp {tradingName}
           </a>
         )}
         <button
@@ -130,6 +144,10 @@ export function QuoteLinkResponse({
           Request a quote
         </button>
       </div>
+
+      {whatsappUrl && !showForm && (
+        <p className="mt-3 text-center text-[11px] leading-5 text-slate">WhatsApp opens a pre-filled conversation on your device. MyTradeBox records the click, not whether a message was actually sent.</p>
+      )}
 
       {showForm && (
         <form onSubmit={submitQuote} className="mt-6 rounded-3xl border border-light-grey bg-white p-5 sm:p-6">
@@ -183,6 +201,22 @@ export function QuoteLinkResponse({
       <p className="mt-6 text-center text-xs leading-5 text-slate">{audienceType === "homeowner" ? "This introduction was prompted by publicly available planning information." : "This introduction relates to a planning/project opportunity relevant to your organisation."}</p>
     </div>
   );
+}
+
+function normalizeWhatsAppNumber(phone: string) {
+  let digits = phone.replace(/\D/g, "");
+  if (digits.startsWith("00")) digits = digits.slice(2);
+  if (digits.startsWith("0")) digits = `44${digits.slice(1)}`;
+  if (digits.length < 8 || digits.length > 15) return null;
+  return digits;
+}
+
+function buildWhatsAppUrl(number: string, tradingName: string, projectType: string | null, audienceType: Audience) {
+  const project = projectType ? ` about the ${projectType.toLowerCase()} project` : " about the project";
+  const message = audienceType === "homeowner"
+    ? `Hi ${tradingName}, I received your introduction${project} and I'd like to discuss a quote.`
+    : `Hi ${tradingName}, I saw your project introduction${project} and I'd like to discuss it.`;
+  return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
 }
 
 function Field({ label, name, type = "text", required = false, autoComplete }: { label: string; name: string; type?: string; required?: boolean; autoComplete?: string }) {
