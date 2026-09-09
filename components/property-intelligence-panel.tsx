@@ -45,7 +45,7 @@ export function PropertyIntelligencePanel({
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Property context</p>
             <h2 className="mt-2 text-xl font-bold tracking-tight text-charcoal">Add property-level timing intelligence</h2>
             <p className="mt-2 text-sm leading-6 text-slate">
-              Match this project address to TwentyCI to surface property value, recent market activity and transaction recency. This enriches timing intelligence; it does not reveal private homeowner contact details.
+              Match this project address to TwentyCI to surface property value, recent market activity, transaction recency and planning history. This enriches timing intelligence; it does not reveal private homeowner contact details.
             </p>
           </div>
           <button
@@ -105,7 +105,29 @@ export function PropertyIntelligencePanel({
               </li>
             ))}
           </ul>
+
+          {intelligence.planning_history.length > 0 && (
+            <div className="mt-5 border-t border-light-grey pt-5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate">Property planning history</p>
+                  <p className="mt-1 text-xs text-slate">TwentyCI has {intelligence.planning_history.length} planning record{intelligence.planning_history.length === 1 ? "" : "s"} associated with this UPRN.</p>
+                </div>
+              </div>
+              <ul className="mt-3 space-y-2">
+                {intelligence.planning_history.slice(0, 4).map((item, index) => (
+                  <li key={`${item.planningId ?? "planning"}-${index}`} className="rounded-xl border border-light-grey bg-white px-3.5 py-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-xs font-semibold text-charcoal">{item.decision ?? "Planning record"}</p>
+                      {item.receivedDate && <span className="text-[10px] font-medium text-slate">{formatDate(item.receivedDate)}</span>}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
+
         <div className="rounded-2xl border border-light-grey bg-soft-surface p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate">Property profile</p>
           <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 text-sm">
@@ -113,6 +135,7 @@ export function PropertyIntelligencePanel({
             <SmallDetail label="Bathrooms" value={numberOrDash(intelligence.bathrooms)} />
             <SmallDetail label="Garden" value={yesNo(intelligence.garden)} />
             <SmallDetail label="Parking" value={yesNo(intelligence.parking)} />
+            <SmallDetail label="Planning records" value={String(intelligence.planning_history.length)} />
             <SmallDetail label="UPRN" value={intelligence.uprn} />
             <SmallDetail label="Updated" value={formatDate(intelligence.retrieved_at)} />
           </dl>
