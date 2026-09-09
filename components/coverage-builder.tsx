@@ -11,6 +11,7 @@ export type CoverageTradeOption = {
 
 export type CoverageDistrictOption = {
   id: string;
+  town: string;
 };
 
 export type CoveragePlanView = {
@@ -59,6 +60,11 @@ export function CoverageBuilder({ trades, districts, existingTradeIds, countyAre
     setSelected((current) =>
       current.includes(district) ? current.filter((item) => item !== district) : [...current, district],
     );
+    setError(null);
+  }
+
+  function addDistrictGroup(group: string[]) {
+    setSelected((current) => Array.from(new Set([...current, ...group])));
     setError(null);
   }
 
@@ -143,6 +149,7 @@ export function CoverageBuilder({ trades, districts, existingTradeIds, countyAre
                 query={query}
                 onQueryChange={setQuery}
                 onToggle={toggleDistrict}
+                onAddGroup={addDistrictGroup}
               />
             </div>
           </div>
@@ -174,8 +181,8 @@ export function CoverageBuilder({ trades, districts, existingTradeIds, countyAre
 
       <p className="mt-6 text-xs leading-5 text-slate">
         {countyAreas.length > 0
-          ? "Verified county bundles are available for selected areas."
-          : "County bundles will appear once verified county-to-postcode mappings are loaded. We will not guess boundaries."}
+          ? "Town/city shortcuts select loaded districts. Verified county bundles are available for selected areas."
+          : "Town/city shortcuts select loaded districts; remove any you do not serve. County bundles will appear once verified boundaries are loaded."}
       </p>
     </section>
   );
@@ -194,6 +201,12 @@ export function CoveragePlanEditor({ plan, districts }: CoveragePlanEditorProps)
     setSelected((current) =>
       current.includes(district) ? current.filter((item) => item !== district) : [...current, district],
     );
+    setMessage(null);
+    setError(null);
+  }
+
+  function addDistrictGroup(group: string[]) {
+    setSelected((current) => Array.from(new Set([...current, ...group])));
     setMessage(null);
     setError(null);
   }
@@ -251,6 +264,7 @@ export function CoveragePlanEditor({ plan, districts }: CoveragePlanEditorProps)
           query={query}
           onQueryChange={setQuery}
           onToggle={toggleDistrict}
+          onAddGroup={addDistrictGroup}
         />
       </div>
 
@@ -279,14 +293,26 @@ function DistrictPicker({
   query,
   onQueryChange,
   onToggle,
+  onAddGroup,
 }: {
   districts: CoverageDistrictOption[];
   selected: string[];
   query: string;
   onQueryChange: (value: string) => void;
   onToggle: (district: string) => void;
+  onAddGroup: (districts: string[]) => void;
 }) {
   const filtered = districts.filter((district) => district.id.toLowerCase().includes(query.trim().toLowerCase()));
+  const townGroups = useMemo(() => {
+    const groups = new Map<string, string[]>();
+    for (const district of districts) {
+      const town = district.town || "Other";
+      const group = groups.get(town) ?? [];
+      group.push(district.id);
+      groups.set(town, group);
+    }
+    return Array.from(groups.entries()).sort(([left], [right]) => left.localeCompare(right));
+  }, [districts]);
 
   return (
     <div className="mt-2 rounded-2xl border border-light-grey bg-soft-surface p-3">
@@ -298,6 +324,32 @@ function DistrictPicker({
         aria-label="Search postcode districts"
         className="w-full rounded-xl border border-light-grey bg-white px-3 py-2.5 text-sm text-charcoal outline-none focus:border-signal-orange"
       />
+      <div className="mt-3 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <label className="block">
+          <span className="text-xs font-semibold uppercase tracking-[0.08em] text-slate">Quick add a town / city</span>
+          <select
+            defaultValue=""
+            onChange={(event) => {
+              const town = event.target.value;
+              const group = townGroups.find(([name]) => name === town)?.[1] ?? [];
+              if (group.length > 0) onAddGroup(group);
+              event.currentTarget.value = "";
+            }}
+            aria-label="Quick add a town or city"
+            className="mt-2 w-full rounded-xl border border-light-grey bg-white px-3 py-2.5 text-sm font-medium text-charcoal outline-none focus:border-signal-orange"
+          >
+            <option value="">Select a loaded town…</option>
+            {townGroups.map(([town, group]) => (
+              <option key={town} value={town}>
+                {town} ({group.length} {group.length === 1 ? "district" : "districts"})
+              </option>
+            ))}
+          </select>
+        </label>
+        <p className="self-end text-xs leading-5 text-slate">
+          Selects the currently loaded districts for that place. Remove any you do not serve before saving.
+        </p>
+      </div>
       <div className="mt-3 grid max-h-64 grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3 lg:grid-cols-5" role="group" aria-label="Postcode districts">
         {filtered.map((district) => {
           const checked = selected.includes(district.id);
@@ -316,7 +368,10 @@ function DistrictPicker({
                 onChange={() => onToggle(district.id)}
                 className="h-4 w-4 accent-signal-orange"
               />
-              {district.id}
+              <span className="min-w-0">
+                <span className="block">{district.id}</span>
+                <span className="block truncate text-[10px] font-normal text-slate">{district.town}</span>
+              </span>
             </label>
           );
         })}
