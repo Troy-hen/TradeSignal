@@ -46,7 +46,7 @@ export default async function RoiPage() {
   const roi = monthlySpendGbp > 0 ? totalWon / monthlySpendGbp : null;
 
   return (
-    <div className="max-w-5xl space-y-8">
+    <div className="space-y-8">
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Business case</p>
         <h1 className="mt-3 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">Your return on signal.</h1>
@@ -55,17 +55,17 @@ export default async function RoiPage() {
 
       <section className="rounded-3xl bg-charcoal p-6 text-white sm:p-8">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Estimated pipeline</p>
-        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <p className="text-5xl font-bold tracking-tight">{formatGbp(totalPipeline)}</p>
-          <p className="text-sm text-white/55">Open opportunity value across your active territories</p>
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <p className="text-4xl font-bold tracking-tight sm:text-5xl">{formatGbp(totalPipeline)}</p>
+          <p className="max-w-md text-sm leading-6 text-white/55 sm:text-right">Open opportunity value across your active territories</p>
         </div>
       </section>
 
       <dl className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-        <Kpi label="Quoted" value={formatGbp(totalQuoted)} />
+        <Kpi label="Quoted" value={formatGbp(totalQuoted)} accent />
         <Kpi label="Won" value={formatGbp(totalWon)} />
         <Kpi label="Monthly spend" value={formatGbp(monthlySpendGbp)} />
-        <Kpi label="Estimated ROI" value={roi !== null ? `${roi.toFixed(1)}×` : "—"} />
+        <Kpi label="Estimated ROI" value={roi !== null ? `${roi.toFixed(1)}×` : "—"} accent />
       </dl>
 
       <p className="max-w-3xl text-sm leading-6 text-slate">
@@ -76,11 +76,11 @@ export default async function RoiPage() {
   );
 }
 
-function Kpi({ label, value }: { label: string; value: string }) {
+function Kpi({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
   return (
-    <div className="rounded-2xl border border-light-grey bg-white p-5">
+    <div className={accent ? "rounded-2xl border border-signal-orange/15 bg-signal-orange/[0.04] p-5" : "rounded-2xl border border-light-grey bg-white p-5"}>
       <dt className="text-[10px] font-semibold uppercase tracking-[0.11em] text-slate">{label}</dt>
-      <dd className="mt-3 text-2xl font-bold tracking-tight text-charcoal">{value}</dd>
+      <dd className="mt-3 break-words text-2xl font-bold tracking-tight text-charcoal">{value}</dd>
     </div>
   );
 }
