@@ -29,10 +29,14 @@ export class MockPlanningProvider implements PlanningDataProvider {
   // keeps repeated ingestion runs against a stable dataset.
   constructor(private readonly applications: RawApplication[]) {}
 
-  async *fetchNewApplications({ since, cursor }: { since?: string; cursor?: string }): AsyncGenerator<RawApplication[]> {
+  async *fetchNewApplications({ since, dateTo, cursor }: { since?: string; dateTo?: string; cursor?: string }): AsyncGenerator<RawApplication[]> {
     const sinceTime = since ? new Date(since).getTime() : 0;
+    const untilTime = dateTo ? new Date(dateTo + "T23:59:59.999Z").getTime() : Number.POSITIVE_INFINITY;
     const filtered = this.applications
-      .filter((app) => new Date(app.receivedDate ?? 0).getTime() >= sinceTime)
+      .filter((app) => {
+        const receivedTime = new Date(app.receivedDate ?? 0).getTime();
+        return receivedTime >= sinceTime && receivedTime <= untilTime;
+      })
       .sort((a, b) => new Date(a.receivedDate ?? 0).getTime() - new Date(b.receivedDate ?? 0).getTime());
     yield* paginate(filtered, cursor);
   }
@@ -51,10 +55,16 @@ export class MockPlanningProvider implements PlanningDataProvider {
 
   async searchByPostcode(
     postcodeOrDistrict: string,
-    _opts?: { radius?: number; maxPages?: number },
+    _opts?: { radius?: number; maxPages?: number; dateFrom?: string; dateTo?: string },
   ): Promise<RawApplication[]> {
     const district = postcodeOrDistrict.trim().toUpperCase().split(" ")[0];
-    return this.applications.filter((app) => (app.postcode ?? "").toUpperCase().startsWith(district));
+    const from = _opts?.dateFrom ? new Date(_opts.dateFrom).getTime() : 0;
+    const to = _opts?.dateTo ? new Date(_opts.dateTo + "T23:59:59.999Z").getTime() : Number.POSITIVE_INFINITY;
+    return this.applications.filter((app) => {
+      const matchesDistrict = (app.postcode ?? "").toUpperCase().startsWith(district);
+      const received = new Date(app.receivedDate ?? 0).getTime();
+      return matchesDistrict && received >= from && received <= to;
+    });
   }
 
   async searchByDate(dateFrom: string, dateTo: string): Promise<RawApplication[]> {
