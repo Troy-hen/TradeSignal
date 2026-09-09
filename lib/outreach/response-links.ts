@@ -18,47 +18,30 @@ export type ResolvedQuoteLink = {
   expiresAt: string;
 };
 
-export async function createQuoteLink(input: {
+type CreateQuoteLinkInput = {
   companyId: string;
   opportunityId: string;
   deliveryId?: string | null;
   channel: ResponseChannel;
   audienceType: ResponseAudience;
   createdBy?: string | null;
-}) {
-  const admin = createAdminClient() as unknown as SupabaseClient;
+};
 
-  if (input.deliveryId) {
-    await admin
-      .from("outreach_response_links")
-      .update({ status: "revoked", updated_at: new Date().toISOString() })
-      .eq("outreach_delivery_id", input.deliveryId)
-      .eq("status", "active");
-  }
+export async function createQuoteLink(input: CreateQuoteLinkInput) {
+  return persistQuoteLink(input, randomToken());
+}
 
-  const token = randomToken();
-  const tokenHash = await hashQuoteLinkToken(token);
-  const { data, error } = await admin
-    .from("outreach_response_links")
-    .insert({
-      company_id: input.companyId,
-      opportunity_id: input.opportunityId,
-      outreach_delivery_id: input.deliveryId ?? null,
-      channel: input.channel,
-      audience_type: input.audienceType,
-      token_hash: tokenHash,
-      created_by: input.createdBy ?? null,
-    })
-    .select("id,expires_at")
-    .single();
-  if (error || !data) throw error ?? new Error("QuoteLink creation failed");
-
-  return {
-    id: data.id as string,
-    token,
-    url: buildQuoteLinkUrl(token),
-    expiresAt: data.expires_at as string,
-  };
+/**
+ * Postal/email retries need to reproduce the same public URL before the
+ * provider's idempotency key can safely replay the exact same content.
+ * The token is HMAC-derived from an opaque delivery UUID and workspace data,
+ * so it is stable for retries but cannot be guessed without the signing secret.
+ */
+export async function createOrReuseDeliveryQuoteLink(input: CreateQuoteLinkInput & { deliveryId: string }) {
+  const secret = process.env.QUOTE_LINK_SIGNING_SECRET?.trim();
+  if (!secret) throw new Error("QUOTE_LINK_SIGNING_SECRET_NOT_CONFIGURED");
+  const token = await deterministicDeliveryToken(secret, input);
+  return persistQuoteLink(input, token, true);
 }
 
 export async function resolveQuoteLink(token: string): Promise<ResolvedQuoteLink | null> {
@@ -112,12 +95,67 @@ export async function recordQuoteLinkEvent(link: ResolvedQuoteLink, eventType: Q
 
 export async function hashQuoteLinkToken(token: string) {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
-  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  return bytesToHex(new Uint8Array(digest));
 }
 
 export function buildQuoteLinkUrl(token: string) {
   const base = (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
   return `${base}/q/${encodeURIComponent(token)}`;
+}
+
+async function persistQuoteLink(input: CreateQuoteLinkInput, token: string, allowExisting = false) {
+  const admin = createAdminClient() as unknown as SupabaseClient;
+  const tokenHash = await hashQuoteLinkToken(token);
+
+  if (allowExisting) {
+    const { data: existing } = await admin
+      .from("outreach_response_links")
+      .select("id,expires_at,status")
+      .eq("token_hash", tokenHash)
+      .maybeSingle();
+    if (existing) {
+      if (String(existing.status) !== "active") {
+        await admin.from("outreach_response_links").update({ status: "active", expires_at: expiryDate(), updated_at: new Date().toISOString() }).eq("id", existing.id);
+      }
+      return { id: String(existing.id), token, url: buildQuoteLinkUrl(token), expiresAt: String(existing.expires_at) };
+    }
+  }
+
+  if (input.deliveryId) {
+    await admin
+      .from("outreach_response_links")
+      .update({ status: "revoked", updated_at: new Date().toISOString() })
+      .eq("outreach_delivery_id", input.deliveryId)
+      .eq("status", "active");
+  }
+
+  const { data, error } = await admin
+    .from("outreach_response_links")
+    .insert({
+      company_id: input.companyId,
+      opportunity_id: input.opportunityId,
+      outreach_delivery_id: input.deliveryId ?? null,
+      channel: input.channel,
+      audience_type: input.audienceType,
+      token_hash: tokenHash,
+      created_by: input.createdBy ?? null,
+      expires_at: expiryDate(),
+    })
+    .select("id,expires_at")
+    .single();
+  if (error || !data) throw error ?? new Error("QuoteLink creation failed");
+  return { id: data.id as string, token, url: buildQuoteLinkUrl(token), expiresAt: data.expires_at as string };
+}
+
+async function deterministicDeliveryToken(secret: string, input: CreateQuoteLinkInput & { deliveryId: string }) {
+  const payload = ["mytradebox-quotelink-v1", input.deliveryId, input.companyId, input.opportunityId, input.channel, input.audienceType].join(":");
+  const key = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload));
+  return bytesToBase64Url(new Uint8Array(signature));
+}
+
+function expiryDate() {
+  return new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString();
 }
 
 function randomToken() {
@@ -131,7 +169,5 @@ function bytesToBase64Url(bytes: Uint8Array) {
   for (const byte of bytes) binary += String.fromCharCode(byte);
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
-
-function isValidTokenShape(token: string) {
-  return /^[A-Za-z0-9_-]{24,128}$/.test(token);
-}
+function bytesToHex(bytes: Uint8Array) { return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(""); }
+function isValidTokenShape(token: string) { return /^[A-Za-z0-9_-]{24,128}$/.test(token); }
