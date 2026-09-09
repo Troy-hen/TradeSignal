@@ -106,13 +106,29 @@ export class PlotaClient {
 
   async getApplication(id: string): Promise<PlotaApplication | null> {
     try {
-      const response = await this.request<PlotaApplication | { data?: PlotaApplication | null }>(
-        `/applications/${encodeURIComponent(id)}`,
-      );
-      if (response && typeof response === "object" && "data" in response) {
-        return (response as { data?: PlotaApplication | null }).data ?? null;
+      const response = await this.request<unknown>(`/applications/${encodeURIComponent(id)}`);
+
+      // Plota has returned both a direct application object and one or more
+      // data-wrapped detail responses over time. Unwrap conservatively so a
+      // wrapper object can never reach normaliseApplication with a missing id.
+      let candidate: unknown = response;
+      for (let depth = 0; depth < 3; depth++) {
+        if (Array.isArray(candidate)) {
+          candidate = candidate[0] ?? null;
+          continue;
+        }
+        if (!candidate || typeof candidate !== "object") return null;
+        if ("id" in candidate && typeof (candidate as { id?: unknown }).id === "string") {
+          return candidate as PlotaApplication;
+        }
+        if ("data" in candidate) {
+          candidate = (candidate as { data?: unknown }).data ?? null;
+          continue;
+        }
+        return null;
       }
-      return response as PlotaApplication;
+
+      return null;
     } catch (err) {
       if (err instanceof PlotaApiError && err.status === 404) return null;
       throw err;
