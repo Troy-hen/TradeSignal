@@ -14,7 +14,7 @@ export default function PrivacyPage() {
   return (
     <div className="bg-soft-surface">
       <section className="bg-charcoal px-6 py-16 text-white sm:py-20">
-        <div className="mx-auto max-w-4xl lg:px-2">
+        <div className="mx-auto max-w-7xl lg:px-2">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Legal</p>
           <h1 className="mt-4 text-4xl font-bold tracking-tight sm:text-5xl">Privacy notice</h1>
           <p className="mt-4 text-sm text-white/60">Last updated {updated}</p>
