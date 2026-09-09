@@ -47,7 +47,7 @@ export default function PrivacyPage() {
           </LegalSection>
 
           <LegalSection title="4. AI processing">
-            <p>Planning text and structured application fields may be sent to the configured AI provider to classify an application for trade relevance and produce an indicative opportunity estimate. The service is designed to minimise personal data in that payload, and AI output is reviewed as decision support rather than treated as fact.</p>
+            <p>Planning text and structured application fields may be sent to the configured AI provider to classify an application for trade relevance and produce an indicative opportunity estimate. Optional contact enrichment is separately gated, quota-limited and recorded with source provenance, purpose, lawful basis, retrieval date, expiry and suppression controls. The service is designed to minimise personal data in AI payloads, and AI output is reviewed as decision support rather than treated as fact.</p>
           </LegalSection>
 
           <LegalSection title="5. Retention and security">
