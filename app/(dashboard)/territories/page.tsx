@@ -26,6 +26,14 @@ export default async function TerritoriesPage() {
     estimated_trade_value_low: Number(point.estimated_trade_value_low ?? 0),
     estimated_trade_value_high: Number(point.estimated_trade_value_high ?? 0),
     monthly_price_pence: Number(point.monthly_price_pence ?? 2999),
+    teaser_estimated_trade_value_low:
+      point.teaser_estimated_trade_value_low === null || point.teaser_estimated_trade_value_low === undefined
+        ? null
+        : Number(point.teaser_estimated_trade_value_low),
+    teaser_estimated_trade_value_high:
+      point.teaser_estimated_trade_value_high === null || point.teaser_estimated_trade_value_high === undefined
+        ? null
+        : Number(point.teaser_estimated_trade_value_high),
   }));
 
   return (
