@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 
 export type InAppNotificationItem = {
@@ -41,12 +42,13 @@ type RankedNotification = InAppNotificationItem & { priority: number };
 
 export async function getInAppNotifications(companyId: string): Promise<InAppNotificationItem[]> {
   const supabase = await createClient();
+  const db = supabase as unknown as SupabaseClient;
   const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
   const [{ data: logData }, { data: nearbyData }, { data: marketEventData }] = await Promise.all([
     supabase.from("notification_log").select("id, notification_type, subject, created_at, metadata, lead_match_id").eq("company_id", companyId).eq("status", "sent").gte("created_at", since).order("created_at", { ascending: false }).limit(25),
     supabase.rpc("browse_nearby_opportunities", { p_limit: 3 }),
-    supabase.rpc("browse_recent_territory_market_events", { p_limit: 5 }),
+    db.rpc("browse_recent_territory_market_events", { p_limit: 5 }),
   ]);
 
   const logs = (logData ?? []) as NotificationLogRow[];
@@ -63,7 +65,7 @@ export async function getInAppNotifications(companyId: string): Promise<InAppNot
     return notificationFromLog(row, opportunityId);
   });
   const nearby = ((Array.isArray(nearbyData) ? nearbyData : []) as NearbyRow[]).map(notificationFromNearby);
-  const territoryEvents = ((Array.isArray(marketEventData) ? marketEventData : []) as TerritoryMarketEvent[]).map(notificationFromTerritoryEvent);
+  const territoryEvents = ((Array.isArray(marketEventData) ? marketEventData : []) as unknown as TerritoryMarketEvent[]).map(notificationFromTerritoryEvent);
 
   const seenTitles = new Set<string>();
   return [...logged, ...territoryEvents, ...nearby]
