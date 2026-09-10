@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireCurrentCompany } from "@/lib/auth/get-current-company";
@@ -38,7 +39,7 @@ export async function recordLeadAction(input: {
 
   const requestStatus = quoteRequestStatus(parsed.data.actionType);
   if (requestStatus) {
-    const admin = createAdminClient();
+    const admin = createAdminClient() as unknown as SupabaseClient;
     const { error: syncError } = await admin
       .from("quote_requests")
       .update({ status: requestStatus, updated_at: new Date().toISOString() })
