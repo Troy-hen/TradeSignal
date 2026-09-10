@@ -13,20 +13,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   const supabase = await createClient();
   const db = supabase as unknown as SupabaseClient;
 
-  const { data: opportunity } = await supabase
-    .from("application_trade_opportunities")
-    .select("id")
-    .eq("id", id)
-    .maybeSingle();
+  const { data: opportunity } = await supabase.from("application_trade_opportunities").select("id").eq("id", id).maybeSingle();
   if (!opportunity) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
-  const { data } = await db
-    .from("epc_intelligence_records")
-    .select(safeSelect())
-    .eq("company_id", company.id)
-    .eq("opportunity_id", id)
-    .maybeSingle();
-
+  const { data } = await db.from("epc_intelligence_records").select(safeSelect()).eq("company_id", company.id).eq("opportunity_id", id).maybeSingle();
   return NextResponse.json({ configured: isEpcIntelligenceConfigured(), intelligence: data ?? null });
 }
 
@@ -56,13 +46,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const { data: application } = await supabase
     .from("planning_applications")
-    .select("id,address_text,postcode,proposal_description")
+    .select("id,address_text,postcode,proposal_description,raw_provider_payload")
     .eq("id", opportunity.planning_application_id)
     .maybeSingle();
   if (!application) return NextResponse.json({ error: "not_found" }, { status: 404 });
-  if (!application.address_text || !application.postcode) {
-    return NextResponse.json({ error: "property_address_incomplete" }, { status: 422 });
-  }
+  if (!application.address_text || !application.postcode) return NextResponse.json({ error: "property_address_incomplete" }, { status: 422 });
 
   if (!refresh) {
     const { data: cached } = await db
@@ -79,11 +67,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const snapshot = await enrichWithEpc({
       address: application.address_text,
       postcode: application.postcode,
+      uprn: extractUprn(application.raw_provider_payload),
       projectContext: application.proposal_description,
     });
     if (!snapshot) {
       return NextResponse.json(
-        { error: "epc_not_matched", message: "No sufficiently confident domestic or non-domestic EPC match was found for this project address." },
+        { error: "epc_not_matched", message: "The official domestic and non-domestic EPC datasets were searched, but no sufficiently confident certificate matched this project address." },
         { status: 404 },
       );
     }
@@ -148,6 +137,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         certificate_number: snapshot.certificateNumber,
         certificate_scope: snapshot.certificateScope,
         match_confidence: snapshot.matchConfidence,
+        matched_by_uprn: Boolean(extractUprn(application.raw_provider_payload)),
         current_band: snapshot.currentBand,
         potential_band: snapshot.potentialBand,
         energy_mix: snapshot.energyMix,
@@ -166,6 +156,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (message === "EPC_API_RATE_LIMITED") return NextResponse.json({ error: "epc_rate_limited" }, { status: 429 });
     return NextResponse.json({ error: "epc_intelligence_failed" }, { status: 502 });
   }
+}
+
+function extractUprn(value: unknown): string | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const raw = (value as Record<string, unknown>).uprn;
+  if (typeof raw === "string" && raw.trim()) return raw.trim();
+  if (typeof raw === "number" && Number.isFinite(raw)) return String(raw);
+  return null;
 }
 
 function safeSelect() {
