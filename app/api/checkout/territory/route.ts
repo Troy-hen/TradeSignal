@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isConfiguredDemoUser } from "@/lib/auth/demo";
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
 
   const db = supabase;
   const admin = createAdminClient();
-  const adminDb = admin;
+  const adminDb = admin as unknown as SupabaseClient;
 
   const { data: reservationRows, error: reserveError } = await db.rpc("reserve_coverage_plan", {
     p_postcode_districts: districts,
@@ -110,57 +111,67 @@ export async function POST(request: Request) {
 
   const claimIds = (planItems ?? []).map((item: { territory_claim_id: string }) => item.territory_claim_id);
   const firstDistrict = (planItems?.[0]?.postcode_district as string | undefined) ?? districts[0];
-
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? new URL(request.url).origin;
 
   try {
     if (!plan || !company || !trade || claimIds.length === 0) {
       throw new Error("coverage_plan_load_failed");
     }
 
-    if (isConfiguredDemoUser(user)) {
-    const now = new Date().toISOString();
-    const { error: activationError } = await adminDb
-      .from("territory_claims")
-      .update({
-        status: "active",
-        activated_at: now,
-        reserved_expires_at: null,
-        stripe_checkout_session_id: null,
-        stripe_subscription_id: null,
-      })
-      .in("id", claimIds)
-      .eq("company_id", company.id)
-      .eq("status", "reserved");
-
-    if (activationError) {
-      throw new Error("demo_activation_failed");
+    const configuredDemo = isConfiguredDemoUser(user);
+    let databaseDemo = false;
+    if (!configuredDemo) {
+      const { data: demoAccount, error: demoLookupError } = await adminDb
+        .from("demo_accounts")
+        .select("user_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (demoLookupError) throw new Error("demo_lookup_failed");
+      databaseDemo = Boolean(demoAccount);
     }
 
-    const { error: planActivationError } = await adminDb
-      .from("coverage_plans")
-      .update({ status: "active", current_period_start: now })
-      .eq("id", reservation.coverage_plan_id)
-      .eq("company_id", company.id)
-      .eq("status", "reserved");
+    if (configuredDemo || databaseDemo) {
+      const now = new Date().toISOString();
+      const { error: activationError } = await adminDb
+        .from("territory_claims")
+        .update({
+          status: "active",
+          activated_at: now,
+          reserved_expires_at: null,
+          stripe_checkout_session_id: null,
+          stripe_subscription_id: null,
+        })
+        .in("id", claimIds)
+        .eq("company_id", company.id)
+        .eq("status", "reserved");
 
-    if (planActivationError) {
-      throw new Error("demo_activation_failed");
-    }
+      if (activationError) {
+        throw new Error("demo_activation_failed");
+      }
 
-    return NextResponse.json({
-      demo: true,
-      plan: reservation.coverage_plan_id,
-      claim: reservation.first_territory_claim_id,
-      url:
-        appUrl +
-        "/territories/claim/confirming?plan=" +
-        encodeURIComponent(reservation.coverage_plan_id) +
-        "&claim=" +
-        encodeURIComponent(reservation.first_territory_claim_id) +
-        "&demo=1",
-    });
+      const { error: planActivationError } = await adminDb
+        .from("coverage_plans")
+        .update({ status: "active", current_period_start: now })
+        .eq("id", reservation.coverage_plan_id)
+        .eq("company_id", company.id)
+        .eq("status", "reserved");
 
+      if (planActivationError) {
+        throw new Error("demo_activation_failed");
+      }
+
+      return NextResponse.json({
+        demo: true,
+        plan: reservation.coverage_plan_id,
+        claim: reservation.first_territory_claim_id,
+        url:
+          appUrl +
+          "/territories/claim/confirming?plan=" +
+          encodeURIComponent(reservation.coverage_plan_id) +
+          "&claim=" +
+          encodeURIComponent(reservation.first_territory_claim_id) +
+          "&demo=1",
+      });
     }
 
     const stripe = getStripeClient();
@@ -240,11 +251,11 @@ export async function POST(request: Request) {
       .eq("id", reservation.coverage_plan_id)
       .eq("status", "reserved");
 
-    const error = err instanceof Error && err.message === "demo_activation_failed" ? "demo_activation_failed" : "checkout_failed";
+    const message = err instanceof Error ? err.message : "";
+    const error = ["demo_activation_failed", "demo_lookup_failed"].includes(message) ? "demo_activation_failed" : "checkout_failed";
     return NextResponse.json({ error }, { status: error === "demo_activation_failed" ? 500 : 502 });
   }
 }
-
 
 function randomLetters(length: number): string {
   const bytes = new Uint8Array(length);
