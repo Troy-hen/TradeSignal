@@ -80,9 +80,14 @@ const RULES: Record<string, TradeRule> = {
     keywords: ["loft conversion", "attic conversion", "roof space conversion"], strongKeywords: ["loft conversion"],
     cpvPrefixes: [], broadShare: [0.05, 0.12], directShare: [0.65, 1.0],
   },
+  "fit-out-interiors": {
+    keywords: ["fit out", "fit-out", "shop fitting", "shopfitting", "interior refurbishment", "interior renovation", "workplace refurbishment", "tenant fit out", "tenant fit-out"],
+    strongKeywords: ["retail fit out", "retail fit-out", "office fit out", "office fit-out", "shop fit out", "shop fit-out", "commercial fit out", "commercial fit-out", "cat a fit out", "cat a fit-out", "cat b fit out", "cat b fit-out"],
+    cpvPrefixes: [], broadShare: [0.15, 0.45], directShare: [0.55, 1.0],
+  },
   "general-builder": {
-    keywords: ["construction works", "building works", "refurbishment", "renovation", "building extension", "extension works", "construction of an extension", "construction of extension", "building alterations", "fit out", "fit-out", "remodelling", "building maintenance", "capital works"],
-    strongKeywords: ["general building works", "building refurbishment", "construction contract", "refurbishment works"],
+    keywords: ["construction works", "building works", "refurbishment", "renovation", "building extension", "extension works", "construction of an extension", "construction of extension", "building alterations", "fit out", "fit-out", "remodelling", "building maintenance", "capital works", "office renovation", "retail refurbishment", "commercial refurbishment", "commercial alterations"],
+    strongKeywords: ["general building works", "building refurbishment", "construction contract", "refurbishment works", "commercial refurbishment", "office refurbishment"],
     cpvPrefixes: ["4500", "4521", "4545"], broadShare: [0.25, 0.55], directShare: [0.55, 1.0],
   },
 };
