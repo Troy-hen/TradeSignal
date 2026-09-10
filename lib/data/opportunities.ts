@@ -14,6 +14,7 @@ export interface OpportunityListItem {
   district: string;
   tradeName: string;
   planningStatus: string;
+  isCommercial: boolean | null;
   valueLow: number | null;
   valueHigh: number | null;
   receivedDate: string | null;
@@ -85,7 +86,7 @@ export async function getCompanyOpportunities(
       .from("application_classifications")
       .select("id, project_type, summary, likely_start_window, opportunity_timing, project_size_category, ai_confidence, classification_status")
       .in("id", classIds),
-    supabase.from("planning_applications").select("id, status, received_date, decision_date").in("id", appIds),
+    supabase.from("planning_applications").select("id, status, received_date, decision_date, is_commercial").in("id", appIds),
   ]);
 
   const tradeById = new Map((trades ?? []).map((t) => [t.id, t]));
@@ -96,7 +97,7 @@ export async function getCompanyOpportunities(
   for (const m of visibleMatches) {
     if (!m.application_trade_opportunity_id || !m.lead_match_id) continue;
     const opp = oppById.get(m.application_trade_opportunity_id);
-    if (!opp) continue; // excluded by the bucket filter, or not (yet) RLS-visible
+    if (!opp) continue;
 
     const trade = tradeById.get(opp.trade_category_id);
     const cls = classById.get(opp.application_classification_id);
@@ -121,6 +122,7 @@ export async function getCompanyOpportunities(
       district: opp.postcode_district,
       tradeName: trade?.name ?? "Trade",
       planningStatus: app?.status ?? "unknown",
+      isCommercial: app?.is_commercial ?? null,
       valueLow: opp.estimated_trade_value_low,
       valueHigh: opp.estimated_trade_value_high,
       receivedDate: app?.received_date ?? null,
