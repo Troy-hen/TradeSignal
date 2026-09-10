@@ -68,7 +68,7 @@ as $$
     market.commercial_count,
     market.latest_record_at
   from market
-  order by source_kind, source_label;
+  order by 3, 2;
 $$;
 
 revoke all on function public.browse_intelligence_feed_coverage() from public, anon;
