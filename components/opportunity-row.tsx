@@ -29,9 +29,16 @@ export function OpportunityRow({ item }: { item: OpportunityListItem }) {
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
-              <p className="break-words text-[10px] font-semibold uppercase tracking-[0.12em] text-slate sm:tracking-[0.14em]">
-                {item.tradeName} · {item.district}
-              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="break-words text-[10px] font-semibold uppercase tracking-[0.12em] text-slate sm:tracking-[0.14em]">
+                  {item.tradeName} · {item.district}
+                </p>
+                {item.isCommercial === true && (
+                  <span className="rounded-full bg-signal-orange/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-signal-orange">
+                    Commercial build
+                  </span>
+                )}
+              </div>
               <h3 className="mt-1 line-clamp-2 text-base font-semibold tracking-tight text-charcoal sm:text-lg">
                 {item.projectType ?? "Planning application"}
               </h3>
