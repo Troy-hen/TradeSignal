@@ -24,6 +24,8 @@ export default async function TradeOpportunityPage({ params }: { params: Promise
   if (!item) notFound();
 
   const signalLabel = LABELS[item.signal_type] ?? "Trade opportunity";
+  const locationLabel = item.postcode_district ?? item.location_text ?? "Regional delivery";
+  const isRegional = !item.postcode_district;
   const contact = item.contact && typeof item.contact === "object" ? item.contact : {};
   const email = typeof contact.email === "string" ? contact.email : null;
   const phone = typeof contact.telephone === "string" ? contact.telephone : null;
@@ -39,10 +41,12 @@ export default async function TradeOpportunityPage({ params }: { params: Promise
         <div className="bg-charcoal p-6 text-white sm:p-8">
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-signal-orange px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em]">{signalLabel}</span>
-            <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/75">{item.postcode_district} · {item.trade_name}</span>
+            {isRegional && <span className="rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-white/75">Regional delivery</span>}
+            <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/75">{locationLabel} · {item.trade_name}</span>
           </div>
           <h1 className="mt-4 max-w-5xl text-2xl font-bold tracking-tight sm:text-3xl">{item.title}</h1>
           {item.summary && <p className="mt-4 max-w-5xl text-sm leading-7 text-white/70">{item.summary}</p>}
+          {isRegional && <p className="mt-3 max-w-4xl text-xs leading-5 text-white/55">The source notice identifies a delivery region rather than an exact project postcode. MyTradeBox has matched it to your trade coverage in that region; the buyer&apos;s office address is not being used as the project location.</p>}
         </div>
         <div className="grid gap-px bg-light-grey sm:grid-cols-4">
           <Metric label="Estimated project value" value={formatGbpRange(item.project_value_low, item.project_value_high)} />
@@ -65,6 +69,7 @@ export default async function TradeOpportunityPage({ params }: { params: Promise
 
           <Section title="Commercial context">
             <dl className="grid gap-4 text-sm sm:grid-cols-2">
+              <Detail label="Delivery area" value={locationLabel} />
               <Detail label="Buyer" value={item.buyer_name ?? "Not supplied"} />
               <Detail label="Awarded supplier / main contractor" value={item.supplier_name ?? "Not yet awarded / not supplied"} />
               <Detail label="Procurement stage" value={humanize(item.procurement_stage)} />
