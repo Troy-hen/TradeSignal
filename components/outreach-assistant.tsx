@@ -26,6 +26,7 @@ export function OutreachAssistant({ opportunityId }: { opportunityId: string }) 
   const [postalEnabled, setPostalEnabled] = useState(false);
   const [postalPreview, setPostalPreview] = useState<PostalPreview | null>(null);
   const [postalBusy, setPostalBusy] = useState(false);
+  const [printBusy, setPrintBusy] = useState(false);
   const [postalMessage, setPostalMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -84,6 +85,44 @@ export function OutreachAssistant({ opportunityId }: { opportunityId: string }) 
     anchor.download = `mytradebox-${channel}-draft.txt`;
     anchor.click();
     URL.revokeObjectURL(url);
+  }
+
+  async function downloadPrintReadyLetter() {
+    if (!selectedText || channel !== "letter" || printBusy) return;
+    setPrintBusy(true);
+    setPostalMessage(null);
+    try {
+      const response = await fetch(`/api/opportunities/${opportunityId}/postal/print`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: selectedText }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setPostalMessage(
+          data.error === "postal_address_unavailable"
+            ? "This opportunity does not have a complete project address for a postal letter."
+            : data.error === "quote_link_signing_secret_not_configured"
+              ? "QuoteLink signing is not configured."
+              : "The print-ready letter could not be created.",
+        );
+        return;
+      }
+      const blob = await response.blob();
+      const disposition = response.headers.get("Content-Disposition") ?? "";
+      const match = disposition.match(/filename="([^"]+)"/i);
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = match?.[1] ?? "mytradebox-letter.pdf";
+      anchor.click();
+      URL.revokeObjectURL(url);
+      setPostalMessage("Print-ready PDF created with a private MyTradeBox response link.");
+    } catch {
+      setPostalMessage("The print-ready letter could not be created.");
+    } finally {
+      setPrintBusy(false);
+    }
   }
 
   async function previewPostalLetter() {
@@ -172,32 +211,44 @@ export function OutreachAssistant({ opportunityId }: { opportunityId: string }) 
                 <pre className="mt-3 whitespace-pre-wrap break-words font-sans text-sm leading-6 text-charcoal">{selectedText}</pre>
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
+                {channel === "letter" && (
+                  <button type="button" onClick={downloadPrintReadyLetter} disabled={printBusy} className="rounded-xl bg-signal-orange px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-95 disabled:opacity-50">
+                    {printBusy ? "Preparing PDF…" : "Download print-ready PDF ↓"}
+                  </button>
+                )}
                 <button type="button" onClick={downloadDraft} className="rounded-xl border border-light-grey bg-white px-4 py-2.5 text-sm font-semibold text-charcoal transition hover:border-signal-orange/40">Download draft ↓</button>
                 <button type="button" onClick={() => navigator.clipboard?.writeText(selectedText)} className="rounded-xl border border-light-grey bg-white px-4 py-2.5 text-sm font-semibold text-charcoal transition hover:border-signal-orange/40">Copy text</button>
               </div>
 
-              {channel === "letter" && postalEnabled && (
+              {channel === "letter" && (
                 <div className="mt-5 rounded-2xl border border-signal-orange/20 bg-signal-orange/[0.03] p-4">
-                  <p className="text-sm font-semibold text-charcoal">Print & post with MyTradeBox</p>
-                  <p className="mt-1 text-xs leading-5 text-slate">The project address is validated before anything can be sent. Previewing is free; live delivery always requires an explicit confirmation.</p>
-                  {!postalPreview ? (
-                    <button type="button" onClick={previewPostalLetter} disabled={postalBusy} className="mt-3 rounded-xl bg-signal-orange px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-50">
-                      {postalBusy ? "Preparing preview…" : "Preview posted letter"}
-                    </button>
-                  ) : (
-                    <div className="mt-3 flex flex-wrap items-center gap-2">
-                      {postalPreview.preview?.previewUrl && <a href={postalPreview.preview.previewUrl} target="_blank" rel="noreferrer" className="rounded-xl border border-light-grey bg-white px-4 py-2.5 text-xs font-semibold text-charcoal">Open PDF preview ↗</a>}
-                      <button type="button" onClick={sendPostalLetter} disabled={postalBusy || !postalPreview.deliveryId} className="rounded-xl bg-signal-orange px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-50">
-                        {postalBusy ? "Sending…" : `Confirm & send${typeof postalPreview.preview?.estimatedCostPence === "number" ? ` · ${formatPence(postalPreview.preview.estimatedCostPence)}` : ""}`}
-                      </button>
-                      <button type="button" onClick={() => setPostalPreview(null)} className="px-2 py-2 text-xs font-semibold text-slate">Re-preview</button>
-                    </div>
+                  <p className="text-sm font-semibold text-charcoal">Close the loop with a private QuoteLink</p>
+                  <p className="mt-1 text-xs leading-5 text-slate">The print-ready PDF includes the project address and a private response link so the recipient can call, WhatsApp or request a quote. You can print and post it yourself now.</p>
+                  {postalEnabled && (
+                    <>
+                      <div className="my-4 border-t border-signal-orange/10" />
+                      <p className="text-sm font-semibold text-charcoal">Print & post with MyTradeBox</p>
+                      <p className="mt-1 text-xs leading-5 text-slate">The connected mail provider validates the address before anything can be sent. Previewing is free; live delivery always requires an explicit confirmation.</p>
+                      {!postalPreview ? (
+                        <button type="button" onClick={previewPostalLetter} disabled={postalBusy} className="mt-3 rounded-xl bg-charcoal px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-50">
+                          {postalBusy ? "Preparing preview…" : "Preview posted letter"}
+                        </button>
+                      ) : (
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                          {postalPreview.preview?.previewUrl && <a href={postalPreview.preview.previewUrl} target="_blank" rel="noreferrer" className="rounded-xl border border-light-grey bg-white px-4 py-2.5 text-xs font-semibold text-charcoal">Open PDF preview ↗</a>}
+                          <button type="button" onClick={sendPostalLetter} disabled={postalBusy || !postalPreview.deliveryId} className="rounded-xl bg-signal-orange px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-50">
+                            {postalBusy ? "Sending…" : `Confirm & send${typeof postalPreview.preview?.estimatedCostPence === "number" ? ` · ${formatPence(postalPreview.preview.estimatedCostPence)}` : ""}`}
+                          </button>
+                          <button type="button" onClick={() => setPostalPreview(null)} className="px-2 py-2 text-xs font-semibold text-slate">Re-preview</button>
+                        </div>
+                      )}
+                    </>
                   )}
                   {postalMessage && <p className="mt-3 text-xs font-medium text-slate">{postalMessage}</p>}
                 </div>
               )}
 
-              {!postalEnabled && <p className="mt-3 text-xs leading-5 text-slate">Review and personalise before using. Postal delivery controls appear automatically when a mail provider is connected.</p>}
+              {channel !== "letter" && <p className="mt-3 text-xs leading-5 text-slate">Review and personalise before using.</p>}
             </>
           ) : (
             <div className="mt-5 flex min-h-[230px] items-center justify-center rounded-2xl border border-dashed border-light-grey bg-soft-surface p-6 text-center">
