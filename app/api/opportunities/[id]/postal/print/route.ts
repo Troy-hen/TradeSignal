@@ -83,7 +83,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       recipient.addressLine1,
       recipient.addressLine2,
       recipient.city,
-      recipient.county,
       recipient.postcode,
     ].filter((value): value is string => Boolean(value?.trim()));
 
