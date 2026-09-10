@@ -35,22 +35,22 @@ type Target = { key: string; href: string; kind: string; title: string };
 export async function GET() {
   const company = await requireCurrentCompany();
   const supabase = await createClient();
+  const db = supabase as unknown as SupabaseClient;
   const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 
-  const existing = await supabase
+  const existing = await db
     .from("assistant_daily_briefs")
     .select("id,brief_date,summary,snapshot,action_items,model,generated_at")
     .eq("company_id", company.id)
     .eq("brief_date", today)
     .maybeSingle();
-  if (existing.data) return NextResponse.json(toResponse(existing.data as StoredBrief, false));
+  if (existing.data) return NextResponse.json(toResponse(existing.data as unknown as StoredBrief, false));
 
   const openai = getAssistantOpenAI();
   if (!openai) return NextResponse.json({ error: "assistant_not_configured" }, { status: 503 });
 
   try {
     const workspace = await getWorkspaceSnapshot(company.id);
-    const db = supabase as unknown as SupabaseClient;
     const { data: benchmarks } = await db.rpc("get_conversion_learning_benchmarks", { p_min_platform_sample: 10 });
     const evidence = buildEvidence(workspace, Array.isArray(benchmarks) ? benchmarks : []);
     const targets = buildTargets(workspace);
@@ -116,7 +116,7 @@ export async function GET() {
       benchmarkRows: evidence.conversionBenchmarks.length,
     };
 
-    const admin = createAdminClient();
+    const admin = createAdminClient() as unknown as SupabaseClient;
     const { data: stored, error } = await admin
       .from("assistant_daily_briefs")
       .upsert({
@@ -132,7 +132,7 @@ export async function GET() {
       .select("id,brief_date,summary,snapshot,action_items,model,generated_at")
       .single();
     if (error || !stored) throw new Error(error?.message ?? "Could not store daily brief");
-    return NextResponse.json(toResponse(stored as StoredBrief, true));
+    return NextResponse.json(toResponse(stored as unknown as StoredBrief, true));
   } catch (error) {
     console.error("Daily brief generation failed", error);
     return NextResponse.json({ error: "daily_brief_failed" }, { status: 500 });
