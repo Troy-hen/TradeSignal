@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireCurrentCompany } from "@/lib/auth/get-current-company";
@@ -24,7 +25,8 @@ export async function recordMarketSignalAction(input: {
 
   const company = await requireCurrentCompany();
   const supabase = await createClient();
-  const { data: entitled } = await supabase.rpc("get_owned_market_signal", { p_match_id: parsed.data.matchId });
+  const db = supabase as unknown as SupabaseClient;
+  const { data: entitled } = await db.rpc("get_owned_market_signal", { p_match_id: parsed.data.matchId });
   if (!Array.isArray(entitled) || entitled.length === 0) return { error: "This opportunity is not available in your coverage." };
 
   const now = new Date().toISOString();
@@ -41,7 +43,7 @@ export async function recordMarketSignalAction(input: {
   if (parsed.data.action === "won") row.won_at = now;
   if (parsed.data.action === "lost") row.lost_at = now;
 
-  const { error } = await supabase.from("market_signal_company_states").upsert(row, { onConflict: "company_id,market_signal_trade_match_id" });
+  const { error } = await db.from("market_signal_company_states").upsert(row, { onConflict: "company_id,market_signal_trade_match_id" });
   if (error) {
     console.error("market signal action failed", error);
     return { error: "Could not update this opportunity. Please try again." };
@@ -49,7 +51,7 @@ export async function recordMarketSignalAction(input: {
 
   const requestStatus = quoteRequestStatus(parsed.data.action);
   if (requestStatus) {
-    const admin = createAdminClient();
+    const admin = createAdminClient() as unknown as SupabaseClient;
     const { error: syncError } = await admin
       .from("quote_requests")
       .update({ status: requestStatus, updated_at: now })
