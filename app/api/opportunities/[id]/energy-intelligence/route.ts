@@ -56,7 +56,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const { data: application } = await supabase
     .from("planning_applications")
-    .select("id,address_text,postcode")
+    .select("id,address_text,postcode,proposal_description")
     .eq("id", opportunity.planning_application_id)
     .maybeSingle();
   if (!application) return NextResponse.json({ error: "not_found" }, { status: 404 });
@@ -76,10 +76,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   try {
-    const snapshot = await enrichWithEpc({ address: application.address_text, postcode: application.postcode });
+    const snapshot = await enrichWithEpc({
+      address: application.address_text,
+      postcode: application.postcode,
+      projectContext: application.proposal_description,
+    });
     if (!snapshot) {
       return NextResponse.json(
-        { error: "epc_not_matched", message: "No sufficiently confident domestic EPC match was found for this project address." },
+        { error: "epc_not_matched", message: "No sufficiently confident domestic or non-domestic EPC match was found for this project address." },
         { status: 404 },
       );
     }
@@ -93,6 +97,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         company_id: company.id,
         opportunity_id: id,
         planning_application_id: application.id,
+        certificate_scope: snapshot.certificateScope,
         certificate_number: snapshot.certificateNumber,
         uprn: snapshot.uprn,
         matched_address: snapshot.matchedAddress,
@@ -113,6 +118,15 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         walls_description: snapshot.wallsDescription,
         mains_gas: snapshot.mainsGas,
         solar_water_heating: snapshot.solarWaterHeating,
+        energy_mix: snapshot.energyMix,
+        fuel_sources: snapshot.fuelSources,
+        has_heat_pump: snapshot.hasHeatPump,
+        has_solar_pv: snapshot.hasSolarPv,
+        renewable_sources: snapshot.renewableSources,
+        air_conditioning: snapshot.airConditioning,
+        other_fuel_description: snapshot.otherFuelDescription,
+        energy_consumption_current: snapshot.energyConsumptionCurrent,
+        co2_emissions_current: snapshot.co2EmissionsCurrent,
         improvement_signals: snapshot.improvementSignals,
         signal_summary: snapshot.signalSummary,
         registration_date: snapshot.registrationDate,
@@ -132,9 +146,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       provider: "mhclg-epc",
       metadata: {
         certificate_number: snapshot.certificateNumber,
+        certificate_scope: snapshot.certificateScope,
         match_confidence: snapshot.matchConfidence,
         current_band: snapshot.currentBand,
         potential_band: snapshot.potentialBand,
+        energy_mix: snapshot.energyMix,
+        has_heat_pump: snapshot.hasHeatPump,
+        has_solar_pv: snapshot.hasSolarPv,
         signal_count: snapshot.improvementSignals.length,
       },
       created_by: user.id,
@@ -152,10 +170,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
 function safeSelect() {
   return [
-    "id", "certificate_number", "uprn", "matched_address", "postcode", "match_confidence",
+    "id", "certificate_scope", "certificate_number", "uprn", "matched_address", "postcode", "match_confidence",
     "current_band", "current_efficiency", "potential_band", "potential_efficiency", "property_type", "built_form",
     "floor_area", "construction_age_band", "main_heating_description", "main_fuel", "roof_description",
-    "windows_description", "walls_description", "mains_gas", "solar_water_heating", "improvement_signals",
-    "signal_summary", "registration_date", "retrieved_at", "expires_at",
+    "windows_description", "walls_description", "mains_gas", "solar_water_heating", "energy_mix", "fuel_sources",
+    "has_heat_pump", "has_solar_pv", "renewable_sources", "air_conditioning", "other_fuel_description",
+    "energy_consumption_current", "co2_emissions_current", "improvement_signals", "signal_summary", "registration_date",
+    "retrieved_at", "expires_at",
   ].join(",");
 }
