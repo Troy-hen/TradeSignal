@@ -15,28 +15,32 @@ const BUCKETS: { value: OpportunityBucket | ""; label: string; helper: string }[
 const SOURCES = [
   ["", "All intelligence"], ["planning", "Planning"], ["tender", "Tenders"], ["public_pipeline", "Public pipeline"], ["contract_award", "Awards"], ["commercial_development", "Commercial builds"],
 ] as const;
+const BUYERS = [["", "All buyers"], ["local_authority", "Local authority"]] as const;
 const ACTIONS = [
   ["", "All stages"], ["new", "New"], ["saved", "Saved"], ["contacted", "Contacted"], ["bid_planned", "Bid planned"], ["bid_submitted", "Bid submitted"], ["quoted", "Quoted"], ["won", "Won"], ["lost", "Lost"],
 ] as const;
 type SourceFilter = (typeof SOURCES)[number][0];
+type BuyerFilter = (typeof BUYERS)[number][0];
 type ActionFilter = (typeof ACTIONS)[number][0];
 const VALID_BUCKETS = new Set<string>(["hot", "strong", "possible", "low"]);
 const VALID_SOURCES = new Set<string>(SOURCES.map(([value]) => value));
+const VALID_BUYERS = new Set<string>(BUYERS.map(([value]) => value));
 const VALID_ACTIONS = new Set<string>(ACTIONS.map(([value]) => value));
 const PLANNING_ACTIONS = new Set<string>(["new", "saved", "contacted", "quoted", "won", "lost"]);
 
-export default async function OpportunitiesPage({ searchParams }: { searchParams: Promise<{ bucket?: string; action?: string; source?: string }> }) {
+export default async function OpportunitiesPage({ searchParams }: { searchParams: Promise<{ bucket?: string; action?: string; source?: string; buyer?: string }> }) {
   const company = await requireCurrentCompany();
-  const { bucket, action, source } = await searchParams;
+  const { bucket, action, source, buyer } = await searchParams;
   const selectedBucket = bucket && VALID_BUCKETS.has(bucket) ? bucket : "";
   const selectedAction: ActionFilter = action && VALID_ACTIONS.has(action) ? action as ActionFilter : "";
   const selectedSource: SourceFilter = source && VALID_SOURCES.has(source) ? source as SourceFilter : "";
+  const selectedBuyer: BuyerFilter = buyer && VALID_BUYERS.has(buyer) ? buyer as BuyerFilter : "";
   const planningAction = selectedAction && PLANNING_ACTIONS.has(selectedAction) ? selectedAction as OpportunityActionFilter : undefined;
   const supabase = await createClient();
 
   const [{ data: activeClaims }, planningRaw, marketRaw] = await Promise.all([
     supabase.from("territory_claims").select("id").eq("company_id", company.id).eq("status", "active").limit(1),
-    selectedAction.startsWith("bid_") || (selectedSource && selectedSource !== "planning")
+    selectedBuyer || selectedAction.startsWith("bid_") || (selectedSource && selectedSource !== "planning")
       ? Promise.resolve([])
       : getCompanyOpportunities(company.id, { bucket: selectedBucket ? selectedBucket as OpportunityBucket : undefined, action: planningAction, limit: 300 }),
     selectedSource === "planning" ? Promise.resolve([]) : getOwnedMarketSignals(300),
@@ -46,26 +50,29 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
     if (selectedSource && item.signal_type !== selectedSource) return false;
     if (selectedBucket && item.opportunity_bucket !== selectedBucket) return false;
     if (selectedAction && item.current_action !== selectedAction) return false;
+    if (selectedBuyer === "local_authority" && !isLocalAuthorityBuyer(item.buyer_name)) return false;
     return true;
   });
   const planning = planningRaw;
   const totalCount = planning.length + marketSignals.length;
   const hasActiveClaims = (activeClaims?.length ?? 0) > 0;
-  const filtered = Boolean(selectedBucket || selectedAction || selectedSource);
+  const filtered = Boolean(selectedBucket || selectedAction || selectedSource || selectedBuyer);
 
   const exportParams = new URLSearchParams();
   if (selectedBucket) exportParams.set("bucket", selectedBucket);
   if (planningAction) exportParams.set("action", planningAction);
   const exportHref = `/api/opportunities/export${exportParams.toString() ? "?" + exportParams.toString() : ""}`;
 
-  const hrefFor = (overrides: { bucket?: string; action?: string; source?: string }) => {
+  const hrefFor = (overrides: { bucket?: string; action?: string; source?: string; buyer?: string }) => {
     const params = new URLSearchParams();
     const nextBucket = overrides.bucket !== undefined ? overrides.bucket : selectedBucket;
     const nextAction = overrides.action !== undefined ? overrides.action : selectedAction;
     const nextSource = overrides.source !== undefined ? overrides.source : selectedSource;
+    const nextBuyer = overrides.buyer !== undefined ? overrides.buyer : selectedBuyer;
     if (nextBucket) params.set("bucket", nextBucket);
     if (nextAction) params.set("action", nextAction);
     if (nextSource) params.set("source", nextSource);
+    if (nextBuyer) params.set("buyer", nextBuyer);
     return params.toString() ? `/opportunities?${params}` : "/opportunities";
   };
 
@@ -84,8 +91,9 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
       </div>
 
       <section className="rounded-3xl border border-light-grey bg-white p-4 sm:p-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold text-charcoal">One feed, multiple intelligence layers</p><p className="mt-1 text-xs text-slate">Filter by source, commercial strength or workflow stage. Public/commercial records use the same territory entitlement as planning opportunities.</p></div><p className="text-xs font-medium text-slate">{totalCount} {totalCount === 1 ? "opportunity" : "opportunities"}</p></div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold text-charcoal">One feed, multiple intelligence layers</p><p className="mt-1 text-xs text-slate">Filter by source, buyer type, commercial strength or workflow stage. Regional public-sector notices are included only where the delivery region overlaps territory you own for the same trade.</p></div><p className="text-xs font-medium text-slate">{totalCount} {totalCount === 1 ? "opportunity" : "opportunities"}</p></div>
         <div className="mt-4 flex gap-2 overflow-x-auto pb-1">{SOURCES.map(([value, label]) => <Link key={value} href={hrefFor({ source: value })} className={`min-w-max rounded-xl border px-3 py-2 text-sm font-semibold transition ${selectedSource === value ? "border-signal-orange bg-signal-orange text-white" : "border-light-grey bg-white text-charcoal hover:border-signal-orange/40"}`}>{label}</Link>)}</div>
+        <div className="mt-4 flex gap-2 overflow-x-auto border-t border-light-grey pt-4 pb-1">{BUYERS.map(([value, label]) => <Link key={value} href={hrefFor({ buyer: value })} className={`min-w-max rounded-xl border px-3 py-2 text-sm font-semibold transition ${selectedBuyer === value ? "border-signal-orange bg-signal-orange/10 text-signal-orange" : "border-light-grey bg-white text-charcoal hover:border-signal-orange/40"}`}>{label}</Link>)}</div>
         <div className="mt-4 flex gap-2 overflow-x-auto border-t border-light-grey pt-4 pb-1">{BUCKETS.map((item) => <Link key={item.value} href={hrefFor({ bucket: item.value })} className={`flex min-w-max items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition ${selectedBucket === item.value ? "border-charcoal bg-charcoal text-white" : "border-light-grey bg-white text-charcoal hover:border-charcoal/30"}`}><span>{item.label}</span><span className={selectedBucket === item.value ? "text-white/60" : "text-slate"}>{item.helper}</span></Link>)}</div>
         <div className="mt-4 flex flex-wrap gap-2 border-t border-light-grey pt-4">{ACTIONS.map(([value, label]) => <Link key={value} href={hrefFor({ action: value })} className={`rounded-xl border px-3 py-2 text-xs font-semibold transition ${selectedAction === value ? "border-charcoal bg-charcoal text-white" : "border-light-grey bg-white text-charcoal hover:border-signal-orange/40"}`}>{label}</Link>)}</div>
       </section>
@@ -103,4 +111,9 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
       )}
     </div>
   );
+}
+
+function isLocalAuthorityBuyer(value: string | null) {
+  if (!value) return false;
+  return /\b(council|borough|combined authority|local authority)\b/i.test(value);
 }
