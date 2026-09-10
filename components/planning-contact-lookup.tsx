@@ -8,6 +8,7 @@ type Capabilities = { planningContactData?: boolean };
 export function PlanningContactLookup({ opportunityId, hasContacts }: { opportunityId: string; hasContacts: boolean }) {
   const router = useRouter();
   const [enabled, setEnabled] = useState(false);
+  const [checked, setChecked] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -15,12 +16,30 @@ export function PlanningContactLookup({ opportunityId, hasContacts }: { opportun
     let cancelled = false;
     fetch("/api/capabilities", { cache: "no-store" })
       .then((response) => response.ok ? response.json() : null)
-      .then((data: Capabilities | null) => { if (!cancelled) setEnabled(Boolean(data?.planningContactData)); })
-      .catch(() => {});
+      .then((data: Capabilities | null) => {
+        if (cancelled) return;
+        setEnabled(Boolean(data?.planningContactData));
+        setChecked(true);
+      })
+      .catch(() => { if (!cancelled) setChecked(true); });
     return () => { cancelled = true; };
   }, []);
 
-  if (!enabled || hasContacts) return null;
+  if (hasContacts || !checked) return null;
+
+  if (!enabled) {
+    return (
+      <div className="rounded-2xl border border-light-grey bg-soft-surface p-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-sm font-semibold text-charcoal">Published project contacts</p>
+          <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold text-slate">Not enabled</span>
+        </div>
+        <p className="mt-2 text-xs leading-5 text-slate">
+          This planning record did not include a named professional contact in the core feed. Contact lookup is an on-demand enrichment service rather than a field MyTradeBox can safely invent or infer.
+        </p>
+      </div>
+    );
+  }
 
   function lookup() {
     setError(null);
@@ -28,7 +47,13 @@ export function PlanningContactLookup({ opportunityId, hasContacts }: { opportun
       const response = await fetch(`/api/opportunities/${opportunityId}/contacts/lookup`, { method: "POST" });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
-        setError(data.error === "contact_lookup_failed" ? "Published planning contact data was not available for this record." : "Contact lookup could not complete.");
+        if (data.error === "contact_lookup_failed") setError("No published professional contact could be returned for this planning record.");
+        else if (data.error === "contact_provider_not_configured") setError("Planning contact enrichment is temporarily unavailable.");
+        else setError("Contact lookup could not complete.");
+        return;
+      }
+      if (Array.isArray(data.contacts) && data.contacts.length === 0) {
+        setError("The provider returned no published professional contact for this record.");
         return;
       }
       router.refresh();
@@ -36,20 +61,18 @@ export function PlanningContactLookup({ opportunityId, hasContacts }: { opportun
   }
 
   return (
-    <div className="mt-5 rounded-2xl border border-signal-orange/20 bg-signal-orange/[0.04] p-4">
-      <p className="text-sm font-semibold text-charcoal">Published planning contact data available</p>
+    <div className="rounded-2xl border border-signal-orange/20 bg-signal-orange/[0.04] p-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="text-sm font-semibold text-charcoal">Find published project contacts</p>
+        <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold text-signal-orange">On demand</span>
+      </div>
       <p className="mt-1 text-xs leading-5 text-slate">
-        Check Plota for the planning agent&apos;s published business email or phone. This is an explicit lookup because contact-bearing records are metered by the provider.
+        Check the planning-data provider for a published architect, planning agent or business contact. The lookup is explicit because contact-bearing records can be metered and may not exist for every application.
       </p>
-      <button
-        type="button"
-        onClick={lookup}
-        disabled={isPending}
-        className="mt-3 rounded-xl bg-signal-orange px-4 py-2.5 text-xs font-semibold text-white transition hover:brightness-95 disabled:opacity-50"
-      >
-        {isPending ? "Checking…" : "Reveal planning contact"}
+      <button type="button" onClick={lookup} disabled={isPending} className="mt-3 rounded-xl bg-signal-orange px-4 py-2.5 text-xs font-semibold text-white transition hover:brightness-95 disabled:opacity-50">
+        {isPending ? "Checking…" : "Check published contacts"}
       </button>
-      {error && <p className="mt-2 text-xs text-danger">{error}</p>}
+      {error && <p className="mt-2 text-xs leading-5 text-warning">{error}</p>}
     </div>
   );
 }
