@@ -21,7 +21,8 @@ export function MarketSignalRow({ item }: { item: OwnedMarketSignal }) {
           <div className="flex flex-wrap items-center gap-2">
             <span className="rounded-full bg-signal-orange/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-signal-orange">{label}</span>
             {item.opportunity_bucket && <span className="rounded-full bg-soft-surface px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-slate">{item.opportunity_bucket}</span>}
-            <span className="text-xs font-medium text-slate">{item.postcode_district} · {item.trade_name}</span>
+            {item.location_scope === "regional" && <span className="rounded-full bg-charcoal/5 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-charcoal">Regional delivery</span>}
+            <span className="text-xs font-medium text-slate">{item.location_label} · {item.trade_name}</span>
           </div>
           <h3 className="mt-2 truncate text-base font-semibold text-charcoal">{item.title}</h3>
           <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate">
