@@ -152,7 +152,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
 function safeSelect() {
   return [
-    "id", "provider", "certificate_number", "uprn", "matched_address", "postcode", "match_confidence",
+    "id", "certificate_number", "uprn", "matched_address", "postcode", "match_confidence",
     "current_band", "current_efficiency", "potential_band", "potential_efficiency", "property_type", "built_form",
     "floor_area", "construction_age_band", "main_heating_description", "main_fuel", "roof_description",
     "windows_description", "walls_description", "mains_gas", "solar_water_heating", "improvement_signals",
