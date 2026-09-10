@@ -39,7 +39,9 @@ export type OwnedMarketSignal = {
   market_signal_trade_match_id: string;
   signal_type: string;
   title: string;
-  postcode_district: string;
+  postcode_district: string | null;
+  location_label: string;
+  location_scope: "exact" | "regional";
   trade_name: string;
   trade_slug: string;
   procurement_stage: string | null;
@@ -82,7 +84,7 @@ export type MarketSignalDetail = {
   title: string;
   summary: string | null;
   location_text: string | null;
-  postcode_district: string;
+  postcode_district: string | null;
   trade_name: string;
   trade_slug: string;
   project_value_low: number | null;
@@ -138,7 +140,7 @@ export async function getTerritoryTradeSignalFeed(postcodeDistrict: string, trad
 
 export async function getOwnedMarketSignals(limit = 100): Promise<OwnedMarketSignal[]> {
   const client = await db();
-  const { data, error } = await client.rpc("browse_owned_market_signals", { p_limit: limit });
+  const { data, error } = await client.rpc("browse_owned_market_signals_v2", { p_limit: limit });
   if (error) { console.error("owned market signals failed", error); return []; }
   return ((data ?? []) as Array<Record<string, unknown>>).map((row) => normalizeNumbers(row) as OwnedMarketSignal);
 }
