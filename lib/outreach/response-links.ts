@@ -99,7 +99,11 @@ export async function hashQuoteLinkToken(token: string) {
 }
 
 export function buildQuoteLinkUrl(token: string) {
-  const base = (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
+  const configuredBase = process.env.NEXT_PUBLIC_APP_URL?.trim();
+  if (!configuredBase && process.env.NODE_ENV === "production") {
+    throw new Error("NEXT_PUBLIC_APP_URL_NOT_CONFIGURED");
+  }
+  const base = (configuredBase || "http://localhost:3000").replace(/\/$/, "");
   return `${base}/q/${encodeURIComponent(token)}`;
 }
 
@@ -114,10 +118,16 @@ async function persistQuoteLink(input: CreateQuoteLinkInput, token: string, allo
       .eq("token_hash", tokenHash)
       .maybeSingle();
     if (existing) {
-      if (String(existing.status) !== "active") {
-        await admin.from("outreach_response_links").update({ status: "active", expires_at: expiryDate(), updated_at: new Date().toISOString() }).eq("id", existing.id);
+      let expiresAt = String(existing.expires_at);
+      if (String(existing.status) !== "active" || Date.parse(expiresAt) <= Date.now()) {
+        expiresAt = expiryDate();
+        const { error } = await admin
+          .from("outreach_response_links")
+          .update({ status: "active", expires_at: expiresAt, updated_at: new Date().toISOString() })
+          .eq("id", existing.id);
+        if (error) throw error;
       }
-      return { id: String(existing.id), token, url: buildQuoteLinkUrl(token), expiresAt: String(existing.expires_at) };
+      return { id: String(existing.id), token, url: buildQuoteLinkUrl(token), expiresAt };
     }
   }
 
@@ -129,6 +139,7 @@ async function persistQuoteLink(input: CreateQuoteLinkInput, token: string, allo
       .eq("status", "active");
   }
 
+  const expiresAt = expiryDate();
   const { data, error } = await admin
     .from("outreach_response_links")
     .insert({
@@ -139,7 +150,7 @@ async function persistQuoteLink(input: CreateQuoteLinkInput, token: string, allo
       audience_type: input.audienceType,
       token_hash: tokenHash,
       created_by: input.createdBy ?? null,
-      expires_at: expiryDate(),
+      expires_at: expiresAt,
     })
     .select("id,expires_at")
     .single();
