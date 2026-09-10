@@ -42,38 +42,65 @@ export type EpcIntelligenceSnapshot = {
 };
 
 type SearchResult = Record<string, unknown>;
-type SearchResponse = { data?: SearchResult[]; pagination?: Record<string, unknown> };
+type SearchResponse = { data?: unknown; pagination?: Record<string, unknown> };
 type CertificateResponse = { data?: Record<string, unknown> | Record<string, unknown>[] };
 type ScopedCandidate = { candidate: SearchResult; scope: Exclude<EpcCertificateScope, "display">; score: number };
+type SearchQuery = { postcode?: string | null; uprn?: string | null; address?: string | null };
 
 export function isEpcIntelligenceConfigured() {
-  return Boolean(process.env.EPC_API_BEARER_TOKEN?.trim());
+  return Boolean(getBearerToken());
 }
 
 /**
- * Searches both domestic and non-domestic EPC datasets. Project context only
- * provides a small tie-breaker; a poor address match can never be rescued by
- * a guessed building type.
+ * Match order deliberately favours a source UPRN when the planning provider has
+ * supplied one. The official EPC API accepts UPRN, postcode and address search.
+ * If there is no UPRN match we search both domestic and non-domestic datasets by
+ * postcode, then fall back to address search before declaring a genuine no-match.
  */
-export async function enrichWithEpc(input: { address: string; postcode: string; projectContext?: string | null }): Promise<EpcIntelligenceSnapshot | null> {
-  const token = process.env.EPC_API_BEARER_TOKEN?.trim();
+export async function enrichWithEpc(input: { address: string; postcode: string; uprn?: string | null; projectContext?: string | null }): Promise<EpcIntelligenceSnapshot | null> {
+  const token = getBearerToken();
   if (!token) return null;
 
   const postcode = normalizePostcode(input.postcode);
   if (!postcode) return null;
-
-  const [domestic, nonDomestic] = await Promise.all([
-    searchCertificates("domestic", postcode, token),
-    searchCertificates("non-domestic", postcode, token),
-  ]);
-
+  const uprn = normalizeUprn(input.uprn ?? null);
   const preference = inferScopePreference(input.projectContext ?? "");
-  const candidates: ScopedCandidate[] = [
-    ...domestic.map((candidate) => ({ candidate, scope: "domestic" as const, score: addressMatchScore(input.address, candidate) + scopeBonus("domestic", preference) })),
-    ...nonDomestic.map((candidate) => ({ candidate, scope: "non_domestic" as const, score: addressMatchScore(input.address, candidate) + scopeBonus("non_domestic", preference) })),
-  ].sort((a, b) => b.score - a.score || registrationTime(b.candidate) - registrationTime(a.candidate));
 
-  const winner = candidates[0];
+  let candidates: ScopedCandidate[] = [];
+
+  if (uprn) {
+    const [domesticByUprn, nonDomesticByUprn] = await Promise.all([
+      searchCertificates("domestic", { uprn }, token),
+      searchCertificates("non-domestic", { uprn }, token),
+    ]);
+    candidates = rankCandidates(input.address, preference, domesticByUprn, nonDomesticByUprn, true);
+  }
+
+  if (candidates.length === 0) {
+    const [domestic, nonDomestic] = await Promise.all([
+      searchCertificates("domestic", { postcode }, token),
+      searchCertificates("non-domestic", { postcode }, token),
+    ]);
+    candidates = rankCandidates(input.address, preference, domestic, nonDomestic, false);
+  }
+
+  let winner = candidates[0];
+
+  // Some planning feeds format premises differently from the EPC register. If a
+  // postcode search returned nothing sufficiently close, let the API's own
+  // address index provide a second candidate set rather than silently failing.
+  if (!winner || winner.score < 0.52) {
+    const address = addressForSearch(input.address, postcode);
+    if (address) {
+      const [domesticByAddress, nonDomesticByAddress] = await Promise.all([
+        searchCertificates("domestic", { address }, token),
+        searchCertificates("non-domestic", { address }, token),
+      ]);
+      const addressCandidates = rankCandidates(input.address, preference, domesticByAddress, nonDomesticByAddress, false);
+      if (!winner || (addressCandidates[0]?.score ?? -1) > winner.score) winner = addressCandidates[0];
+    }
+  }
+
   if (!winner || winner.score < 0.52) return null;
 
   const certificateNumber = firstDeepString(winner.candidate, ["certificate_number", "certificateNumber", "lmk_key", "lmkKey"]);
@@ -186,13 +213,22 @@ export async function enrichWithEpc(input: { address: string; postcode: string; 
   };
 }
 
-async function searchCertificates(scope: "domestic" | "non-domestic", postcode: string, token: string): Promise<SearchResult[]> {
+function rankCandidates(address: string, preference: ReturnType<typeof inferScopePreference>, domestic: SearchResult[], nonDomestic: SearchResult[], exactUprn: boolean): ScopedCandidate[] {
+  return [
+    ...domestic.map((candidate) => ({ candidate, scope: "domestic" as const, score: exactUprn ? 1 : addressMatchScore(address, candidate) + scopeBonus("domestic", preference) })),
+    ...nonDomestic.map((candidate) => ({ candidate, scope: "non_domestic" as const, score: exactUprn ? 1 : addressMatchScore(address, candidate) + scopeBonus("non_domestic", preference) })),
+  ].sort((a, b) => b.score - a.score || registrationTime(b.candidate) - registrationTime(a.candidate));
+}
+
+async function searchCertificates(scope: "domestic" | "non-domestic", query: SearchQuery, token: string): Promise<SearchResult[]> {
   const searchUrl = new URL(`/api/${scope}/search`, EPC_BASE_URL);
-  searchUrl.searchParams.set("postcode", postcode);
+  if (query.postcode) searchUrl.searchParams.set("postcode", query.postcode);
+  if (query.uprn) searchUrl.searchParams.set("uprn", query.uprn);
+  if (query.address) searchUrl.searchParams.set("address", query.address);
   searchUrl.searchParams.set("page_size", "100");
   try {
     const search = await epcRequest<SearchResponse>(searchUrl, token, true);
-    return Array.isArray(search?.data) ? search.data : [];
+    return normalizeSearchData(search?.data);
   } catch (error) {
     if (error instanceof Error && ["EPC_API_AUTH_FAILED", "EPC_API_RATE_LIMITED"].includes(error.message)) throw error;
     console.warn(`EPC ${scope} search unavailable`, error);
@@ -219,6 +255,24 @@ async function epcRequest<T>(url: URL, token: string, allowNotFound: boolean): P
   }
 }
 
+function getBearerToken() {
+  const raw = process.env.EPC_API_BEARER_TOKEN?.trim();
+  if (!raw) return null;
+  // Accept either the raw token copied from GOV.UK or a value pasted with the
+  // human-readable "Bearer " prefix; the request builder adds the prefix once.
+  return raw.replace(/^Bearer\s+/i, "").trim() || null;
+}
+
+function normalizeSearchData(data: unknown): SearchResult[] {
+  if (Array.isArray(data)) return data.filter(isRecord);
+  if (!isRecord(data)) return [];
+  for (const key of ["certificates", "results", "items", "data"]) {
+    const value = data[key];
+    if (Array.isArray(value)) return value.filter(isRecord);
+  }
+  return [];
+}
+
 function addressMatchScore(inputAddress: string, candidate: SearchResult) {
   const target = normalizeAddress(inputAddress);
   const candidateAddress = normalizeAddress(joinedAddress(candidate) ?? "");
@@ -240,7 +294,7 @@ function addressMatchScore(inputAddress: string, candidate: SearchResult) {
 
 function inferScopePreference(context: string): "domestic" | "non_domestic" | null {
   const normalized = context.toLowerCase();
-  if (/\b(shop|retail|office|commercial|industrial|warehouse|restaurant|cafe|pub|hotel|school|clinic|workplace|business premises|fit[- ]?out|shopfitting|shop fitting)\b/.test(normalized)) return "non_domestic";
+  if (/\b(shop|retail|office|commercial|industrial|warehouse|restaurant|cafe|pub|hotel|school|nursery|clinic|workplace|business premises|fit[- ]?out|shopfitting|shop fitting)\b/.test(normalized)) return "non_domestic";
   if (/\b(house|dwelling|bungalow|flat|apartment|home|residential extension|loft conversion)\b/.test(normalized)) return "domestic";
   return null;
 }
@@ -335,12 +389,8 @@ function deriveImprovementSignals(input: {
   certificateScope: EpcCertificateScope;
 }) {
   const signals: string[] = [];
-  if (input.currentBand && ["D", "E", "F", "G"].includes(input.currentBand)) {
-    signals.push(`Current EPC rating is ${input.currentBand}, indicating meaningful energy-efficiency headroom.`);
-  }
-  if (input.certificateScope === "domestic" && input.currentEfficiency !== null && input.potentialEfficiency !== null && input.potentialEfficiency - input.currentEfficiency >= 10) {
-    signals.push(`The certificate shows ${input.potentialEfficiency - input.currentEfficiency} points of potential efficiency improvement.`);
-  }
+  if (input.currentBand && ["D", "E", "F", "G"].includes(input.currentBand)) signals.push(`Current EPC rating is ${input.currentBand}, indicating meaningful energy-efficiency headroom.`);
+  if (input.certificateScope === "domestic" && input.currentEfficiency !== null && input.potentialEfficiency !== null && input.potentialEfficiency - input.currentEfficiency >= 10) signals.push(`The certificate shows ${input.potentialEfficiency - input.currentEfficiency} points of potential efficiency improvement.`);
   if (containsAny(input.roofDescription, ["no insulation", "limited insulation", "poor", "very poor", "uninsulated"])) signals.push("Roof/loft performance may make insulation-related work commercially relevant.");
   if (containsAny(input.windowsDescription, ["single glazed", "single glazing", "partial double", "poor", "very poor"])) signals.push("Window performance may make glazing or replacement-window work commercially relevant.");
   if (containsAny(input.wallsDescription, ["no insulation", "uninsulated", "poor", "very poor"])) signals.push("Wall performance indicates additional fabric-efficiency improvement potential.");
@@ -380,12 +430,17 @@ function normalizeCertificateData(data: CertificateResponse["data"]): SearchResu
   return isRecord(data) ? data : null;
 }
 
+function addressForSearch(value: string, postcode: string) {
+  const compactPostcode = postcode.replace(/\s+/g, "");
+  return value.replace(new RegExp(postcode.replace(/\s+/g, "\\s*"), "ig"), " ").replace(new RegExp(compactPostcode, "ig"), " ").replace(/\s+/g, " ").trim();
+}
+
 function normalizeAddress(value: string) {
   return value.toLowerCase()
     .replace(/[’']/g, "")
-    .replace(/\b(flat|apartment|apt)\s+/g, "$1 ")
     .replace(/[^a-z0-9]+/g, " ")
     .replace(/\b(the|property|at|england|wales|uk|united kingdom)\b/g, " ")
+    .replace(/\b[a-z]{1,2}\d[a-z\d]?\s*\d[a-z]{2}\b/gi, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -397,11 +452,14 @@ function normalizePostcode(value: string | null) {
   return `${compact.slice(0, -3)} ${compact.slice(-3)}`;
 }
 
-function containsAny(value: string | null, needles: string[]) {
-  const haystack = (value ?? "").toLowerCase();
-  return needles.some((needle) => haystack.includes(needle));
+function normalizeUprn(value: string | null) {
+  if (!value) return null;
+  const digits = value.replace(/\D/g, "");
+  if (!digits || digits.length > 12) return null;
+  return digits.padStart(12, "0");
 }
 
+function containsAny(value: string | null, needles: string[]) { const haystack = (value ?? "").toLowerCase(); return needles.some((needle) => haystack.includes(needle)); }
 function normalizeKey(key: string) { return key.replace(/[^a-z0-9]/gi, "").toLowerCase(); }
 function deepValues(root: unknown, keys: string[]) {
   const wanted = new Set(keys.map(normalizeKey));
@@ -429,13 +487,7 @@ function toBoolean(raw: unknown) { if (typeof raw === "boolean") return raw; if 
 function nullableString(input: unknown) { if (typeof input === "string" && input.trim()) return input.trim(); if (typeof input === "number" && Number.isFinite(input)) return String(input); return null; }
 function upperBand(input: unknown) { const band = nullableString(input)?.toUpperCase() ?? null; return band && /^[A-G]$/.test(band) ? band : null; }
 function isRecord(value: unknown): value is Record<string, unknown> { return Boolean(value) && typeof value === "object" && !Array.isArray(value); }
-function toMeaningfulStrings(value: unknown): string[] {
-  if (typeof value === "string" && value.trim()) return [value.trim()];
-  if (typeof value === "number" && Number.isFinite(value)) return [String(value)];
-  if (Array.isArray(value)) return value.flatMap(toMeaningfulStrings);
-  if (isRecord(value)) return Object.values(value).flatMap(toMeaningfulStrings);
-  return [];
-}
+function toMeaningfulStrings(value: unknown): string[] { if (typeof value === "string" && value.trim()) return [value.trim()]; if (typeof value === "number" && Number.isFinite(value)) return [String(value)]; if (Array.isArray(value)) return value.flatMap(toMeaningfulStrings); if (isRecord(value)) return Object.values(value).flatMap(toMeaningfulStrings); return []; }
 function hasPositiveOrTrueValue(value: unknown): boolean {
   if (value === true) return true;
   if (typeof value === "number") return value > 0;
