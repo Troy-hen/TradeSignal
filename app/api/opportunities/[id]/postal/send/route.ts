@@ -96,6 +96,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       channel: "letter",
       audienceType: "homeowner",
       createdBy: user.id,
+      baseUrl: new URL(request.url).origin,
     });
     const finalContent = appendQuoteLink(body.data.content, quoteLink.url);
 
