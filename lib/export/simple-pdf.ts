@@ -17,6 +17,7 @@ export function renderSimplePdf(input: {
   title: string;
   subtitle?: string;
   sections: PdfSection[];
+  footer?: string;
 }): Uint8Array {
   const logicalLines: Array<{ text: string; bold: boolean; size: number; gapBefore?: number }> = [];
   logicalLines.push({ text: input.title, bold: true, size: 20 });
@@ -92,7 +93,7 @@ export function renderSimplePdf(input: {
       "/F1 8 Tf",
       `0.45 0.45 0.45 rg`,
       `1 0 0 1 ${LEFT} 28 Tm`,
-      `(MyTradeBox - indicative planning intelligence, not a formal valuation) Tj`,
+      `(${escapePdf(input.footer ?? "MyTradeBox - indicative planning intelligence, not a formal valuation")}) Tj`,
       "ET",
     );
 
