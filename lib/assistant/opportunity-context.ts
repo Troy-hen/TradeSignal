@@ -28,7 +28,7 @@ export async function getCurrentOpportunityContext(companyId: string, opportunit
     getStoredPropertyIntelligence(companyId, opportunityId),
     db
       .from("epc_intelligence_records")
-      .select("current_band,current_efficiency,potential_band,potential_efficiency,property_type,built_form,floor_area,construction_age_band,main_heating_description,main_fuel,roof_description,windows_description,walls_description,improvement_signals,signal_summary,registration_date,retrieved_at")
+      .select("certificate_scope,current_band,current_efficiency,potential_band,potential_efficiency,property_type,built_form,floor_area,construction_age_band,main_heating_description,main_fuel,roof_description,windows_description,walls_description,mains_gas,solar_water_heating,energy_mix,fuel_sources,has_heat_pump,has_solar_pv,renewable_sources,air_conditioning,other_fuel_description,energy_consumption_current,co2_emissions_current,improvement_signals,signal_summary,registration_date,retrieved_at")
       .eq("company_id", companyId)
       .eq("opportunity_id", opportunityId)
       .maybeSingle(),
@@ -63,6 +63,7 @@ export async function getCurrentOpportunityContext(companyId: string, opportunit
     matchReasons: opportunity.match_reasons,
     propertyIntelligence,
     epcIntelligence: epcIntelligence ? {
+      certificateScope: epcIntelligence.certificate_scope,
       currentBand: epcIntelligence.current_band,
       currentEfficiency: toNumber(epcIntelligence.current_efficiency),
       potentialBand: epcIntelligence.potential_band,
@@ -73,12 +74,21 @@ export async function getCurrentOpportunityContext(companyId: string, opportunit
       constructionAgeBand: epcIntelligence.construction_age_band,
       heating: epcIntelligence.main_heating_description,
       fuel: epcIntelligence.main_fuel,
+      mainsGas: epcIntelligence.mains_gas,
+      solarWaterHeating: epcIntelligence.solar_water_heating,
+      energyMix: epcIntelligence.energy_mix,
+      fuelSources: stringArray(epcIntelligence.fuel_sources),
+      hasHeatPump: epcIntelligence.has_heat_pump,
+      hasSolarPv: epcIntelligence.has_solar_pv,
+      renewableSources: stringArray(epcIntelligence.renewable_sources),
+      airConditioning: epcIntelligence.air_conditioning,
+      otherFuelDescription: epcIntelligence.other_fuel_description,
+      energyConsumptionCurrent: toNumber(epcIntelligence.energy_consumption_current),
+      co2EmissionsCurrent: toNumber(epcIntelligence.co2_emissions_current),
       roof: epcIntelligence.roof_description,
       windows: epcIntelligence.windows_description,
       walls: epcIntelligence.walls_description,
-      improvementSignals: Array.isArray(epcIntelligence.improvement_signals)
-        ? epcIntelligence.improvement_signals.filter((item): item is string => typeof item === "string")
-        : [],
+      improvementSignals: stringArray(epcIntelligence.improvement_signals),
       summary: epcIntelligence.signal_summary,
       registrationDate: epcIntelligence.registration_date,
       retrievedAt: epcIntelligence.retrieved_at,
@@ -97,3 +107,4 @@ function toNumber(value: unknown) {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
 }
+function stringArray(value: unknown) { return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : []; }
