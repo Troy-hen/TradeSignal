@@ -25,6 +25,7 @@ type CreateQuoteLinkInput = {
   channel: ResponseChannel;
   audienceType: ResponseAudience;
   createdBy?: string | null;
+  baseUrl?: string | null;
 };
 
 export async function createQuoteLink(input: CreateQuoteLinkInput) {
@@ -98,12 +99,19 @@ export async function hashQuoteLinkToken(token: string) {
   return bytesToHex(new Uint8Array(digest));
 }
 
-export function buildQuoteLinkUrl(token: string) {
+export function buildQuoteLinkUrl(token: string, baseUrlOverride?: string | null) {
   const configuredBase = process.env.NEXT_PUBLIC_APP_URL?.trim();
-  if (!configuredBase && process.env.NODE_ENV === "production") {
-    throw new Error("NEXT_PUBLIC_APP_URL_NOT_CONFIGURED");
+  const candidate = configuredBase || baseUrlOverride?.trim() || (process.env.NODE_ENV === "production" ? "" : "http://localhost:3000");
+  if (!candidate) throw new Error("NEXT_PUBLIC_APP_URL_NOT_CONFIGURED");
+
+  let base: string;
+  try {
+    const parsed = new URL(candidate);
+    if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error("unsupported protocol");
+    base = parsed.origin;
+  } catch {
+    throw new Error("QUOTE_LINK_BASE_URL_INVALID");
   }
-  const base = (configuredBase || "http://localhost:3000").replace(/\/$/, "");
   return `${base}/q/${encodeURIComponent(token)}`;
 }
 
@@ -127,7 +135,7 @@ async function persistQuoteLink(input: CreateQuoteLinkInput, token: string, allo
           .eq("id", existing.id);
         if (error) throw error;
       }
-      return { id: String(existing.id), token, url: buildQuoteLinkUrl(token), expiresAt };
+      return { id: String(existing.id), token, url: buildQuoteLinkUrl(token, input.baseUrl), expiresAt };
     }
   }
 
@@ -155,7 +163,7 @@ async function persistQuoteLink(input: CreateQuoteLinkInput, token: string, allo
     .select("id,expires_at")
     .single();
   if (error || !data) throw error ?? new Error("QuoteLink creation failed");
-  return { id: data.id as string, token, url: buildQuoteLinkUrl(token), expiresAt: data.expires_at as string };
+  return { id: data.id as string, token, url: buildQuoteLinkUrl(token, input.baseUrl), expiresAt: data.expires_at as string };
 }
 
 async function deterministicDeliveryToken(secret: string, input: CreateQuoteLinkInput & { deliveryId: string }) {
