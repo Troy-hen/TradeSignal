@@ -18,17 +18,19 @@ const SOURCES = [
 const ACTIONS = [
   ["", "All stages"], ["new", "New"], ["saved", "Saved"], ["contacted", "Contacted"], ["bid_planned", "Bid planned"], ["bid_submitted", "Bid submitted"], ["quoted", "Quoted"], ["won", "Won"], ["lost", "Lost"],
 ] as const;
-const VALID_BUCKETS = new Set(["hot", "strong", "possible", "low"]);
-const VALID_SOURCES = new Set(SOURCES.map(([value]) => value));
-const VALID_ACTIONS = new Set(ACTIONS.map(([value]) => value));
-const PLANNING_ACTIONS = new Set(["new", "saved", "contacted", "quoted", "won", "lost"]);
+type SourceFilter = (typeof SOURCES)[number][0];
+type ActionFilter = (typeof ACTIONS)[number][0];
+const VALID_BUCKETS = new Set<string>(["hot", "strong", "possible", "low"]);
+const VALID_SOURCES = new Set<string>(SOURCES.map(([value]) => value));
+const VALID_ACTIONS = new Set<string>(ACTIONS.map(([value]) => value));
+const PLANNING_ACTIONS = new Set<string>(["new", "saved", "contacted", "quoted", "won", "lost"]);
 
 export default async function OpportunitiesPage({ searchParams }: { searchParams: Promise<{ bucket?: string; action?: string; source?: string }> }) {
   const company = await requireCurrentCompany();
   const { bucket, action, source } = await searchParams;
   const selectedBucket = bucket && VALID_BUCKETS.has(bucket) ? bucket : "";
-  const selectedAction = action && VALID_ACTIONS.has(action) ? action : "";
-  const selectedSource = source && VALID_SOURCES.has(source as (typeof SOURCES)[number][0]) ? source : "";
+  const selectedAction: ActionFilter = action && VALID_ACTIONS.has(action) ? action as ActionFilter : "";
+  const selectedSource: SourceFilter = source && VALID_SOURCES.has(source) ? source as SourceFilter : "";
   const planningAction = selectedAction && PLANNING_ACTIONS.has(selectedAction) ? selectedAction as OpportunityActionFilter : undefined;
   const supabase = await createClient();
 
