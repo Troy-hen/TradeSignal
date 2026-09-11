@@ -23,7 +23,7 @@ Deno.serve(async (req: Request) => {
   try { body = await req.json() as Body; } catch { /* scheduled calls may omit a body */ }
 
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
-  const { data: tradeRows, error: tradeError } = await admin.from("trade_categories").select("id,name,slug").eq("is_active", true);
+  const { data: tradeRows, error: tradeError } = await admin.from("trade_categories").select("id,name,slug,ai_detection_hints").eq("is_active", true);
   if (tradeError) return json({ error: "trade_categories_unavailable", detail: tradeError.message }, 500);
   const trades = (tradeRows ?? []) as TradeCategory[];
 
