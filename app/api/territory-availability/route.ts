@@ -18,10 +18,11 @@ export async function GET(request: Request) {
   if (!(await checkEdgeRateLimit(ip))) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
 
   const supabase = await createClient();
+  const signalFeedDb = supabase as unknown as { rpc: (functionName: string, args: Record<string, unknown>) => Promise<{ data: unknown; error: { message?: string } | null }> };
   const [{ data, error }, { data: teaserData, error: teaserError }, { data: feedData, error: feedError }] = await Promise.all([
     supabase.rpc("check_territory_availability", { p_postcode_district: postcodeDistrict, p_trade_slug: parsed.data.trade }),
     supabase.rpc("browse_territory_teaser", { p_postcode_district: postcodeDistrict, p_trade_slug: parsed.data.trade }),
-    supabase.rpc("browse_territory_trade_signal_feed", { p_postcode_district: postcodeDistrict, p_trade_slug: parsed.data.trade, p_limit: 100 }),
+    signalFeedDb.rpc("browse_territory_trade_signal_feed", { p_postcode_district: postcodeDistrict, p_trade_slug: parsed.data.trade, p_limit: 100 }),
   ]);
 
   if (error) {
