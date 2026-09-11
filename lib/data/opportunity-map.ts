@@ -54,6 +54,90 @@ const REGION_CENTRES: Record<string, { latitude: number; longitude: number }> = 
   "northern ireland": { latitude: 54.7, longitude: -6.6 },
 };
 
+export async function getCanonicalOpportunityMapPoints(limit = 2000) {
+  const supabase = (await createClient()) as unknown as SupabaseClient;
+  const { data: rawOpportunities, error } = await supabase
+    .from("opportunities")
+    .select("id, legacy_application_trade_opportunity_id, location_id, title, status, score, b2b_eligible, customer_visible")
+    .eq("b2b_eligible", true)
+    .eq("customer_visible", true)
+    .order("score", { ascending: false })
+    .limit(limit);
+  if (error || !rawOpportunities?.length) {
+    if (error) console.error("canonical opportunity map failed", error);
+    return [];
+  }
+
+  const opportunities = rawOpportunities as Array<Record<string, unknown>>;
+  const locationIds = [...new Set(opportunities.map((row) => row.location_id).filter((id): id is string => typeof id === "string"))];
+  const legacyIds = [...new Set(opportunities.map((row) => row.legacy_application_trade_opportunity_id).filter((id): id is string => typeof id === "string"))];
+  const [{ data: locations }, { data: legacy }] = await Promise.all([
+    locationIds.length ? supabase.from("business_locations").select("id, postcode_district, town_city, latitude, longitude").in("id", locationIds) : Promise.resolve({ data: [] }),
+    legacyIds.length ? supabase.from("application_trade_opportunities").select("id, estimated_trade_value_low, estimated_trade_value_high").in("id", legacyIds) : Promise.resolve({ data: [] }),
+  ]);
+  const locationById = new Map((locations ?? []).map((row) => [row.id, row]));
+  const legacyById = new Map((legacy ?? []).map((row) => [row.id, row]));
+  const grouped = new Map<string, {
+    postcode_district: string;
+    post_town: string;
+    latitude: number;
+    longitude: number;
+    opportunity_count: number;
+    estimated_trade_value_low: number;
+    estimated_trade_value_high: number;
+    teaser_project_type: string | null;
+    teaser_status: string | null;
+    monthly_price_pence: number;
+  }>();
+
+  for (const opportunity of opportunities) {
+    const location = locationById.get(opportunity.location_id as string);
+    const district = typeof location?.postcode_district === "string" ? location.postcode_district : null;
+    const latitude = Number(location?.latitude);
+    const longitude = Number(location?.longitude);
+    if (!district || !Number.isFinite(latitude) || !Number.isFinite(longitude)) continue;
+    const current = grouped.get(district);
+    const legacyRow = legacyById.get(opportunity.legacy_application_trade_opportunity_id as string);
+    const low = Number(legacyRow?.estimated_trade_value_low ?? 0);
+    const high = Number(legacyRow?.estimated_trade_value_high ?? 0);
+    if (!current) {
+      grouped.set(district, {
+        postcode_district: district,
+        post_town: typeof location?.town_city === "string" && location.town_city ? location.town_city : district,
+        latitude,
+        longitude,
+        opportunity_count: 1,
+        estimated_trade_value_low: Number.isFinite(low) ? low : 0,
+        estimated_trade_value_high: Number.isFinite(high) ? high : 0,
+        teaser_project_type: typeof opportunity.title === "string" ? opportunity.title : null,
+        teaser_status: typeof opportunity.status === "string" ? opportunity.status : null,
+        monthly_price_pence: 2999,
+      });
+    } else {
+      current.latitude = (current.latitude * (current.opportunity_count - 1) + latitude) / current.opportunity_count;
+      current.longitude = (current.longitude * (current.opportunity_count - 1) + longitude) / current.opportunity_count;
+      current.opportunity_count += 1;
+      current.estimated_trade_value_low += Number.isFinite(low) ? low : 0;
+      current.estimated_trade_value_high += Number.isFinite(high) ? high : 0;
+    }
+  }
+
+  return [...grouped.values()].map((point) => ({
+    ...point,
+    commercial_opportunity_count: point.opportunity_count,
+    commercial_estimated_trade_value_low: point.estimated_trade_value_low,
+    commercial_estimated_trade_value_high: point.estimated_trade_value_high,
+    commercial_teaser_project_type: point.teaser_project_type,
+    commercial_teaser_status: point.teaser_status,
+    commercial_teaser_estimated_trade_value_low: point.estimated_trade_value_low,
+    commercial_teaser_estimated_trade_value_high: point.estimated_trade_value_high,
+    trade_category_id: "unified",
+    trade_name: "Relevant opportunities",
+    trade_slug: "unified",
+    territory_status: "available",
+  }));
+}
+
 export async function getMarketSignalMapPoints(limit = 600): Promise<MarketSignalMapPoint[]> {
   const supabase = (await createClient()) as unknown as SupabaseClient;
   const { data, error } = await supabase.rpc("browse_market_signal_map", { p_trade_slug: null, p_limit: limit });
