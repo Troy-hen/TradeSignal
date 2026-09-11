@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState, type CSSProperties } from "react";
+import { useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
 import { formatGbpRange } from "@/components/opportunity-badge";
 import type { MarketSignalMapPoint } from "@/lib/data/opportunity-map";
 
@@ -77,6 +77,48 @@ export function OpportunityMap({ points, signals }: { points: OpportunityMapPoin
   const [layer, setLayer] = useState<Layer>("all");
   const [selection, setSelection] = useState<Selection>(null);
   const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragRef = useRef<{ pointerId: number; startX: number; startY: number; originX: number; originY: number } | null>(null);
+
+  function changeZoom(nextZoom: number) {
+    setZoom((current) => clamp(nextZoom, 0.8, 1.8));
+  }
+
+  function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
+    if (event.button !== 0) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    dragRef.current = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, originX: pan.x, originY: pan.y };
+    setIsDragging(true);
+  }
+
+  function handlePointerMove(event: ReactPointerEvent<HTMLDivElement>) {
+    const drag = dragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    event.preventDefault();
+    setPan({
+      x: clamp(drag.originX + event.clientX - drag.startX, -460, 460),
+      y: clamp(drag.originY + event.clientY - drag.startY, -280, 280),
+    });
+  }
+
+  function endDrag(event: ReactPointerEvent<HTMLDivElement>) {
+    if (dragRef.current?.pointerId === event.pointerId) {
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+      dragRef.current = null;
+      setIsDragging(false);
+    }
+  }
+
+  function handleWheel(event: ReactWheelEvent<HTMLDivElement>) {
+    event.preventDefault();
+    changeZoom(zoom + (event.deltaY < 0 ? 0.1 : -0.1));
+  }
+
+  function resetMap() {
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  }
 
   const filteredPoints = useMemo(() => {
     if (layer === "tender" || layer === "public_pipeline" || layer === "contract_award") return [];
@@ -102,7 +144,7 @@ export function OpportunityMap({ points, signals }: { points: OpportunityMapPoin
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Opportunity map</p>
           <h2 className="mt-2 text-2xl font-bold tracking-tight text-charcoal">See where buying windows are building.</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate">Use the map to spot concentration across the UK. Select a business-change area or public-signal cluster, then open the marketplace for the full teaser.</p>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate">Drag or scroll to explore concentration across the UK. Select a business-change area or public-signal cluster, then open the marketplace for the full teaser.</p>
         </div>
         <Link href="/opportunities" className="shrink-0 text-sm font-semibold text-signal-orange">Open marketplace →</Link>
       </div>
@@ -116,8 +158,17 @@ export function OpportunityMap({ points, signals }: { points: OpportunityMapPoin
       </div>
 
       <div className="mt-5 grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(290px,0.45fr)]">
-        <div className="relative min-h-[430px] min-w-0 overflow-hidden rounded-2xl border border-[#cbd9de] bg-[#e8f0f2] sm:min-h-[560px]">
-          <div className="absolute inset-y-0 left-1/2 h-full w-auto" style={{ aspectRatio: "2 / 1", transform: `translateX(-50%) scale(${zoom})`, transformOrigin: "center" }} aria-label="Approximate opportunity map of the United Kingdom" role="img">
+        <div className="relative min-h-[430px] min-w-0 overflow-hidden rounded-2xl border border-[#cbd9de] bg-[#e8f0f2] sm:min-h-[560px]" role="region" aria-label="Interactive opportunity exploration map">
+          <div
+            className={`absolute inset-y-0 left-1/2 h-full w-auto select-none touch-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
+            style={{ aspectRatio: "2 / 1", transform: `translate3d(calc(-50% + ${pan.x}px), ${pan.y}px, 0) scale(${zoom})`, transformOrigin: "center" }}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={endDrag}
+            onPointerCancel={endDrag}
+            onWheel={handleWheel}
+            aria-label="Approximate opportunity map of the United Kingdom"
+          >
             <div className="absolute inset-0 overflow-hidden bg-[#dbe7e7]">
               <div className="grid h-full w-full grid-cols-4 grid-rows-2">
                 {MAP_TILES.map((tile) => <div key={tile} aria-hidden="true" className="h-full w-full bg-cover bg-center" style={{ backgroundImage: `url(${tile})` }} />)}
@@ -144,14 +195,14 @@ export function OpportunityMap({ points, signals }: { points: OpportunityMapPoin
           </div>
 
           <div className="absolute right-3 top-3 z-40 flex overflow-hidden rounded-xl border border-white/80 bg-white/95 shadow-lg">
-            <button type="button" onClick={() => setZoom((value) => Math.min(1.65, value + 0.15))} className="h-9 w-9 text-lg font-semibold text-charcoal hover:bg-soft-surface" aria-label="Zoom in">+</button>
-            <button type="button" onClick={() => setZoom((value) => Math.max(0.8, value - 0.15))} className="h-9 w-9 border-l border-light-grey text-lg font-semibold text-charcoal hover:bg-soft-surface" aria-label="Zoom out">−</button>
-            <button type="button" onClick={() => setZoom(1)} className="h-9 w-9 border-l border-light-grey text-xs font-semibold text-charcoal hover:bg-soft-surface" aria-label="Reset map">↺</button>
+            <button type="button" onClick={() => changeZoom(zoom + 0.15)} className="h-9 w-9 text-lg font-semibold text-charcoal hover:bg-soft-surface" aria-label="Zoom in">+</button>
+            <button type="button" onClick={() => changeZoom(zoom - 0.15)} className="h-9 w-9 border-l border-light-grey text-lg font-semibold text-charcoal hover:bg-soft-surface" aria-label="Zoom out">−</button>
+            <button type="button" onClick={resetMap} className="h-9 w-9 border-l border-light-grey text-xs font-semibold text-charcoal hover:bg-soft-surface" aria-label="Reset map">↺</button>
           </div>
           <div className="absolute bottom-3 left-3 right-3 z-40 flex gap-3 overflow-x-auto rounded-xl border border-white/80 bg-white/95 px-3 py-2 text-[10px] font-semibold text-slate shadow-sm">
             <span className="min-w-max"><span className="mr-1 inline-block h-2 w-2 rounded-full bg-signal-orange" />Business change</span>
             <span className="min-w-max"><span className="mr-1 inline-block h-2 w-2 rounded bg-charcoal" />Public signal</span>
-            <span className="min-w-max text-slate/70">Approximate markers · © OpenStreetMap contributors</span>
+            <span className="min-w-max text-slate/70">Drag to explore · scroll to zoom</span><span className="min-w-max text-slate/70">Approximate markers · © OpenStreetMap contributors</span>
           </div>
         </div>
 
@@ -261,5 +312,6 @@ function countForLayer(layer: Layer, points: OpportunityMapPoint[], signals: Mar
   return signals.filter((signal) => signal.signal_type === layer).length;
 }
 
+function clamp(value: number, min: number, max: number): number { return Math.min(max, Math.max(min, value)); }
 function humanize(value: string) { return value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()); }
 function signalIcon(value: string) { if (value === "tender") return "T"; if (value === "contract_award") return "A"; if (value === "public_pipeline") return "P"; return "•"; }
