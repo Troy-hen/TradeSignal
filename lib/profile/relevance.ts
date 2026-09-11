@@ -25,6 +25,7 @@ const STOP_WORDS = new Set([
 
 const SYNONYMS: Array<[RegExp, string[]]> = [
   [/epos|payment|card terminal|till|ordering/i, ["hospitality", "restaurant", "cafe", "pub", "hotel", "retail", "checkout"]],
+  [/\\bit\\b|managed it|it support|cyber|technology/i, ["managed it", "technology", "cyber", "office", "business"]],
   [/account|bookkeep|finance|tax|payroll/i, ["office", "business", "finance", "professional services"]],
   [/fit.?out|shopfit|interior|refurb|refit/i, ["fit-out", "interiors", "office", "retail", "workshop", "premises", "conversion"]],
   [/broadband|connectivity|telecom|voip|wifi|internet/i, ["office", "retail", "warehouse", "business", "premises", "connectivity"]],
@@ -64,6 +65,12 @@ export function profileRelevanceScore(profile: CustomerRelevanceProfile | null |
     if (synonymGroup) score += synonymGroup[1].filter((synonym) => haystack.includes(normalize(synonym))).length * 3;
   }
   return score;
+}
+
+export function relevantNeedLabels(profile: CustomerRelevanceProfile | null | undefined, labels: string[]): string[] {
+  if (!profile?.what_do_you_sell?.trim() || labels.length === 0) return labels;
+  const matched = labels.filter((label) => profileRelevanceScore(profile, label) > 0);
+  return matched.length > 0 ? matched : labels;
 }
 
 export function rankByCustomerProfile<T>(
