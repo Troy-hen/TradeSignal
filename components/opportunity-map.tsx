@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type WheelEvent as ReactWheelEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { formatGbpRange } from "@/components/opportunity-badge";
+import { LeadUnlockButton } from "@/components/marketplace/lead-unlock-button";
 import type { MarketSignalMapPoint } from "@/lib/data/opportunity-map";
 
 export type OpportunityMapPoint = {
@@ -29,6 +30,11 @@ export type OpportunityMapPoint = {
   commercial_teaser_status?: string | null;
   commercial_teaser_estimated_trade_value_low?: number | null;
   commercial_teaser_estimated_trade_value_high?: number | null;
+  teaser_opportunity_id?: string | null;
+  teaser_summary?: string | null;
+  teaser_score?: number | null;
+  teaser_needs?: string[];
+  teaser_source?: string | null;
 };
 
 type Layer = "all" | "planning" | "tender" | "public_pipeline" | "contract_award" | "commercial_development";
@@ -80,9 +86,10 @@ export function OpportunityMap({ points, signals }: { points: OpportunityMapPoin
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef<{ pointerId: number; startX: number; startY: number; originX: number; originY: number } | null>(null);
+  const mapViewportRef = useRef<HTMLDivElement>(null);
 
   function changeZoom(nextZoom: number) {
-    setZoom(clamp(nextZoom, 0.8, 1.8));
+    setZoom(clamp(nextZoom, 0.55, 3.2));
   }
 
   function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
@@ -97,8 +104,8 @@ export function OpportunityMap({ points, signals }: { points: OpportunityMapPoin
     if (!drag || drag.pointerId !== event.pointerId) return;
     event.preventDefault();
     setPan({
-      x: clamp(drag.originX + event.clientX - drag.startX, -460, 460),
-      y: clamp(drag.originY + event.clientY - drag.startY, -280, 280),
+      x: clamp(drag.originX + event.clientX - drag.startX, -1000, 1000),
+      y: clamp(drag.originY + event.clientY - drag.startY, -700, 700),
     });
   }
 
@@ -110,15 +117,23 @@ export function OpportunityMap({ points, signals }: { points: OpportunityMapPoin
     }
   }
 
-  function handleWheel(event: ReactWheelEvent<HTMLDivElement>) {
-    event.preventDefault();
-    changeZoom(zoom + (event.deltaY < 0 ? 0.1 : -0.1));
-  }
 
   function resetMap() {
     setZoom(1);
     setPan({ x: 0, y: 0 });
   }
+
+  useEffect(() => {
+    const viewport = mapViewportRef.current;
+    if (!viewport) return;
+    const handleNativeWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setZoom((current) => clamp(current + (event.deltaY < 0 ? 0.12 : -0.12), 0.55, 3.2));
+    };
+    viewport.addEventListener("wheel", handleNativeWheel, { passive: false });
+    return () => viewport.removeEventListener("wheel", handleNativeWheel);
+  }, []);
 
   const filteredPoints = useMemo(() => {
     if (layer === "tender" || layer === "public_pipeline" || layer === "contract_award") return [];
@@ -144,7 +159,7 @@ export function OpportunityMap({ points, signals }: { points: OpportunityMapPoin
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Opportunity map</p>
           <h2 className="mt-2 text-2xl font-bold tracking-tight text-charcoal">See where buying windows are building.</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate">Drag or scroll to explore concentration across the UK. Select a business-change area or public-signal cluster, then open the marketplace for the full teaser.</p>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate">Drag or scroll to explore matched buying windows in your reach. Select a marker to inspect the teaser, then unlock the full lead from the marketplace.</p>
         </div>
         <Link href="/opportunities" className="shrink-0 text-sm font-semibold text-signal-orange">Open marketplace →</Link>
       </div>
@@ -158,7 +173,7 @@ export function OpportunityMap({ points, signals }: { points: OpportunityMapPoin
       </div>
 
       <div className="mt-5 grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(290px,0.45fr)]">
-        <div className="relative min-h-[430px] min-w-0 overflow-hidden rounded-2xl border border-[#cbd9de] bg-[#e8f0f2] sm:min-h-[560px]" role="region" aria-label="Interactive opportunity exploration map">
+        <div ref={mapViewportRef} className="relative min-h-[430px] min-w-0 overflow-hidden overscroll-contain rounded-2xl border border-[#cbd9de] bg-[#e8f0f2] sm:min-h-[560px]" role="region" aria-label="Interactive opportunity exploration map">
           <div
             className={`absolute inset-y-0 left-1/2 h-full w-auto select-none touch-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
             style={{ aspectRatio: "2 / 1", transform: `translate3d(calc(-50% + ${pan.x}px), ${pan.y}px, 0) scale(${zoom})`, transformOrigin: "center" }}
@@ -166,7 +181,6 @@ export function OpportunityMap({ points, signals }: { points: OpportunityMapPoin
             onPointerMove={handlePointerMove}
             onPointerUp={endDrag}
             onPointerCancel={endDrag}
-            onWheel={handleWheel}
             aria-label="Approximate opportunity map of the United Kingdom"
           >
             <div className="absolute inset-0 overflow-hidden bg-[#dbe7e7]">
@@ -219,13 +233,21 @@ function DistrictPanel({ point, layer }: { point: DistrictCluster; layer: Layer 
   const count = commercial ? Number(point.commercial_opportunity_count ?? 0) : Number(point.opportunity_count ?? 0);
   const low = commercial ? Number(point.commercial_estimated_trade_value_low ?? 0) : point.estimated_trade_value_low;
   const high = commercial ? Number(point.commercial_estimated_trade_value_high ?? 0) : point.estimated_trade_value_high;
+  const needs = point.teaser_needs?.filter(Boolean).slice(0, 5) ?? [];
   return <>
     <p className="text-xs font-semibold uppercase tracking-[0.12em] text-signal-orange">Selected area</p>
     <h3 className="mt-2 text-2xl font-bold text-charcoal">{point.post_town || point.postcode_district}</h3>
-    <p className="mt-1 text-sm text-slate">{point.postcode_district} · approximate opportunity density</p>
+    <p className="mt-1 text-sm text-slate">{point.postcode_district} · profile-matched opportunity density</p>
     <dl className="mt-5 space-y-3 border-t border-light-grey pt-4"><Metric label="Open signals" value={String(count)} /><Metric label="Indicative value" value={formatGbpRange(low, high)} /><Metric label="Signal layer" value={commercial ? "Commercial change" : "Business change"} /><Metric label="Map marker" value="Approximate" /></dl>
-    <p className="mt-5 rounded-xl border border-signal-orange/15 bg-white px-3 py-3 text-xs leading-5 text-slate">The map shows density. Open the marketplace to review relevant teasers and choose individual leads to unlock for £20.</p>
-    <Link href="/opportunities?source=planning" className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-signal-orange px-4 py-3 text-sm font-semibold text-white">Review area opportunities →</Link>
+    {point.teaser_project_type && <div className="mt-5 rounded-2xl border border-signal-orange/20 bg-white p-4">
+      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-signal-orange">Top marketplace teaser</p>
+      <h4 className="mt-2 text-base font-bold leading-6 text-charcoal">{point.teaser_project_type}</h4>
+      {point.teaser_summary && <p className="mt-2 text-xs leading-5 text-slate">{point.teaser_summary}</p>}
+      {needs.length > 0 && <div className="mt-3 flex flex-wrap gap-1.5">{needs.map((need) => <span key={need} className="rounded-full bg-soft-surface px-2 py-1 text-[10px] font-semibold text-slate">{need}</span>)}</div>}
+      <div className="mt-4">{point.teaser_opportunity_id ? <LeadUnlockButton opportunityId={point.teaser_opportunity_id} compact /> : <Link href="/opportunities" className="inline-flex w-full items-center justify-center rounded-xl bg-signal-orange px-3 py-2 text-xs font-semibold text-white">Review in marketplace →</Link>}</div>
+    </div>}
+    <p className="mt-5 rounded-xl border border-signal-orange/15 bg-white px-3 py-3 text-xs leading-5 text-slate">This map is a discovery view of the same profile-filtered feed. Open a teaser or use Cards to compare the full queue.</p>
+    <Link href="/opportunities?source=planning" className="mt-4 inline-flex w-full items-center justify-center rounded-xl border border-light-grey bg-white px-4 py-3 text-sm font-semibold text-charcoal">Review area opportunities →</Link>
   </>;
 }
 
@@ -235,7 +257,8 @@ function SignalPanel({ signal }: { signal: MarketSignalMapPoint }) {
     <h3 className="mt-3 text-xl font-bold leading-tight text-charcoal">{signal.title}</h3>
     <p className="mt-2 text-sm leading-6 text-slate">{signal.location_label}{signal.buyer_name ? ` · ${signal.buyer_name}` : ""}</p>
     <dl className="mt-5 space-y-3 border-t border-light-grey pt-4"><Metric label="Customer fit" value={signal.fit_score == null ? "Under review" : `${Math.round(signal.fit_score)}/100`} /><Metric label="Indicative value" value={formatGbpRange(signal.estimated_trade_value_low, signal.estimated_trade_value_high)} /><Metric label="Access" value="Marketplace teaser" /></dl>
-    <Link href={`/opportunities?signal=${encodeURIComponent(signal.market_signal_trade_match_id)}`} className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-signal-orange px-4 py-3 text-sm font-semibold text-white">Review signal →</Link>
+    <div className="mt-5"><LeadUnlockButton marketSignalId={signal.market_signal_trade_match_id} /></div>
+    <Link href={`/opportunities?signal=${encodeURIComponent(signal.market_signal_trade_match_id)}`} className="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-light-grey bg-white px-4 py-3 text-sm font-semibold text-charcoal">Review in marketplace →</Link>
   </>;
 }
 
@@ -271,14 +294,26 @@ function clusterPlanningPoints(points: OpportunityMapPoint[]): DistrictCluster[]
       grouped.set(point.postcode_district, { ...point, sourceCount: 1 });
       continue;
     }
+    const shouldReplaceTeaser = Number(point.teaser_score ?? 0) > Number(existing.teaser_score ?? 0);
     existing.opportunity_count += Number(point.opportunity_count ?? 0);
     existing.estimated_trade_value_low += Number(point.estimated_trade_value_low ?? 0);
     existing.estimated_trade_value_high += Number(point.estimated_trade_value_high ?? 0);
     existing.commercial_opportunity_count = Number(existing.commercial_opportunity_count ?? 0) + Number(point.commercial_opportunity_count ?? 0);
     existing.commercial_estimated_trade_value_low = Number(existing.commercial_estimated_trade_value_low ?? 0) + Number(point.commercial_estimated_trade_value_low ?? 0);
     existing.commercial_estimated_trade_value_high = Number(existing.commercial_estimated_trade_value_high ?? 0) + Number(point.commercial_estimated_trade_value_high ?? 0);
+    existing.teaser_needs = uniqueStrings([...(existing.teaser_needs ?? []), ...(point.teaser_needs ?? [])]);
     existing.sourceCount += 1;
-    if (Number(point.opportunity_count ?? 0) > Number(existing.opportunity_count ?? 0)) Object.assign(existing, point);
+    if (shouldReplaceTeaser) {
+      existing.post_town = point.post_town;
+      existing.latitude = point.latitude;
+      existing.longitude = point.longitude;
+      existing.teaser_opportunity_id = point.teaser_opportunity_id;
+      existing.teaser_project_type = point.teaser_project_type;
+      existing.teaser_summary = point.teaser_summary;
+      existing.teaser_score = point.teaser_score;
+      existing.teaser_needs = point.teaser_needs;
+      existing.teaser_source = point.teaser_source;
+    }
   }
   return [...grouped.values()].sort((a, b) => b.opportunity_count - a.opportunity_count);
 }
@@ -312,6 +347,7 @@ function countForLayer(layer: Layer, points: OpportunityMapPoint[], signals: Mar
   return signals.filter((signal) => signal.signal_type === layer).length;
 }
 
+function uniqueStrings(values: string[]): string[] { return [...new Set(values.filter(Boolean))]; }
 function clamp(value: number, min: number, max: number): number { return Math.min(max, Math.max(min, value)); }
 function humanize(value: string) { return value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()); }
 function signalIcon(value: string) { if (value === "tender") return "T"; if (value === "contract_award") return "A"; if (value === "public_pipeline") return "P"; return "•"; }
