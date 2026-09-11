@@ -3,10 +3,10 @@
 import { useState } from "react";
 
 const REQUEST_TYPES = [
-  ["territory", "Territory availability"],
+  ["territory", "Plan and profile"],
   ["account", "Account or access"],
   ["billing", "Billing"],
-  ["data", "Data coverage"],
+  ["data", "Data or privacy"],
   ["partnership", "Partnership"],
   ["other", "Something else"],
 ] as const;
@@ -51,7 +51,7 @@ export function ContactRequestForm() {
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Send a request</p>
         <h2 className="mt-2 text-2xl font-bold tracking-tight text-charcoal">Tell us what you need.</h2>
         <p className="mt-2 text-sm leading-6 text-slate">
-          We&apos;ll review your message and reply when the support mailbox is connected. No automated email is sent from this form yet.
+          Tell us what you are trying to understand or resolve. We&apos;ll route the request to the right part of the TradeSignal team.
         </p>
       </div>
 
@@ -65,7 +65,7 @@ export function ContactRequestForm() {
             {REQUEST_TYPES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
         </label>
-        <Field label="Postcode district (optional)" name="postcode_district" placeholder="e.g. NR15" maxLength={8} />
+        <Field label="Area or postcode (optional)" name="postcode_district" placeholder="e.g. NR15 or Norwich" maxLength={80} />
         <label className="block sm:col-span-2">
           <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.11em] text-slate">Message</span>
           <textarea
@@ -74,7 +74,7 @@ export function ContactRequestForm() {
             minLength={10}
             maxLength={4000}
             rows={5}
-            placeholder="Tell us what you are trying to do or where you got stuck."
+            placeholder="Tell us what you sell, which area you cover, or where you got stuck."
             className="w-full resize-y rounded-xl border border-light-grey bg-white px-4 py-3 text-sm text-charcoal placeholder:text-slate/60 focus:border-signal-orange focus:outline-none focus:ring-2 focus:ring-signal-orange/15"
           />
         </label>
