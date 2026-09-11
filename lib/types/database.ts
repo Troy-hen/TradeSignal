@@ -2161,6 +2161,7 @@ export type Database = {
           cancelled_at: string | null
           company_id: string
           coverage_area_id: string | null
+          coverage_tier: string
           created_at: string
           created_by: string | null
           currency: string
@@ -2180,6 +2181,7 @@ export type Database = {
           cancelled_at?: string | null
           company_id: string
           coverage_area_id?: string | null
+          coverage_tier?: string
           created_at?: string
           created_by?: string | null
           currency?: string
@@ -2199,6 +2201,7 @@ export type Database = {
           cancelled_at?: string | null
           company_id?: string
           coverage_area_id?: string | null
+          coverage_tier?: string
           created_at?: string
           created_by?: string | null
           currency?: string
