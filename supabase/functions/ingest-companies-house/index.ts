@@ -207,8 +207,8 @@ async function upsertBusinessEntity(
       resolution_confidence: observation.resolutionConfidence,
       resolution_evidence: { provider: PROVIDER_KEY, source_record_id: sourceId },
       origin_source_record_id: sourceId,
-      b2b_status: "review",
-      b2b_eligible: false,
+      b2b_status: "eligible",
+      b2b_eligible: true,
       classification_confidence: 1,
       classification_method: "companies_house_registry_context",
     })
