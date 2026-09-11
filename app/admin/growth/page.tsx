@@ -6,10 +6,9 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminGrowthPage() {
   const db = createAdminClient() as unknown as SupabaseClient;
-  const [{ count: activeOpportunities }, { count: activeMatches }, { count: companies }, { data: eventsData }] = await Promise.all([
+  const [{ count: activeOpportunities }, { count: activeMatches }, { data: eventsData }] = await Promise.all([
     db.from("application_trade_opportunities").select("id", { count: "exact", head: true }).eq("is_active", true),
     db.from("lead_matches").select("id", { count: "exact", head: true }),
-    db.from("companies").select("id", { count: "exact", head: true }).is("deleted_at", null),
     db.from("product_events").select("event_name").limit(10000),
   ]);
   const events = (eventsData ?? []) as Array<{ event_name: string }>;
