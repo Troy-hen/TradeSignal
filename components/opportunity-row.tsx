@@ -1,11 +1,53 @@
-import Link from "next/link";
-import { OpportunityBadge, formatGbpRange } from "@/components/opportunity-badge";
+import { MarketplaceCard } from "@/components/marketplace/marketplace-card";
 import type { OpportunityListItem } from "@/lib/data/opportunities";
 
-const ACTION_LABELS: Record<string, string> = { viewed: "Viewed", saved: "Saved", contacted: "Contacted", quoted: "Quoted", won: "Won", lost: "Lost" };
+export function OpportunityRow({ item, unlocked = false }: { item: OpportunityListItem; unlocked?: boolean }) {
+  return (
+    <MarketplaceCard
+      item={{
+        opportunityId: item.opportunityId,
+        title: item.projectType ?? "Buying-window opportunity",
+        eyebrow: item.isCommercial ? "Commercial change" : "Business change",
+        geography: `${item.district} · approximate area`,
+        score: item.score,
+        bucket: item.bucket,
+        status: item.planningStatus,
+        valueLow: item.valueLow,
+        valueHigh: item.valueHigh,
+        summary: item.summary,
+        recommendedAction: item.recommendedAction,
+        buyingWindow: item.likelyStartWindow ?? item.opportunityTiming,
+        likelyNeeds: inferNeeds(item),
+        signalCount: null,
+        currentAction: item.currentAction,
+        sourceLabel: item.isCommercial ? "Commercial signal" : "Unified intelligence",
+        unlocked,
+      }}
+    />
+  );
+}
 
-function formatStatus(status: string): string { return status.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()); }
-
-export function OpportunityRow({ item }: { item: OpportunityListItem }) {
-  return <Link href={`/opportunities/${item.opportunityId}`} className="group block min-w-0 overflow-hidden rounded-2xl border border-light-grey bg-white p-4 transition hover:-translate-y-0.5 hover:border-signal-orange/40 hover:shadow-[0_12px_32px_rgba(31,41,55,0.08)] sm:p-5"><div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start sm:gap-4"><div className="shrink-0 self-start"><OpportunityBadge bucket={item.bucket} score={item.score} variant="tile" /></div><div className="min-w-0 flex-1"><div className="flex min-w-0 flex-wrap items-start justify-between gap-3"><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><p className="break-words text-[10px] font-semibold uppercase tracking-[0.12em] text-slate sm:tracking-[0.14em]">Profile match · {item.tradeName} · {item.district}</p>{item.isCommercial === true && <span className="rounded-full bg-signal-orange/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-signal-orange">Commercial build</span>}</div><h3 className="mt-1 line-clamp-2 text-base font-semibold tracking-tight text-charcoal sm:text-lg">{item.projectType ?? "Planning opportunity"}</h3></div><span className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] ${item.currentAction ? "bg-soft-surface text-slate" : "bg-signal-orange/10 text-signal-orange"}`}>{item.currentAction ? ACTION_LABELS[item.currentAction] ?? item.currentAction : "New"}</span></div><div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-slate"><span>{formatStatus(item.planningStatus)}</span>{item.receivedDate && <span>Received {item.receivedDate}</span>}<span>Evidence-backed match</span></div>{item.summary && <div className="mt-3 flex min-w-0 gap-2 rounded-xl bg-soft-surface px-3 py-2.5"><span className="mt-0.5 shrink-0 text-signal-orange" aria-hidden="true">✦</span><p className="min-w-0 line-clamp-2 text-xs leading-5 text-slate"><span className="font-semibold text-charcoal">Why now: </span>{item.summary}</p></div>}{item.recommendedAction && <p className="mt-3 line-clamp-2 text-xs text-slate"><span className="font-semibold text-charcoal">Recommended next move: </span>{item.recommendedAction}</p>}<div className="mt-4 flex min-w-0 flex-wrap items-center justify-between gap-3 border-t border-light-grey pt-3"><span className="min-w-0 text-xs text-slate">Indicative trade value <strong className="ml-1 break-words text-sm text-charcoal">{formatGbpRange(item.valueLow, item.valueHigh)}</strong></span><span className="shrink-0 text-xs font-semibold text-signal-orange transition group-hover:text-[#e95f00]">Open opportunity →</span></div></div></div></Link>;
+function inferNeeds(item: OpportunityListItem): string[] {
+  const text = `${item.projectType ?? ""} ${item.summary ?? ""}`.toLowerCase();
+  const needs = new Set<string>();
+  if (/restaurant|cafe|pub|hotel|hospitality|takeaway/.test(text)) {
+    needs.add("Opening infrastructure");
+    needs.add("EPOS and payments");
+    needs.add("Fit-out services");
+  }
+  if (/office|retail|warehouse|industrial|commercial|premises|move|fit.?out/.test(text)) {
+    needs.add("Fit-out and delivery");
+    needs.add("Connectivity");
+    needs.add("Security and access");
+  }
+  if (/care|clinic|dental|health/.test(text)) {
+    needs.add("Care operations");
+    needs.add("IT and compliance");
+  }
+  if (needs.size === 0) {
+    needs.add("Project delivery");
+    needs.add("Supplier services");
+    needs.add("Commercial support");
+  }
+  return [...needs];
 }

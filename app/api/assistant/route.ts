@@ -5,6 +5,7 @@ import { getAssistantOpenAI, resolveTradeSlug, retrieveKnowledge, searchOpportun
 import { searchMarketTradeSignals } from "@/lib/data/trade-intelligence";
 import { getWorkspaceSnapshot } from "@/lib/assistant/workspace-tools";
 import { getCurrentOpportunityContext, opportunityIdFromContextPath } from "@/lib/assistant/opportunity-context";
+import { getCustomerProfile } from "@/lib/data/customer-profile";
 
 const requestSchema = z.object({
   message: z.string().trim().min(1).max(4000),
@@ -38,7 +39,9 @@ export async function POST(request: Request) {
     const planner = await planRetrieval(openai, body.data.message, body.data.history);
     const needsWorkspace = planner.workspaceIntent !== "none";
     const currentOpportunityId = opportunityIdFromContextPath(body.data.contextPath);
-    const tradeSlugPromise = (planner.needsOpportunitySearch || planner.needsMarketSignalSearch) ? resolveTradeSlug(planner.trade) : Promise.resolve(null);
+    const customerProfile = await getCustomerProfile(company.id);
+    const profileTrade = typeof customerProfile?.normalized_profile?.candidateTradeSlug === "string" ? customerProfile.normalized_profile.candidateTradeSlug : null;
+    const tradeSlugPromise = (planner.needsOpportunitySearch || planner.needsMarketSignalSearch) ? resolveTradeSlug(planner.trade ?? profileTrade) : Promise.resolve(null);
 
     const [knowledge, opportunityResults, marketResults, workspace, currentOpportunity] = await Promise.all([
       planner.needsKnowledge ? retrieveKnowledge(body.data.message, 6) : Promise.resolve([]),
@@ -74,15 +77,22 @@ export async function POST(request: Request) {
         results: marketResults,
       } : null,
       workspace: workspaceEvidence,
+      customerProfile: customerProfile ? {
+        whatDoYouSell: customerProfile.what_do_you_sell,
+        idealCustomer: customerProfile.ideal_customer,
+        whereDoYouSell: customerProfile.where_do_you_sell,
+        exclusions: customerProfile.exclusions,
+        normalized: customerProfile.normalized_profile,
+      } : null,
       currentOpportunity,
     };
 
     const response = await openai.responses.create({
-      model: process.env.ASK_MYTRADEBOX_MODEL ?? "gpt-5-mini",
+      model: process.env.ASK_TRADESIGNAL_MODEL ?? process.env.ASK_MYTRADEBOX_MODEL ?? "gpt-5-mini",
       input: [
         {
           role: "system",
-          content: `You are Ask MyTradeBox, a concise commercial assistant for UK trade businesses. Answer only from supplied evidence and ordinary non-sensitive reasoning. Never invent live data. MyTradeBox opportunities can originate from planning applications, public-sector pipeline notices, tenders, contract awards and commercial developments. If live evidence is present, distinguish owned/full results from teaser results. Never embellish teaser results with private project/contact fields or recommendations. For tenders mention deadlines and bid/no-bid urgency where evidence supports it. For contract awards, explain when approaching the awarded supplier/main contractor may create a subcontract opportunity. If workspace evidence is present, prioritise the strongest next actions rather than repeating metrics; inbound quote requests outrank cold opportunities. TwentyCI data is property context only and does not identify or grant permission to contact a homeowner. When there are more matches than returned, state the total and that you are showing the strongest subset. Use pounds sterling and UK terminology. Keep answers practical and short.`,
+          content: `You are Ask TradeSignal, a concise commercial intelligence assistant for UK B2B suppliers. Answer only from supplied evidence and ordinary non-sensitive reasoning. Never invent live data. TradeSignal combines planning, public, commercial-change, business-growth and procurement signals into one opportunity engine. The six internal signal families are Hospitality Openings, Moves & Fit-Outs, Care & Health, Commercial Energy, Growing Businesses and Public Contracts; they are implementation categories, not customer products or subscriptions. Explain which business is relevant, why it is relevant to the supplier profile, why now and who to contact. Distinguish full briefs from teaser results and never invent private company, contact or evidence fields. For public contracts mention deadlines and bid/no-bid urgency where evidence supports it. For contract awards, explain when approaching the awarded supplier/main contractor may create a subcontract opportunity. If workspace evidence is present, prioritise the strongest next actions rather than repeating metrics. Coverage controls geography; the individual £20 unlock reveals the complete opportunity. When there are more matches than returned, state the total and that you are showing the strongest subset. Use pounds sterling and UK terminology. Keep answers practical and short.`,
         },
         ...body.data.history.slice(-6).map((item) => ({ role: item.role, content: item.content } as const)),
         { role: "user", content: `QUESTION:\n${body.data.message}\n\nGROUNDING EVIDENCE:\n${JSON.stringify(evidence)}` },
@@ -107,7 +117,7 @@ export async function POST(request: Request) {
       opportunity_bucket: null,
       summary: null,
       recommended_action: item.recommended_action,
-      territory_status: item.access_level === "full" ? "owned" : "available",
+      coverage_status: item.access_level === "full" ? "included" : "preview",
       monthly_price_pence: 0,
       deadline_at: item.deadline_at,
       buyer_name: item.access_level === "full" ? item.buyer_name : null,
@@ -131,7 +141,7 @@ export async function POST(request: Request) {
           opportunity_bucket: item.bucket,
           summary: null,
           recommended_action: item.recommendation,
-          territory_status: "owned",
+          coverage_status: "included",
           monthly_price_pence: 0,
         }))
       : [];
@@ -150,7 +160,7 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    console.error("Ask MyTradeBox failed", error);
+    console.error("Ask TradeSignal failed", error);
     return NextResponse.json({ error: "assistant_failed" }, { status: 500 });
   }
 }
@@ -166,11 +176,11 @@ function selectWorkspaceEvidence(workspace: Awaited<ReturnType<typeof getWorkspa
 
 async function planRetrieval(openai: NonNullable<ReturnType<typeof getAssistantOpenAI>>, message: string, history: { role: "user" | "assistant"; content: string }[]) {
   const response = await openai.responses.create({
-    model: process.env.ASK_MYTRADEBOX_MODEL ?? "gpt-5-mini",
+    model: process.env.ASK_TRADESIGNAL_MODEL ?? process.env.ASK_MYTRADEBOX_MODEL ?? "gpt-5-mini",
     input: [
       {
         role: "system",
-        content: `Return JSON only. Choose grounded retrieval sources. needsKnowledge=true for product/workflow/scoring/territory/notification/ROI/outreach/property/contactability questions. needsOpportunitySearch=true for planning applications or generic local opportunity searches unless the user explicitly asks only for tenders/procurement/public/commercial work. needsMarketSignalSearch=true for generic local opportunity searches and for tenders, council/local-authority work, public procurement, public pipeline, contract awards or commercial developments. For generic "show opportunities in X" use BOTH planning and market search. signalType=tender for tender/bid opportunities; public_pipeline for future/planned public work; contract_award for awarded work/main-contractor opportunities; commercial_development for private commercial builds; otherwise null. workspaceIntent=priorities for what to focus on/today's priorities/daily brief; coverage for owned territory; expansion for where to buy next; roi for actual pipeline/wins/spend/return; followups for reminders/chasing; otherwise none. Extract location and plain-language trade where supplied. Planning status uses submitted, validated, under_consideration, decision_expected, approved, rejected, withdrawn, appeal_lodged, unknown or null. Use limit 12 unless explicitly fewer, max 25.`,
+        content: `Return JSON only. Choose grounded retrieval sources. needsKnowledge=true for questions about the product model, signal families, scoring, coverage, unlocks, evidence, contactability, CRM, alerts or outcomes. needsOpportunitySearch=true for planning/business-change opportunities and generic local opportunity searches unless the user explicitly asks only for public or commercial signals. needsMarketSignalSearch=true for generic local opportunity searches and for tenders, public procurement, public pipeline, contract awards or commercial developments. For generic "show opportunities in X" use BOTH planning and market search. signalType=tender for tender/bid opportunities; public_pipeline for future/planned public work; contract_award for awarded work/main-contractor opportunities; commercial_development for private commercial builds; otherwise null. workspaceIntent=priorities for what to focus on/today's priorities; coverage for current reach; expansion for where to extend reach; roi for pipeline/wins/spend/return; followups for reminders/chasing; otherwise none. Extract location and plain-language supplier capability, service or likely need where supplied. Planning status uses submitted, validated, under_consideration, decision_expected, approved, rejected, withdrawn, appeal_lodged, unknown or null. Use limit 12 unless explicitly fewer, max 25.`,
       },
       ...history.slice(-4).map((item) => ({ role: item.role, content: item.content } as const)),
       { role: "user", content: message },

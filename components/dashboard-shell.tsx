@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { AskMyTradeBox } from "@/components/ask-mytradebox";
+import { AskTradeSignal } from "@/components/ask-tradesignal";
 import { DashboardNav } from "@/components/dashboard-nav";
 import { InAppNotificationFeed } from "@/components/in-app-notification-feed";
 import { Logo, LogoMark } from "@/components/logo";
@@ -21,12 +21,12 @@ export function DashboardShell({ company, notifications, children }: { company: 
   const initials = company.trading_name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
 
   useEffect(() => {
-    const storedTheme = window.localStorage.getItem("mytradebox-theme");
+    const storedTheme = window.localStorage.getItem("tradesignal-theme");
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     const useDarkTheme = storedTheme === "dark" || (!storedTheme && prefersDark);
     document.documentElement.classList.toggle("dark", useDarkTheme);
     document.documentElement.style.colorScheme = useDarkTheme ? "dark" : "light";
-    const frame = window.requestAnimationFrame(() => setCollapsed(window.localStorage.getItem("mytradebox-sidebar") === "collapsed"));
+    const frame = window.requestAnimationFrame(() => setCollapsed(window.localStorage.getItem("tradesignal-sidebar") === "collapsed"));
     function handleShortcut(event: KeyboardEvent) {
       if ((event.metaKey || event.ctrlKey) && event.key === "\\") {
         event.preventDefault();
@@ -46,7 +46,7 @@ export function DashboardShell({ company, notifications, children }: { company: 
   function toggleSidebar() {
     setCollapsed((current) => {
       const next = !current;
-      window.localStorage.setItem("mytradebox-sidebar", next ? "collapsed" : "expanded");
+      window.localStorage.setItem("tradesignal-sidebar", next ? "collapsed" : "expanded");
       return next;
     });
   }
@@ -54,27 +54,27 @@ export function DashboardShell({ company, notifications, children }: { company: 
   return (
     <div className="min-h-screen min-w-0 overflow-x-hidden bg-soft-surface">
       <aside className={"fixed inset-y-0 left-0 z-40 hidden border-r border-light-grey bg-white transition-[width] duration-200 lg:flex " + (collapsed ? "w-[76px]" : "w-[272px]")} aria-label="Workspace sidebar">
-        <SidebarContent company={company} initials={initials || "MT"} collapsed={collapsed} notificationCount={notificationCount} onToggle={toggleSidebar} />
+        <SidebarContent company={company} initials={initials || "TS"} collapsed={collapsed} notificationCount={notificationCount} onToggle={toggleSidebar} />
       </aside>
 
       {mobileOpen && <>
         <button type="button" aria-label="Close navigation" className="fixed inset-0 z-40 bg-charcoal/40 lg:hidden" onClick={() => setMobileOpen(false)} />
         <aside className="fixed inset-y-0 left-0 z-50 flex w-[286px] max-w-[88vw] border-r border-light-grey bg-white shadow-xl lg:hidden" aria-label="Workspace navigation">
-          <SidebarContent company={company} initials={initials || "MT"} collapsed={false} notificationCount={notificationCount} mobile onToggle={() => setMobileOpen(false)} />
+          <SidebarContent company={company} initials={initials || "TS"} collapsed={false} notificationCount={notificationCount} mobile onToggle={() => setMobileOpen(false)} />
         </aside>
       </>}
 
       <div className={"flex min-h-screen min-w-0 flex-col transition-[margin] duration-200 " + (collapsed ? "lg:ml-[76px]" : "lg:ml-[272px]")}>
         <header className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-light-grey bg-white/95 px-4 backdrop-blur lg:hidden">
           <button type="button" className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate transition hover:bg-soft-surface hover:text-charcoal" aria-label="Open navigation" aria-expanded={mobileOpen} onClick={() => setMobileOpen(true)}><MenuIcon /></button>
-          <Link href="/dashboard" aria-label="MyTradeBox overview" className="inline-flex h-9 w-9 items-center justify-center"><LogoMark className="h-9 w-9" /></Link>
+          <Link href="/dashboard" aria-label="TradeSignal overview" className="inline-flex h-9 w-9 items-center justify-center"><LogoMark className="h-9 w-9" /></Link>
         </header>
         <main className={"min-w-0 flex-1 overflow-x-hidden px-4 py-7 sm:px-6 lg:px-10 lg:py-10 " + (notificationCount > 0 ? "pb-36 md:pb-28" : "")}>
           <div className="mx-auto min-w-0 max-w-[1500px]">{children}</div>
         </main>
       </div>
 
-      <AskMyTradeBox notificationBarVisible={notificationCount > 0} />
+      <AskTradeSignal notificationBarVisible={notificationCount > 0} />
       <InAppNotificationFeed items={notifications} sidebarCollapsed={collapsed} onCountChange={handleNotificationCount} />
     </div>
   );
@@ -84,7 +84,7 @@ function SidebarContent({ company, initials, collapsed, notificationCount, mobil
   return (
     <div className="flex h-full min-h-0 w-full flex-col overflow-hidden">
       <div className={"shrink-0 border-b border-light-grey px-4 py-5 " + (collapsed ? "flex flex-col items-center gap-4" : "flex items-center justify-between gap-3")}>
-        <Link href="/dashboard" aria-label="MyTradeBox overview" onClick={mobile ? onToggle : undefined}>{collapsed ? <LogoMark className="h-9 w-9" /> : <Logo wordmarkClassName="text-xl" />}</Link>
+        <Link href="/dashboard" aria-label="TradeSignal overview" onClick={mobile ? onToggle : undefined}>{collapsed ? <LogoMark className="h-9 w-9" /> : <Logo wordmarkClassName="text-xl" />}</Link>
         <button type="button" onClick={onToggle} aria-label={mobile ? "Close navigation" : collapsed ? "Expand sidebar" : "Collapse sidebar"} aria-expanded={!collapsed} title={mobile ? "Close navigation" : collapsed ? "Expand sidebar" : "Collapse sidebar"} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate transition hover:bg-soft-surface hover:text-charcoal">
           {mobile ? <CloseIcon /> : <SidebarToggleIcon collapsed={collapsed} />}
         </button>

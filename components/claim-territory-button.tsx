@@ -1,77 +1,8 @@
-"use client";
+import Link from "next/link";
 
-import { useState } from "react";
-
-const ERROR_COPY: Record<string, string> = {
-  unauthenticated: "Sign in or create a free account before claiming a territory.",
-  territory_unavailable:
-    "This territory was just claimed by another business. Refresh the page to see current availability.",
-  no_authorized_company: "Finish setting up your company before claiming a territory.",
-  unknown_territory: "We couldn't recognise that postcode district or trade.",
-  reservation_failed: "We couldn't reserve this territory. Please refresh and try again.",
-  checkout_failed: "Something went wrong starting checkout. Please try again.",
-  demo_activation_failed: "We could not activate the demo territory. Please try again.",
-};
-
-export function ClaimTerritoryButton({
-  postcodeDistrict,
-  tradeCategoryId,
-  priceLabel,
-}: {
-  postcodeDistrict: string;
-  tradeCategoryId: string;
-  priceLabel: string;
-}) {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleClaim() {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/checkout/territory", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          postcode_district: postcodeDistrict,
-          trade_category_id: tradeCategoryId,
-        }),
-      });
-      const body = await res.json().catch(() => ({}) as { error?: string; url?: string });
-
-      if (!res.ok || !body.url) {
-        setError(ERROR_COPY[body.error ?? ""] ?? "Something went wrong. Please try again.");
-        setIsLoading(false);
-        return;
-      }
-
-      window.location.href = body.url;
-    } catch {
-      setError("Network error — please try again.");
-      setIsLoading(false);
-    }
-  }
-
-  return (
-    <div className="rounded-2xl bg-charcoal p-5 text-white sm:flex sm:items-center sm:justify-between sm:gap-5">
-      <div>
-        <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-signal-orange">Ready to unlock?</p>
-        <p className="mt-2 text-sm leading-6 text-white/65">
-          Secure exclusive access to {postcodeDistrict} and reveal the full opportunity brief.
-        </p>
-      </div>
-      <div className="mt-4 shrink-0 sm:mt-0">
-        <button
-          type="button"
-          onClick={handleClaim}
-          disabled={isLoading}
-          aria-busy={isLoading}
-          className="w-full rounded-xl bg-signal-orange px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#e95f00] disabled:opacity-60 sm:w-auto"
-        >
-          {isLoading ? "Starting checkout…" : "Claim " + postcodeDistrict + " — " + priceLabel + "/month"}
-        </button>
-        {error && <p role="alert" className="mt-2 max-w-sm text-sm text-danger">{error}</p>}
-      </div>
-    </div>
-  );
+/** Compatibility wrapper for older detail routes. Customer geography is no
+ * longer exclusive; plan selection happens in Coverage and lead unlocks are
+ * handled per opportunity from the marketplace. */
+export function ClaimTerritoryButton({ postcodeDistrict }: { postcodeDistrict: string; tradeCategoryId?: string; priceLabel?: string }) {
+  return <div className="rounded-2xl bg-charcoal p-5 text-white sm:flex sm:items-center sm:justify-between sm:gap-5"><div><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-signal-orange">Choose your coverage</p><p className="mt-2 text-sm leading-6 text-white/65">{postcodeDistrict} is a preview area, not an exclusive territory. Choose Local, Regional or Nationwide coverage, then unlock individual opportunities from the marketplace.</p></div><Link href="/coverage" className="mt-4 inline-flex shrink-0 items-center justify-center rounded-xl bg-signal-orange px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#e95f00] sm:mt-0">Open coverage →</Link></div>;
 }

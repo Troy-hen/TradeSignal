@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
+import { useState } from "react";
 import { LockedOpportunityPreview } from "@/components/locked-opportunity-preview";
 import { normalisePostcodeDistrict } from "@/lib/postcode";
 import { formatGbp } from "@/components/opportunity-badge";
 
-interface TradeOption { slug: string; name: string; }
 interface CheckerResult {
   applications_last_30d: number;
   high_priority_count: number;
@@ -16,43 +15,37 @@ interface CheckerResult {
   monthly_price_pence: number;
   signal_breakdown?: { hot: number; warm: number; early: number } | null;
   market_breakdown?: Array<{ key: string; count: number }> | null;
+  normalized_profile?: { label: string; keywords: string[]; source: "ai" | "fallback" } | null;
   teaser?: { project_type: string | null; planning_status: string | null; estimated_trade_value_low: number | null; estimated_trade_value_high: number | null } | null;
 }
 
-const FALLBACK_TRADE: TradeOption = { slug: "general-builder", name: "General Builder" };
-
-function MapPinIcon() {
-  return <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M12 21s7-5.25 7-11a7 7 0 1 0-14 0c0 5.75 7 11 7 11Z" /><circle cx="12" cy="10" r="2.25" /></svg>;
-}
-
-export function TerritoryCheckerWidget({ trades, compact = false }: { trades: TradeOption[]; compact?: boolean }) {
-  const options = trades.length > 0 ? trades : [FALLBACK_TRADE];
+export function TerritoryCheckerWidget({ compact = false }: { trades?: unknown[]; compact?: boolean }) {
   const [district, setDistrict] = useState("");
-  const [tradeSlug, setTradeSlug] = useState(options[0]?.slug ?? FALLBACK_TRADE.slug);
+  const [whatDoYouSell, setWhatDoYouSell] = useState("");
   const [result, setResult] = useState<CheckerResult | null>(null);
   const [checkedDistrict, setCheckedDistrict] = useState("");
-  const [checkedTradeName, setCheckedTradeName] = useState("");
+  const [checkedProfile, setCheckedProfile] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
     const cleaned = normalisePostcodeDistrict(district);
-    if (!cleaned || !tradeSlug) return;
+    if (!cleaned || !whatDoYouSell.trim()) return;
     setIsLoading(true);
     setError(null);
     setResult(null);
     try {
-      const requestUrl = "/api/territory-availability?postcode=" + encodeURIComponent(cleaned) + "&trade=" + encodeURIComponent(tradeSlug);
-      const res = await fetch(requestUrl);
-      const body = await res.json();
-      if (!res.ok) {
-        setError(res.status === 429 ? "Too many searches — please wait a moment and try again." : body.error === "unknown_postcode_district" ? "We don't cover that postcode district yet. Try NR15, IP22 or SW11." : body.error === "unknown_trade" ? "We couldn't recognise that supplier category." : "Something went wrong. Please try again.");
+      const requestUrl = "/api/territory-availability?postcode=" + encodeURIComponent(cleaned) + "&profile=" + encodeURIComponent(whatDoYouSell.trim());
+      const response = await fetch(requestUrl);
+      const body = await response.json();
+      if (!response.ok) {
+        setError(response.status === 429 ? "Too many searches — please wait a moment and try again." : body.error === "unknown_postcode_district" ? "We do not cover that postcode district yet. Try NR15, IP22 or SW11." : body.error === "profile_not_recognised" ? "We could not match that description to the current signal inventory yet." : "Something went wrong. Please try again.");
         return;
       }
-      setResult(body);
+      setResult(body as CheckerResult);
       setCheckedDistrict(cleaned);
-      setCheckedTradeName(options.find((trade) => trade.slug === tradeSlug)?.name ?? tradeSlug);
+      setCheckedProfile(body.normalized_profile?.label ?? whatDoYouSell.trim());
     } catch {
       setError("Network error — please try again.");
     } finally {
@@ -62,18 +55,18 @@ export function TerritoryCheckerWidget({ trades, compact = false }: { trades: Tr
 
   return (
     <div className={compact ? "rounded-2xl border border-light-grey bg-white p-4 text-charcoal shadow-[0_18px_50px_rgba(31,41,55,0.12)] sm:p-5" : "rounded-3xl border border-light-grey bg-white p-5 text-charcoal shadow-[0_18px_50px_rgba(31,41,55,0.08)] sm:p-7"}>
-      <div className="flex items-start gap-3"><div className={compact ? "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-signal-orange/10 text-signal-orange" : "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-signal-orange/10 text-signal-orange"}><MapPinIcon /></div><div><p className="font-semibold text-charcoal">Preview your opportunity feed</p><p className="mt-1 text-sm leading-6 text-slate">{compact ? "Choose what you sell and a starting location. Preview the signal before you create your profile." : "Start with a location preview. Your full profile later controls which opportunities the engine considers relevant."}</p></div></div>
+      <div className="flex items-start gap-3"><div className={compact ? "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-signal-orange/10 text-signal-orange" : "flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-signal-orange/10 text-signal-orange"}><MapPinIcon /></div><div><p className="font-semibold text-charcoal">Preview your opportunity feed</p><p className="mt-1 text-sm leading-6 text-slate">Describe what you sell in your own words. The intelligence engine normalises it, then uses the location to show the kind of buying signals in reach.</p></div></div>
 
-      <form onSubmit={handleSubmit} className={compact ? "mt-5 grid gap-3" : "mt-6 grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"}>
-        <label className="block"><span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.12em] text-slate">What do you sell?</span><select value={tradeSlug} onChange={(e) => setTradeSlug(e.target.value)} aria-label="What do you sell?" className="w-full rounded-xl border border-light-grey bg-white px-4 py-3 text-sm text-charcoal focus:border-signal-orange focus:outline-none focus:ring-2 focus:ring-signal-orange/15">{options.map((trade) => <option key={trade.slug} value={trade.slug}>{trade.name}</option>)}</select></label>
-        <label className="block"><span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.12em] text-slate">Starting location</span><input value={district} onChange={(e) => setDistrict(e.target.value)} placeholder="e.g. NR15" aria-label="Starting location" autoComplete="postal-code" required maxLength={8} className="w-full rounded-xl border border-light-grey bg-white px-4 py-3 text-sm text-charcoal placeholder:text-slate/70 focus:border-signal-orange focus:outline-none focus:ring-2 focus:ring-signal-orange/15" /></label>
-        <button type="submit" disabled={isLoading} className={compact ? "inline-flex items-center justify-center rounded-xl bg-signal-orange px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#e95f00] disabled:cursor-not-allowed disabled:opacity-60 sm:mt-5" : "inline-flex items-center justify-center rounded-xl bg-signal-orange px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#e95f00] disabled:cursor-not-allowed disabled:opacity-60 sm:mt-5"}>{isLoading ? "Checking…" : "Preview signal"}</button>
+      <form onSubmit={handleSubmit} className={compact ? "mt-5 grid gap-3" : "mt-6 grid gap-3 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)_auto]"}>
+        <label className="block"><span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.12em] text-slate">What do you sell?</span><input value={whatDoYouSell} onChange={(event) => setWhatDoYouSell(event.target.value)} placeholder="e.g. EPOS and payment systems for restaurants" aria-label="What do you sell?" required maxLength={500} className="w-full rounded-xl border border-light-grey bg-white px-4 py-3 text-sm text-charcoal placeholder:text-slate/70 focus:border-signal-orange focus:outline-none focus:ring-2 focus:ring-signal-orange/15" /></label>
+        <label className="block"><span className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.12em] text-slate">Where do you sell?</span><input value={district} onChange={(event) => setDistrict(event.target.value)} placeholder="e.g. NR15" aria-label="Where do you sell?" autoComplete="postal-code" required maxLength={8} className="w-full rounded-xl border border-light-grey bg-white px-4 py-3 text-sm text-charcoal placeholder:text-slate/70 focus:border-signal-orange focus:outline-none focus:ring-2 focus:ring-signal-orange/15" /></label>
+        <button type="submit" disabled={isLoading} className="inline-flex items-center justify-center rounded-xl bg-signal-orange px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#e95f00] disabled:cursor-not-allowed disabled:opacity-60 sm:mt-5">{isLoading ? "Normalising…" : "Preview signal"}</button>
       </form>
 
-      <p className="mt-3 text-xs text-slate">{compact ? "No account needed. Final coverage can use counties, towns, cities, a radius or the whole UK." : "Try a starting location such as NR15, IP22 or SW11."}</p>
+      <p className="mt-3 text-xs text-slate">Free text in, structured profile out. Try a postcode district such as NR15, IP22 or SW11.</p>
       {error && <p role="alert" className="mt-4 rounded-xl bg-danger/10 px-4 py-3 text-sm font-medium text-danger">{error}</p>}
 
-      {result && <div role="status" className="mt-6 border-t border-light-grey pt-6 text-left"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate">{checkedTradeName} · {checkedDistrict}</p><h3 className="mt-2 text-lg font-semibold text-charcoal">Relevant opportunity preview</h3></div><span className="inline-flex items-center gap-2 rounded-full bg-success/10 px-3 py-1.5 text-xs font-semibold text-success"><span className="h-2 w-2 rounded-full bg-success" />Preview ready</span></div><div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"><Stat label="Signals · 30 days" value={String(result.applications_last_30d)} /><Stat label="High priority" value={String(result.high_priority_count)} /><Stat label="Activity value" value={formatGbp(result.estimated_construction_activity_gbp)} /><Stat label="Profile-fit value" value={formatGbp(result.estimated_trade_value_gbp)} /></div>{result.signal_breakdown && <div className="mt-5 rounded-2xl border border-light-grey bg-soft-surface p-4"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate">Current signal mix</p><span className="text-[11px] text-slate">Across available intelligence sources</span></div><div className="mt-3 grid grid-cols-3 gap-2"><SignalStat label="Hot" value={result.signal_breakdown.hot} tone="orange" /><SignalStat label="Warm" value={result.signal_breakdown.warm} tone="blue" /><SignalStat label="Early" value={result.signal_breakdown.early} tone="green" /></div>{result.market_breakdown && result.market_breakdown.length > 0 && <div className="mt-4 flex flex-wrap gap-2">{result.market_breakdown.map((source) => <span key={source.key} className="rounded-full border border-light-grey bg-white px-2.5 py-1 text-[11px] font-medium text-slate">{formatSource(source.key)} · {source.count}</span>)}</div>}</div>}{!result.signal_breakdown && <p className="mt-5 rounded-2xl border border-dashed border-light-grey p-4 text-xs leading-5 text-slate">The scored signal mix will appear as the source feed is populated.</p>}<div className="mt-5"><LockedOpportunityPreview compact title="Preview the opportunity shape" body="See enough to decide whether this is worth your time. Unlock the full opportunity for £20 when the fit is clear." teaser={result.teaser ? { projectType: result.teaser.project_type, status: result.teaser.planning_status, estimatedTradeValueLow: result.teaser.estimated_trade_value_low, estimatedTradeValueHigh: result.teaser.estimated_trade_value_high } : null} /></div><div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-soft-surface p-4"><div><p className="font-semibold text-charcoal">Ready to build your profile?</p><p className="mt-1 text-sm text-slate">Choose Local, Regional or Nationwide coverage; all relevant sources stay included.</p></div><Link href="/signup" className="inline-flex items-center rounded-xl bg-signal-orange px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#e95f00]">Create account</Link></div></div>}
+      {result && <div role="status" className="mt-6 border-t border-light-grey pt-6 text-left"><div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate">{checkedDistrict} · normalised profile</p><h3 className="mt-2 text-lg font-semibold text-charcoal">{checkedProfile}</h3><p className="mt-1 text-xs text-slate">{result.normalized_profile?.source === "ai" ? "AI-normalised from your description" : "Profile preview normalised from your description"}</p></div><span className="inline-flex items-center gap-2 rounded-full bg-success/10 px-3 py-1.5 text-xs font-semibold text-success"><span className="h-2 w-2 rounded-full bg-success" />Preview ready</span></div>{result.normalized_profile?.keywords?.length ? <div className="mt-4 flex flex-wrap gap-2">{result.normalized_profile.keywords.slice(0, 5).map((keyword) => <span key={keyword} className="rounded-full bg-soft-surface px-2.5 py-1 text-[11px] font-medium text-slate">{keyword}</span>)}</div> : null}<div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4"><Stat label="Signals · 30 days" value={String(result.applications_last_30d)} /><Stat label="High priority" value={String(result.high_priority_count)} /><Stat label="Activity value" value={formatGbp(result.estimated_construction_activity_gbp)} /><Stat label="Profile-fit value" value={formatGbp(result.estimated_trade_value_gbp)} /></div>{result.signal_breakdown && <div className="mt-5 rounded-2xl border border-light-grey bg-soft-surface p-4"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate">Current signal mix</p><span className="text-[11px] text-slate">Across available intelligence sources</span></div><div className="mt-3 grid grid-cols-3 gap-2"><SignalStat label="Hot" value={result.signal_breakdown.hot} tone="orange" /><SignalStat label="Warm" value={result.signal_breakdown.warm} tone="blue" /><SignalStat label="Early" value={result.signal_breakdown.early} tone="green" /></div>{result.market_breakdown && result.market_breakdown.length > 0 && <div className="mt-4 flex flex-wrap gap-2">{result.market_breakdown.map((source) => <span key={source.key} className="rounded-full border border-light-grey bg-white px-2.5 py-1 text-[11px] font-medium text-slate">{formatSource(source.key)} · {source.count}</span>)}</div>}</div>}{!result.signal_breakdown && <p className="mt-5 rounded-2xl border border-dashed border-light-grey p-4 text-xs leading-5 text-slate">The scored signal mix will appear as the source feed is populated.</p>}<div className="mt-5"><LockedOpportunityPreview compact title="Preview the opportunity shape" body="See enough to decide whether this is worth your time. Unlock the full opportunity for £20 when the fit is clear." teaser={result.teaser ? { projectType: result.teaser.project_type, status: result.teaser.planning_status, estimatedTradeValueLow: result.teaser.estimated_trade_value_low, estimatedTradeValueHigh: result.teaser.estimated_trade_value_high } : null} /></div><div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-soft-surface p-4"><div><p className="font-semibold text-charcoal">Ready to build your profile?</p><p className="mt-1 text-sm text-slate">Choose Local, Regional or Nationwide coverage; all relevant sources stay included.</p></div><Link href="/signup" className="inline-flex items-center rounded-xl bg-signal-orange px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#e95f00]">Create account</Link></div></div>}
     </div>
   );
 }
@@ -81,3 +74,4 @@ export function TerritoryCheckerWidget({ trades, compact = false }: { trades: Tr
 function Stat({ label, value }: { label: string; value: string }) { return <div className="rounded-2xl border border-light-grey bg-white p-3"><p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-slate">{label}</p><p className="mt-1 text-xl font-bold tracking-tight text-charcoal">{value}</p></div>; }
 function SignalStat({ label, value, tone }: { label: string; value: number; tone: "orange" | "blue" | "green" }) { const styles = { orange: "text-signal-orange", blue: "text-slate", green: "text-success" }[tone]; return <div className="rounded-xl border border-light-grey bg-white p-3"><p className={`text-[10px] font-bold uppercase tracking-[0.1em] ${styles}`}>{label}</p><p className="mt-1 text-lg font-bold text-charcoal">{value}</p></div>; }
 function formatSource(value: string): string { return value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()); }
+function MapPinIcon() { return <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M12 21s7-5.25 7-11a7 7 0 1 0-14 0c0 5.75 7 11 7 11Z" /><circle cx="12" cy="10" r="2.25" /></svg>; }

@@ -9,7 +9,7 @@ const sora = Sora({
 });
 
 const themeInitScript = `try {
-  var storedTheme = window.localStorage.getItem("mytradebox-theme");
+  var storedTheme = window.localStorage.getItem("tradesignal-theme");
   var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
   var appRoutes = ["/dashboard", "/opportunities", "/markets", "/territories", "/coverage", "/crm", "/roi", "/billing", "/settings", "/my-territories", "/admin"];
   var isAppRoute = appRoutes.some(function (prefix) {
@@ -27,11 +27,11 @@ const themeInitScript = `try {
 
 export const metadata: Metadata = {
   title: {
-    default: "MyTradeBox — Find businesses ready to buy",
-    template: "%s · MyTradeBox",
+    default: "TradeSignal — Find businesses ready to buy",
+    template: "%s · TradeSignal",
   },
   description:
-    "MyTradeBox turns UK business and planning signals into qualified, actionable opportunities for trade businesses.",
+    "TradeSignal turns UK business signals into qualified, actionable opportunities for growing suppliers.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

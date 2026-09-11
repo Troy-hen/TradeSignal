@@ -2,6 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export type TerritoryTradeIntelligence = {
   postcode_district: string;
@@ -179,4 +180,67 @@ function normalizeNumbers(row: Record<string, unknown>): Record<string, unknown>
     if (output[key] !== null && output[key] !== undefined) output[key] = Number(output[key]);
   }
   return output;
+}
+
+
+/**
+ * Reads the complete market signal server-side after a paid lead unlock.
+ * The legacy owned-signal RPC is intentionally territory-scoped; this path
+ * keeps the new £20 opportunity purchase independent from territory ownership.
+ */
+export async function getMarketSignalForLeadUnlock(matchId: string): Promise<MarketSignalDetail | null> {
+  const admin = createAdminClient() as unknown as SupabaseClient;
+  const { data: match, error: matchError } = await admin.from("market_signal_trade_matches").select("*").eq("id", matchId).eq("is_active", true).maybeSingle();
+  if (matchError || !match) return null;
+  const matchRow = match as Record<string, unknown>;
+  const [{ data: signal, error: signalError }, { data: trade, error: tradeError }] = await Promise.all([
+    admin.from("market_signals").select("*").eq("id", matchRow.signal_id).eq("is_active", true).maybeSingle(),
+    admin.from("trade_categories").select("name,slug").eq("id", matchRow.trade_category_id).maybeSingle(),
+  ]);
+  if (signalError || tradeError || !signal) return null;
+  const signalRow = signal as Record<string, unknown>;
+  const tradeRow = (trade ?? {}) as Record<string, unknown>;
+  return normalizeNumbers({
+    market_signal_trade_match_id: matchRow.id,
+    signal_id: signalRow.id,
+    signal_type: signalRow.signal_type,
+    title: signalRow.title,
+    summary: signalRow.summary ?? null,
+    location_text: signalRow.location_text ?? null,
+    postcode_district: signalRow.postcode_district ?? null,
+    trade_name: tradeRow.name ?? "Matched profile",
+    trade_slug: tradeRow.slug ?? "",
+    project_value_low: signalRow.estimated_project_value_low ?? null,
+    project_value_high: signalRow.estimated_project_value_high ?? null,
+    estimated_trade_value_low: matchRow.estimated_trade_value_low ?? null,
+    estimated_trade_value_high: matchRow.estimated_trade_value_high ?? null,
+    fit_score: matchRow.fit_score ?? null,
+    opportunity_bucket: matchRow.opportunity_bucket ?? bucketForScore(matchRow.fit_score),
+    match_reasons: Array.isArray(matchRow.match_reasons) ? matchRow.match_reasons.filter((value): value is string => typeof value === "string") : [],
+    recommended_action: matchRow.recommended_action ?? null,
+    procurement_stage: signalRow.procurement_stage ?? signalRow.notice_type ?? null,
+    notice_type: signalRow.notice_type ?? null,
+    buyer_name: signalRow.buyer_name ?? null,
+    buyer_identifier: signalRow.buyer_identifier ?? null,
+    supplier_name: signalRow.supplier_name ?? null,
+    deadline_at: signalRow.deadline_at ?? null,
+    contract_start_date: signalRow.contract_start_date ?? null,
+    contract_end_date: signalRow.contract_end_date ?? null,
+    cpv_codes: Array.isArray(signalRow.cpv_codes) ? signalRow.cpv_codes.filter((value): value is string => typeof value === "string") : [],
+    contact: signalRow.contact ?? null,
+    source: signalRow.source,
+    source_url: signalRow.source_url ?? null,
+    external_ocid: signalRow.external_ocid ?? null,
+    published_at: signalRow.published_at ?? null,
+    current_action: "new",
+  }) as MarketSignalDetail;
+}
+
+function bucketForScore(value: unknown): string | null {
+  const score = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(score)) return null;
+  if (score >= 90) return "hot";
+  if (score >= 75) return "strong";
+  if (score >= 50) return "possible";
+  return "low";
 }

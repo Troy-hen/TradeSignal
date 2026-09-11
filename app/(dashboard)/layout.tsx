@@ -31,7 +31,7 @@ function PublicShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-soft-surface">
       <header className="border-b border-light-grey bg-white/95 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-10">
-          <Link href="/" aria-label="MyTradeBox home">
+          <Link href="/" aria-label="TradeSignal home">
             <Logo wordmarkClassName="text-lg" />
           </Link>
           <nav className="flex items-center gap-3" aria-label="Account">
@@ -50,3 +50,4 @@ function PublicShell({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
+

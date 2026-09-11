@@ -3,7 +3,7 @@ import { FaqSection } from "@/components/marketing/faq";
 
 export const metadata: Metadata = {
   title: "FAQ",
-  description: "Answers about MyTradeBox intelligence, geographic coverage and individual lead unlocks.",
+  description: "Answers about TradeSignal intelligence, geographic coverage and individual lead unlocks.",
 };
 
 export default function FaqPage() {

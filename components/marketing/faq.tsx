@@ -2,8 +2,8 @@ import Link from "next/link";
 
 export const FAQ_ITEMS = [
   {
-    question: "What does MyTradeBox do?",
-    answer: "MyTradeBox combines public and licensed business signals, understands what your business sells and surfaces companies entering a buying window. You see the evidence, relevance, likely need and next move in one opportunity feed.",
+    question: "What does TradeSignal do?",
+    answer: "TradeSignal combines public and licensed business signals, understands what your business sells and surfaces companies entering a buying window. You see the evidence, relevance, likely need and next move in one opportunity feed.",
   },
   {
     question: "Do I have to choose a vertical or market?",
@@ -23,7 +23,7 @@ export const FAQ_ITEMS = [
   },
   {
     question: "Are opportunities exclusive?",
-    answer: "No. Relevance is customer-specific, but the underlying opportunity may be relevant to multiple businesses. MyTradeBox helps each customer decide whether a particular lead is worth a £20 unlock.",
+    answer: "No. Relevance is customer-specific, but the underlying opportunity may be relevant to multiple businesses. TradeSignal helps each customer decide whether a particular lead is worth a £20 unlock.",
   },
   {
     question: "Are the values guaranteed?",

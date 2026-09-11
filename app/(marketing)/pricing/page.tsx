@@ -4,7 +4,7 @@ import { PricingGrid } from "@/components/marketing/pricing-grid";
 
 export const metadata: Metadata = {
   title: "Pricing",
-  description: "Simple geography-based MyTradeBox pricing with £20 individual opportunity unlocks.",
+  description: "Simple geography-based TradeSignal pricing with £20 individual opportunity unlocks.",
 };
 
 export default function PricingPage() {

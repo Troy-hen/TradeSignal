@@ -82,7 +82,7 @@ export function OutreachAssistant({ opportunityId }: { opportunityId: string }) 
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = `mytradebox-${channel}-draft.txt`;
+    anchor.download = `tradesignal-${channel}-draft.txt`;
     anchor.click();
     URL.revokeObjectURL(url);
   }
@@ -114,10 +114,10 @@ export function OutreachAssistant({ opportunityId }: { opportunityId: string }) 
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
-      anchor.download = match?.[1] ?? "mytradebox-letter.pdf";
+      anchor.download = match?.[1] ?? "tradesignal-letter.pdf";
       anchor.click();
       URL.revokeObjectURL(url);
-      setPostalMessage("Print-ready PDF created with a private MyTradeBox response link.");
+      setPostalMessage("Print-ready PDF created with a private TradeSignal response link.");
     } catch {
       setPostalMessage("The print-ready letter could not be created.");
     } finally {
@@ -182,7 +182,7 @@ export function OutreachAssistant({ opportunityId }: { opportunityId: string }) 
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Contact this opportunity</p>
           <h2 className="mt-2 text-xl font-bold tracking-tight">Turn the intelligence into a useful first move.</h2>
           <p className="mt-3 text-sm leading-6 text-white/60">
-            MyTradeBox drafts outreach from the project facts already on this brief. Nothing is sent automatically, and no applicant contact details are injected into the prompt.
+            TradeSignal drafts a first-contact angle from the evidence already on this brief. Nothing is sent automatically, and no applicant contact details are injected into the prompt.
           </p>
           <div className="mt-5 rounded-2xl border border-white/10 bg-white/[0.06] p-4">
             <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/45">Allowance</p>
@@ -227,7 +227,7 @@ export function OutreachAssistant({ opportunityId }: { opportunityId: string }) 
                   {postalEnabled && (
                     <>
                       <div className="my-4 border-t border-signal-orange/10" />
-                      <p className="text-sm font-semibold text-charcoal">Print & post with MyTradeBox</p>
+                      <p className="text-sm font-semibold text-charcoal">Print & post with TradeSignal</p>
                       <p className="mt-1 text-xs leading-5 text-slate">The connected mail provider validates the address before anything can be sent. Previewing is free; live delivery always requires an explicit confirmation.</p>
                       {!postalPreview ? (
                         <button type="button" onClick={previewPostalLetter} disabled={postalBusy} className="mt-3 rounded-xl bg-charcoal px-4 py-2.5 text-xs font-semibold text-white disabled:opacity-50">

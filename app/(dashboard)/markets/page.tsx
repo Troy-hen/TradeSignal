@@ -10,7 +10,7 @@ export default function MarketsPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Intelligence sources</p>
             <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-5xl">One engine. Every relevant signal.</h1>
             <p className="mt-4 max-w-xl text-sm leading-7 text-white/65 sm:text-base">
-              These are the source layers MyTradeBox can connect. They are not products to buy or verticals to select. Tell us what you sell, who you sell to and where you operate; the intelligence engine decides what belongs in your feed.
+              These are the source layers TradeSignal can connect. They are not products to buy or verticals to select. Tell us what you sell, who you sell to and where you operate; the intelligence engine decides what belongs in your feed.
             </p>
           </div>
           <Link href="/coverage" className="inline-flex shrink-0 items-center justify-center rounded-xl bg-signal-orange px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#e95f00]">
