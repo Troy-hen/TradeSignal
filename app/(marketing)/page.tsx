@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { INTELLIGENCE_SOURCES } from "@/lib/marketplace/catalog";
+import { B2B_TAXONOMY_GROUPS, INTELLIGENCE_SOURCES } from "@/lib/marketplace/catalog";
 import { TerritoryCheckerWidget } from "@/components/territory-checker-widget";
 import { MarketplacePreview } from "@/components/marketing/marketplace-preview";
 import { FaqSection } from "@/components/marketing/faq";
@@ -16,7 +16,7 @@ export default function LandingPage() {
           <div className="max-w-2xl lg:pt-12">
             <div className="inline-flex items-center gap-2 rounded-full border border-signal-orange/20 bg-white px-3 py-1.5 text-xs font-semibold tracking-wide text-charcoal shadow-sm"><span className="h-1.5 w-1.5 rounded-full bg-signal-orange" />One platform. One intelligence engine.</div>
             <h1 className="mt-7 text-4xl font-bold leading-[1.05] tracking-tight text-charcoal sm:text-5xl lg:text-7xl">Find businesses <span className="text-signal-orange">ready to buy.</span></h1>
-            <p className="mt-6 max-w-xl text-base leading-7 text-slate sm:text-lg">Tell TradeSignal what you sell, who you sell to and where you operate. The platform finds relevant buying signals across every enabled source, then shows you why the opportunity matters now.</p>
+            <p className="mt-6 max-w-xl text-base leading-7 text-slate sm:text-lg">From web design and software to accountancy, EPOS, signage, office furniture, facilities, consulting and specialist B2B services, tell TradeSignal what you sell, who you sell to and where you operate. The platform finds the buying signals that fit your profile, then shows you why the opportunity matters now.</p>
             <div className="mt-8 grid gap-3 sm:grid-cols-3"><HeroProof label="Why now" body="See the evidence behind the buying window." /><HeroProof label="Relevant" body="Let your profile decide what belongs in the feed." /><HeroProof label="£20 unlock" body="Pay only for the individual opportunities you want." /></div>
             <div className="mt-9 flex flex-col items-start gap-3 sm:flex-row sm:items-center"><Link href="#coverage-checker" className="inline-flex items-center justify-center gap-2 rounded-xl bg-signal-orange px-5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-signal-orange/20 transition hover:bg-[#e95f00]">Preview an opportunity <ArrowUpRight /></Link><Link href="#pricing" className="inline-flex items-center justify-center gap-2 rounded-xl border border-light-grey bg-white px-5 py-3.5 text-sm font-semibold text-charcoal transition hover:border-signal-orange/40">See pricing</Link></div>
           </div>
@@ -34,8 +34,28 @@ export default function LandingPage() {
 
       <section id="how-it-works" className="bg-white px-6 py-20 sm:py-24 lg:px-8"><div className="mx-auto max-w-7xl"><div className="max-w-2xl"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">How it works</p><h2 className="mt-4 text-3xl font-bold tracking-tight text-charcoal sm:text-5xl">A marketplace built around timing.</h2><p className="mt-5 text-base leading-7 text-slate sm:text-lg">The backend can resolve entities, events, signals, needs and contacts. You get a simple feed that answers three questions: why this business, why now and who should I contact?</p></div><div className="mt-12 grid gap-5 md:grid-cols-3"><HowCard number="01" title="Build your profile" body="Describe what you sell, who you serve and what to exclude. AI turns it into a relevance profile." /><HowCard number="02" title="Review the buying window" body="See the likely need, score, approximate geography, signal count and evidence-grounded why-now explanation." /><HowCard number="03" title="Unlock the lead" body={`Pay ${LEAD_UNLOCK_PRICE_GBP} for one opportunity when the fit is clear. Then export it or push it to your CRM.`} /></div></div></section>
 
-      <section className="bg-soft-surface px-6 py-20 sm:py-24 lg:px-8"><div className="mx-auto max-w-7xl"><div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div className="max-w-2xl"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">One engine, every source</p><h2 className="mt-4 text-3xl font-bold tracking-tight text-charcoal sm:text-5xl">The verticals disappear. The signal stays useful.</h2><p className="mt-5 text-base leading-7 text-slate">Hospitality, moves, care, energy, growth and public contracts are source layers behind the scenes. You never buy them separately or choose a market subscription.</p></div><Link href="/faq" className="shrink-0 text-sm font-semibold text-signal-orange">Read the model →</Link></div><div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{INTELLIGENCE_SOURCES.map((source) => <article key={source.slug} className="rounded-3xl border border-light-grey bg-white p-5"><div className="flex items-center justify-between gap-3"><p className="text-sm font-bold text-charcoal">{source.name}</p><span className="rounded-full bg-success/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] text-success">Included</span></div><p className="mt-3 text-sm leading-6 text-slate">{source.description}</p><div className="mt-4 flex flex-wrap gap-2">{source.examples.map((example) => <span key={example} className="rounded-full bg-soft-surface px-2.5 py-1 text-[11px] font-medium text-slate">{example}</span>)}</div></article>)}</div></div></section>
-
+      <section className="bg-soft-surface px-6 py-20 sm:py-24 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Built for every B2B supplier</p>
+            <h2 className="mt-4 text-3xl font-bold tracking-tight text-charcoal sm:text-5xl">One intelligence engine. A much bigger opportunity surface.</h2>
+            <p className="mt-5 text-base leading-7 text-slate sm:text-lg">The catalogue spans digital, software, professional, financial, premises, infrastructure, specialist and trade services. You describe your offer in your own words; the engine normalises it and only surfaces the buying needs that fit.</p>
+          </div>
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {B2B_TAXONOMY_GROUPS.map((group) => (
+              <article key={group.slug} className="rounded-3xl border border-light-grey bg-white p-5">
+                <h3 className="text-base font-bold text-charcoal">{group.name}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate">{group.description}</p>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {group.examples.map((example) => <span key={example} className="rounded-full bg-soft-surface px-2.5 py-1 text-[11px] font-medium text-slate">{example}</span>)}
+                </div>
+              </article>
+            ))}
+          </div>
+          <p className="mt-6 text-sm leading-6 text-slate">These are matching categories, not separate products. Availability depends on the live signal inventory in the geography you choose.</p>
+          <Link href="/faq" className="mt-4 inline-flex text-sm font-semibold text-signal-orange">How the matching model works →</Link>
+        </div>
+      </section>
       <PricingGrid />
 
       <section className="bg-charcoal px-6 py-20 text-white sm:py-24 lg:px-8"><div className="mx-auto flex max-w-7xl flex-col gap-8 lg:flex-row lg:items-end lg:justify-between"><div className="max-w-2xl"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">A cleaner commercial model</p><h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-5xl">One platform. One coverage fee. One unlock price.</h2><p className="mt-5 text-base leading-7 text-white/65 sm:text-lg">Choose the geography you need, then pay £20 for each individual opportunity you decide is worth working.</p></div><Link href="/signup" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-signal-orange px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#e95f00]">Create your account <ArrowUpRight /></Link></div></section>
