@@ -25,7 +25,8 @@ export class CompaniesHouseAdapter implements ProviderAdapter {
     const apiKey = Deno.env.get("COMPANIES_HOUSE_API_KEY");
     if (!apiKey) throw new Error("COMPANIES_HOUSE_API_KEY is not configured");
 
-    const url = new URL("https://api.company-information.service.gov.uk/search/companies");
+    const baseUrl = Deno.env.get("COMPANIES_HOUSE_API_BASE_URL")?.trim() || "https://api.company-information.service.gov.uk";
+    const url = new URL("/search/companies", baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`);
     url.searchParams.set("q", query);
     url.searchParams.set("items_per_page", String(Math.max(1, Math.min(request.limit ?? 20, 100))));
     const response = await fetch(url, {
@@ -43,7 +44,7 @@ export class CompaniesHouseAdapter implements ProviderAdapter {
         recordType: "company_search_result",
         externalId: item.company_number!,
         sourceUrl: item.links?.self ? `https://api.company-information.service.gov.uk${item.links.self}` : null,
-        publishedAt: item.date_of_creation ?? null,
+        publishedAt: null,
         retrievedAt: new Date().toISOString(),
         contentHash: await sha256(JSON.stringify(payload)),
         payload,
