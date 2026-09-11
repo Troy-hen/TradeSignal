@@ -6,9 +6,9 @@ export function OpportunityRow({ item, unlocked = false }: { item: OpportunityLi
     <MarketplaceCard
       item={{
         opportunityId: item.opportunityId,
-        title: item.projectType ?? "Buying-window opportunity",
-        eyebrow: item.isCommercial ? "Commercial change" : "Business change",
-        geography: `${item.district} · approximate area`,
+        title: item.projectType ?? item.entityName ?? "Buying-window opportunity",
+        eyebrow: item.signalFamily ? humanize(item.signalFamily) : item.isCommercial ? "Commercial change" : "Business change",
+        geography: item.locationLabel ?? `${item.district} · approximate area`,
         score: item.score,
         bucket: item.bucket,
         status: item.planningStatus,
@@ -18,9 +18,9 @@ export function OpportunityRow({ item, unlocked = false }: { item: OpportunityLi
         recommendedAction: item.recommendedAction,
         buyingWindow: item.likelyStartWindow ?? item.opportunityTiming,
         likelyNeeds: inferNeeds(item),
-        signalCount: null,
+        signalCount: item.signalCount ?? null,
         currentAction: item.currentAction,
-        sourceLabel: item.isCommercial ? "Commercial signal" : "Unified intelligence",
+        sourceLabel: item.sourceKind ? humanize(item.sourceKind) : item.isCommercial ? "Commercial signal" : "Unified intelligence",
         unlocked,
       }}
     />
@@ -28,8 +28,8 @@ export function OpportunityRow({ item, unlocked = false }: { item: OpportunityLi
 }
 
 function inferNeeds(item: OpportunityListItem): string[] {
-  const text = `${item.projectType ?? ""} ${item.summary ?? ""}`.toLowerCase();
-  const needs = new Set<string>();
+  const needs = new Set<string>([...(item.likelyRequirements ?? []), ...(item.matchReasons ?? [])]);
+  const text = `${item.projectType ?? ""} ${item.summary ?? ""} ${item.signalFamily ?? ""}`.toLowerCase();
   if (/restaurant|cafe|pub|hotel|hospitality|takeaway/.test(text)) {
     needs.add("Opening infrastructure");
     needs.add("EPOS and payments");
@@ -49,5 +49,9 @@ function inferNeeds(item: OpportunityListItem): string[] {
     needs.add("Supplier services");
     needs.add("Commercial support");
   }
-  return [...needs];
+  return [...needs].slice(0, 6);
+}
+
+function humanize(value: string): string {
+  return value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
