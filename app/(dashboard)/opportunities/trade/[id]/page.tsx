@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireCurrentCompany } from "@/lib/auth/get-current-company";
-import { getOwnedMarketSignal, getMarketSignalForLeadUnlock, getMarketSignalQuoteRequests, type MarketSignalDetail } from "@/lib/data/trade-intelligence";
+import { getOwnedMarketSignal, getMarketSignalForLeadUnlock, type MarketSignalDetail } from "@/lib/data/trade-intelligence";
+import { getMarketSignalQuoteRequests } from "@/lib/data/quote-requests";
 import { findLeadUnlock, isPaidUnlock } from "@/lib/data/lead-unlocks";
 import { MarketplaceCard } from "@/components/marketplace/marketplace-card";
 import { QuoteRequestsPanel } from "@/components/quote-requests-panel";

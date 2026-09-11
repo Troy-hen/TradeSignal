@@ -89,10 +89,9 @@ function LockedBrief({ teaser }: { teaser: OpportunityTeaser }) {
 
 async function PaidBrief({ opportunity, companyId }: { opportunity: Opportunity; companyId: string }) {
   const supabase = createAdminClient();
-  const [{ data: application }, { data: classification }, { data: trade }, { data: updates }, { data: matchState }] = await Promise.all([
+  const [{ data: application }, { data: classification }, { data: updates }, { data: matchState }] = await Promise.all([
     supabase.from("planning_applications").select("*").eq("id", opportunity.planning_application_id).maybeSingle(),
     supabase.from("application_classifications").select("*").eq("id", opportunity.application_classification_id).maybeSingle(),
-    supabase.from("trade_categories").select("name").eq("id", opportunity.trade_category_id).maybeSingle(),
     supabase.from("planning_application_updates").select("id, change_type, previous_status, new_status, detected_at").eq("planning_application_id", opportunity.planning_application_id).order("detected_at", { ascending: false }),
     supabase.from("lead_match_current_state").select("lead_match_id, current_action").eq("application_trade_opportunity_id", opportunity.id).eq("company_id", companyId).maybeSingle(),
   ]);
