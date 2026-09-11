@@ -28,8 +28,8 @@ async function tryAiNormalisation(input: string, candidates: ProfileCandidate[])
   const prompt = [
     "You normalize a supplier's free-text description for a B2B opportunity marketplace.",
     "Return concise structured data. Never invent services, customers or categories that are not supported by the input.",
-    "Choose candidateTradeSlug only when one candidate is a reasonable match; otherwise return null.",
-    `Candidate categories:\n${candidateText || "No candidate categories are available."}`,
+    "Choose candidateTradeSlug only when one supplier category is a reasonable match; otherwise return null. Never force a construction or trade category for a different B2B service.",
+    `Candidate B2B supplier categories:\n${candidateText || "No candidate categories are available."}`,
     `Supplier description: ${input}`,
   ].join("\n\n");
 
@@ -88,8 +88,18 @@ function fallbackNormalisation(input: string, candidates: ProfileCandidate[]): N
     return haystack.split(/[^a-z0-9]+/).some((token) => token.length > 3 && lower.includes(token));
   });
   const keywordMap: Array<[RegExp, string]> = [
+    [/website|web design|web development|web hosting|ecommerce|online shop/, "Web design and development"],
+    [/software|saas|crm|erp|app development|api|cyber|cloud|automation/, "Software and systems"],
+    [/consult|advisory|strategy|legal|solicitor|insurance|compliance/, "Consulting and advisory"],
+    [/social media|instagram|facebook marketing|linkedin marketing/, "Social media marketing"],
+    [/digital marketing|seo|ppc|search engine|lead generation/, "Digital marketing"],
+    [/accountancy|accounting|bookkeep|tax|payroll|finance/, "Accountancy and finance"],
     [/epos|payment|card terminal|till|ordering/, "EPOS and payments"],
     [/signage|sign|branding|vehicle graphic/, "Signage and branding"],
+    [/office furniture|office supplies|workplace|desks|interior design/, "Office and workplace"],
+    [/cleaning|facilities|waste|pest control|property management/, "Facilities and premises"],
+    [/recruitment|hr|human resources|staffing/, "HR and recruitment"],
+    [/logistics|courier|warehouse|packaging|fulfilment/, "Logistics and supply chain"],
     [/broadband|connectivity|telecom|phone|voip|wifi/, "Connectivity and telecoms"],
     [/cctv|security|access control|alarm/, "Security and access"],
     [/fit.?out|refurb|interior|shopfitting/, "Fit-out and interiors"],
@@ -102,7 +112,7 @@ function fallbackNormalisation(input: string, candidates: ProfileCandidate[]): N
     label: input.length > 90 ? `${input.slice(0, 87)}…` : input,
     keywords: keywords.length > 0 ? keywords : ["Supplier services"],
     buyerTypes: inferBuyerTypes(lower),
-    candidateTradeSlug: candidate?.slug ?? candidates.find((item) => item.slug === "general-builder")?.slug ?? null,
+    candidateTradeSlug: candidate?.slug ?? null,
     confidence: candidate ? 0.72 : 0.45,
     source: "fallback",
   };
