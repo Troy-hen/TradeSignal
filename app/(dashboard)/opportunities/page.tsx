@@ -87,10 +87,9 @@ export default async function OpportunitiesPage({
   );
 
   const paidOpportunityIds = new Set(
-    paidUnlocks.flatMap((unlock) => [
-      unlock.application_trade_opportunity_id,
-      ...(unlock.application_trade_opportunity_id ? [] : []),
-    ]).filter((value): value is string => Boolean(value)),
+    paidUnlocks
+      .map((unlock) => unlock.application_trade_opportunity_id)
+      .filter((value): value is string => Boolean(value)),
   );
   const paidMarketSignalIds = new Set(
     paidUnlocks.map((unlock) => unlock.market_signal_trade_match_id).filter((value): value is string => Boolean(value)),
