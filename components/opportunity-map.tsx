@@ -82,7 +82,7 @@ export function OpportunityMap({ points, signals }: { points: OpportunityMapPoin
   const dragRef = useRef<{ pointerId: number; startX: number; startY: number; originX: number; originY: number } | null>(null);
 
   function changeZoom(nextZoom: number) {
-    setZoom((current) => clamp(nextZoom, 0.8, 1.8));
+    setZoom(clamp(nextZoom, 0.8, 1.8));
   }
 
   function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
