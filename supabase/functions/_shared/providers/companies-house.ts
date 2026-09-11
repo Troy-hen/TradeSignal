@@ -62,6 +62,7 @@ export class CompaniesHouseAdapter implements ProviderAdapter {
         name: payload.title ?? null,
         legalName: payload.title ?? null,
         companiesHouseNumber: payload.company_number ?? record.externalId,
+        postcode: typeof payload.address?.postal_code === "string" ? payload.address.postal_code : null,
         resolutionMethod: "companies_house_number",
         resolutionConfidence: 1,
       },
