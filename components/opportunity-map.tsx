@@ -120,7 +120,7 @@ export function OpportunityMap({ points, signals }: { points: OpportunityMapPoin
           <div className="absolute inset-y-0 left-1/2 h-full w-auto" style={{ aspectRatio: "2 / 1", transform: `translateX(-50%) scale(${zoom})`, transformOrigin: "center" }} aria-label="Approximate opportunity map of the United Kingdom" role="img">
             <div className="absolute inset-0 overflow-hidden bg-[#dbe7e7]">
               <div className="grid h-full w-full grid-cols-4 grid-rows-2">
-                {MAP_TILES.map((tile) => <img key={tile} src={tile} alt="" draggable={false} className="block h-full w-full" />)}
+                {MAP_TILES.map((tile) => <div key={tile} aria-hidden="true" className="h-full w-full bg-cover bg-center" style={{ backgroundImage: `url(${tile})` }} />)}
               </div>
               <div className="absolute inset-0 bg-white/10" />
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,transparent_0,rgba(232,240,242,0.04)_55%,rgba(31,41,55,0.12)_100%)]" />
