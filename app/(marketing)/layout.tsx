@@ -13,7 +13,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
       <div className="flex min-h-screen flex-col overflow-x-hidden">
         <header className="sticky top-0 z-50 border-b border-white/10 bg-charcoal">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-5 lg:px-8">
-            <Link href="/" aria-label="MyTradeBox home" className="min-w-0 shrink">
+            <Link href="/" aria-label="TradeSignal home" className="min-w-0 shrink">
               <Logo tone="light" />
             </Link>
 
@@ -84,7 +84,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
               <div>
                 <Logo tone="light" />
                 <p className="mt-4 max-w-sm text-sm leading-6 text-white/60">
-                  Planning intelligence that helps trade businesses find the local jobs worth chasing.
+                  B2B buying intelligence that helps suppliers find businesses entering a buying window.
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-x-10 gap-y-3 text-sm sm:text-right">
@@ -97,8 +97,8 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
               </div>
             </div>
             <div className="mt-10 border-t border-white/10 pt-5 text-sm text-white/50 sm:flex sm:items-center sm:justify-between">
-              <p>Built for UK trade businesses.</p>
-              <p className="mt-2 sm:mt-0">© {currentYear()} MyTradeBox. All rights reserved.</p>
+              <p>Built for UK B2B suppliers.</p>
+              <p className="mt-2 sm:mt-0">© {currentYear()} TradeSignal. All rights reserved.</p>
             </div>
           </div>
         </footer>
