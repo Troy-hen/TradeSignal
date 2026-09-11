@@ -10,7 +10,7 @@ export default async function SettingsPage({ searchParams }: { searchParams: Pro
   const supabase = await createClient();
   const { coverage_plan: coveragePlan, coverage_mode: coverageMode } = await searchParams;
   const canEdit = company.role === "owner" || company.role === "admin";
-  const [{ data: companyRow }, { data: prefs }, profile] = await Promise.all([
+  const [{ data: companyRow }, { data: prefs }] = await Promise.all([
     supabase.from("companies").select("trading_name, billing_email").eq("id", company.id).maybeSingle(),
     supabase.from("notification_preferences").select("*").eq("company_id", company.id).is("user_id", null).maybeSingle(),
   ]);
