@@ -704,8 +704,8 @@ begin
   ), '');
   v_entity_name := coalesce(nullif(btrim(v_pa.applicant_name), ''), nullif(btrim(v_pa.agent_company), ''), 'Unresolved planning applicant ' || v_pa.provider_application_id);
 
-  select id into v_entity_id
-  from public.business_entities
+  select be.id into v_entity_id
+  from public.business_entities be
   where origin_source_record_id = v_source_id
   limit 1;
 
@@ -904,7 +904,7 @@ begin
   end;
   if v_market_id is null then return null; end if;
 
-  select id into v_supplier_id from public.supplier_categories where source_trade_category_id = v_legacy.trade_category_id;
+  select sc.id into v_supplier_id from public.supplier_categories sc where source_trade_category_id = v_legacy.trade_category_id;
   if v_supplier_id is null then return null; end if;
 
   select snm.need_category_id into v_need_id
@@ -914,7 +914,7 @@ begin
   order by snm.match_weight desc
   limit 1;
   if v_need_id is null then
-    select id into v_need_id from public.need_categories where market_id = v_market_id and is_default and is_active limit 1;
+    select nc.id into v_need_id from public.need_categories nc where market_id = v_market_id and is_default and is_active limit 1;
   end if;
   if v_need_id is null then return null; end if;
 
@@ -1139,13 +1139,13 @@ do $$
 declare
   v_row record;
 begin
-  for v_row in select id from public.planning_applications order by created_at loop
+  for v_row in select pa.id from public.planning_applications pa order by pa.created_at loop
     perform public.sync_planning_application_to_graph(v_row.id);
   end loop;
-  for v_row in select id from public.application_trade_opportunities order by created_at loop
+  for v_row in select ato.id from public.application_trade_opportunities ato order by ato.created_at loop
     perform public.sync_application_trade_opportunity_to_graph(v_row.id);
   end loop;
-  for v_row in select id from public.lead_matches order by matched_at loop
+  for v_row in select lm.id from public.lead_matches lm order by lm.matched_at loop
     perform public.sync_legacy_lead_match_to_graph(v_row.id);
   end loop;
 end;
@@ -1164,7 +1164,7 @@ do $$
 declare
   v_row record;
 begin
-  for v_row in select id from public.application_trade_opportunities order by created_at loop
+  for v_row in select ato.id from public.application_trade_opportunities ato order by ato.created_at loop
     perform public.sync_application_trade_opportunity_to_graph(v_row.id);
   end loop;
 end;
@@ -1175,7 +1175,7 @@ $$;
 insert into public.supplier_need_mappings (supplier_category_id, need_category_id, match_weight, match_method)
 select sc.id, nc.id, 0.5, 'legacy_default'
 from public.supplier_categories sc
-join public.need_categories nc on nc.market_id = (select id from public.opportunity_markets where slug = 'moves_fitouts') and nc.is_default
+join public.need_categories nc on nc.market_id = (select om.id from public.opportunity_markets om where = 'moves_fitouts') and nc.is_default
 on conflict (supplier_category_id, need_category_id) do nothing;
 
 -- One final bridge pass after supplier/need configuration is seeded.
@@ -1183,7 +1183,7 @@ do $$
 declare
   v_row record;
 begin
-  for v_row in select id from public.application_trade_opportunities order by created_at loop
+  for v_row in select ato.id from public.application_trade_opportunities ato order by ato.created_at loop
     perform public.sync_application_trade_opportunity_to_graph(v_row.id);
   end loop;
 end;
