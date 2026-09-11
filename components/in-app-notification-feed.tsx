@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { InAppNotificationItem } from "@/lib/data/in-app-notifications";
 import { trackProductEvent } from "@/lib/analytics/client";
 
-const STORAGE_KEY = "mytradebox-dismissed-in-app-notifications";
+const STORAGE_KEY = "tradesignal-dismissed-in-app-notifications";
 
 export function InAppNotificationFeed({
   items,
