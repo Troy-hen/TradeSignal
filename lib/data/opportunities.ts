@@ -97,6 +97,12 @@ type GraphOpportunity = {
   customer_visible: boolean;
 };
 
+type GraphNeed = {
+  opportunity_id: string;
+  need_category_id: string;
+  relevance: number | string | null;
+};
+
 async function getCanonicalCompanyOpportunities(
   companyId: string,
   opts?: { bucket?: OpportunityBucket; action?: OpportunityActionFilter; limit?: number },
@@ -140,16 +146,31 @@ async function getCanonicalCompanyOpportunities(
   const locationIds = [...new Set(opportunities.map((row) => row.location_id).filter((id): id is string => Boolean(id)))];
   const legacyIds = [...new Set(opportunities.map((row) => row.legacy_application_trade_opportunity_id).filter((id): id is string => Boolean(id)))];
 
-  const [{ data: entities }, { data: locations }, { data: links }, { data: legacyOpportunities }] = await Promise.all([
+  const [{ data: entities }, { data: locations }, { data: links }, { data: legacyOpportunities }, { data: needs }] = await Promise.all([
     entityIds.length ? supabase.from("business_entities").select("id, canonical_name, legal_name, entity_type").in("id", entityIds) : Promise.resolve({ data: [] }),
     locationIds.length ? supabase.from("business_locations").select("id, postcode_district, town_city, address_text, latitude, longitude").in("id", locationIds) : Promise.resolve({ data: [] }),
     supabase.from("opportunity_signals").select("opportunity_id, signal_id").in("opportunity_id", graphIds),
     legacyIds.length ? supabase.from("application_trade_opportunities").select("id, opportunity_score, opportunity_bucket, postcode_district, trade_category_id, application_classification_id, estimated_trade_value_low, estimated_trade_value_high, fit_score, ai_confidence, likely_scope, recommended_action, recommended_contact_timing, risk_flags, planning_application_id").in("id", legacyIds) : Promise.resolve({ data: [] }),
+    supabase.from("opportunity_needs").select("opportunity_id, need_category_id, relevance").in("opportunity_id", graphIds),
   ]);
 
   const entityById = new Map((entities ?? []).map((row) => [row.id, row]));
   const locationById = new Map((locations ?? []).map((row) => [row.id, row]));
   const legacyById = new Map((legacyOpportunities ?? []).map((row) => [row.id, row]));
+  const needRows = (needs ?? []) as unknown as GraphNeed[];
+  const needIds = [...new Set(needRows.map((row) => row.need_category_id))];
+  const { data: needCategories } = needIds.length
+    ? await supabase.from("need_categories").select("id, name").in("id", needIds)
+    : { data: [] };
+  const needNameById = new Map((needCategories ?? []).map((row) => [row.id, row.name]));
+  const needsByOpportunity = new Map<string, string[]>();
+  for (const need of needRows) {
+    const name = needNameById.get(need.need_category_id);
+    if (!name) continue;
+    const names = needsByOpportunity.get(need.opportunity_id) ?? [];
+    names.push(name);
+    needsByOpportunity.set(need.opportunity_id, names);
+  }
   const signalLinks = (links ?? []) as Array<{ opportunity_id: string; signal_id: string }>;
   const signalIds = [...new Set(signalLinks.map((row) => row.signal_id))];
   const { data: signals } = signalIds.length
@@ -200,13 +221,17 @@ async function getCanonicalCompanyOpportunities(
     const signalFamily = typeof firstSignal.signal_family === "string" ? firstSignal.signal_family : null;
     const tradeName = tradeById.get(legacy?.trade_category_id ?? "")?.name ?? "Matched business profile";
     const opportunityId = legacy?.id ?? graph.id;
+    const matchedNeeds = uniqueList([
+      ...(needsByOpportunity.get(graph.id) ?? []),
+      ...(tradeName === "Matched business profile" ? [] : [tradeName]),
+    ]);
     items.push({
       leadMatchId: match.legacy_lead_match_id ?? match.id,
       opportunityId,
       canonicalOpportunityId: graph.id,
       planningApplicationId: legacy?.planning_application_id ?? null,
       underlyingOpportunityIds: [opportunityId],
-      matchedNeeds: tradeName === "Matched business profile" ? [] : [tradeName],
+      matchedNeeds,
       latitude: numberOrNull(location?.latitude),
       longitude: numberOrNull(location?.longitude),
       score,
