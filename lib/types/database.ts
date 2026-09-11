@@ -418,6 +418,130 @@ export type Database = {
           },
         ]
       }
+      assistant_daily_briefs: {
+        Row: {
+          action_items: Json
+          brief_date: string
+          company_id: string
+          generated_at: string
+          id: string
+          model: string | null
+          snapshot: Json
+          summary: string
+          updated_at: string
+        }
+        Insert: {
+          action_items?: Json
+          brief_date: string
+          company_id: string
+          generated_at?: string
+          id?: string
+          model?: string | null
+          snapshot?: Json
+          summary: string
+          updated_at?: string
+        }
+        Update: {
+          action_items?: Json
+          brief_date?: string
+          company_id?: string
+          generated_at?: string
+          id?: string
+          model?: string | null
+          snapshot?: Json
+          summary?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assistant_daily_briefs_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assistant_knowledge_chunks: {
+        Row: {
+          chunk_index: number
+          content: string
+          created_at: string
+          document_id: string
+          embedding: string | null
+          heading: string | null
+          id: string
+          search_vector: unknown
+          updated_at: string
+        }
+        Insert: {
+          chunk_index: number
+          content: string
+          created_at?: string
+          document_id: string
+          embedding?: string | null
+          heading?: string | null
+          id?: string
+          search_vector?: unknown
+          updated_at?: string
+        }
+        Update: {
+          chunk_index?: number
+          content?: string
+          created_at?: string
+          document_id?: string
+          embedding?: string | null
+          heading?: string | null
+          id?: string
+          search_vector?: unknown
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assistant_knowledge_chunks_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "assistant_knowledge_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assistant_knowledge_documents: {
+        Row: {
+          body: string
+          category: string
+          created_at: string
+          id: string
+          is_active: boolean
+          metadata: Json
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          category: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          metadata?: Json
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          category?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          metadata?: Json
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -459,6 +583,596 @@ export type Database = {
           metadata?: Json | null
         }
         Relationships: []
+      }
+      b2b_source_eligibility_rules: {
+        Row: {
+          b2b_status: string
+          created_at: string
+          exclude_if_domestic: boolean
+          id: string
+          include_in_customer_opportunities: boolean
+          include_in_entity_resolution: boolean
+          include_in_signal_generation: boolean
+          notes: string | null
+          priority: number
+          provider_key: string
+          record_type: string
+          updated_at: string
+        }
+        Insert: {
+          b2b_status: string
+          created_at?: string
+          exclude_if_domestic?: boolean
+          id?: string
+          include_in_customer_opportunities?: boolean
+          include_in_entity_resolution?: boolean
+          include_in_signal_generation?: boolean
+          notes?: string | null
+          priority?: number
+          provider_key: string
+          record_type: string
+          updated_at?: string
+        }
+        Update: {
+          b2b_status?: string
+          created_at?: string
+          exclude_if_domestic?: boolean
+          id?: string
+          include_in_customer_opportunities?: boolean
+          include_in_entity_resolution?: boolean
+          include_in_signal_generation?: boolean
+          notes?: string | null
+          priority?: number
+          provider_key?: string
+          record_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2b_source_eligibility_rules_provider_key_fkey"
+            columns: ["provider_key"]
+            isOneToOne: false
+            referencedRelation: "provider_config"
+            referencedColumns: ["provider_key"]
+          },
+        ]
+      }
+      business_domains: {
+        Row: {
+          created_at: string
+          domain: string
+          entity_id: string
+          id: string
+          is_primary: boolean
+          provider_key: string | null
+          source_record_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          domain: string
+          entity_id: string
+          id?: string
+          is_primary?: boolean
+          provider_key?: string | null
+          source_record_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          domain?: string
+          entity_id?: string
+          id?: string
+          is_primary?: boolean
+          provider_key?: string | null
+          source_record_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_domains_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "business_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_domains_provider_key_fkey"
+            columns: ["provider_key"]
+            isOneToOne: false
+            referencedRelation: "provider_config"
+            referencedColumns: ["provider_key"]
+          },
+          {
+            foreignKeyName: "business_domains_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_entities: {
+        Row: {
+          b2b_eligible: boolean
+          b2b_status: string
+          canonical_name: string
+          classification_confidence: number | null
+          classification_method: string | null
+          companies_house_number: string | null
+          created_at: string
+          domain: string | null
+          entity_subtype: string | null
+          entity_type: string
+          id: string
+          last_business_change_at: string | null
+          legal_name: string | null
+          origin_source_record_id: string | null
+          registration_jurisdiction: string | null
+          resolution_confidence: number | null
+          resolution_evidence: Json
+          resolution_method: string | null
+          resolution_status: string
+          telephone: string | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          b2b_eligible?: boolean
+          b2b_status?: string
+          canonical_name: string
+          classification_confidence?: number | null
+          classification_method?: string | null
+          companies_house_number?: string | null
+          created_at?: string
+          domain?: string | null
+          entity_subtype?: string | null
+          entity_type?: string
+          id?: string
+          last_business_change_at?: string | null
+          legal_name?: string | null
+          origin_source_record_id?: string | null
+          registration_jurisdiction?: string | null
+          resolution_confidence?: number | null
+          resolution_evidence?: Json
+          resolution_method?: string | null
+          resolution_status?: string
+          telephone?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          b2b_eligible?: boolean
+          b2b_status?: string
+          canonical_name?: string
+          classification_confidence?: number | null
+          classification_method?: string | null
+          companies_house_number?: string | null
+          created_at?: string
+          domain?: string | null
+          entity_subtype?: string | null
+          entity_type?: string
+          id?: string
+          last_business_change_at?: string | null
+          legal_name?: string | null
+          origin_source_record_id?: string | null
+          registration_jurisdiction?: string | null
+          resolution_confidence?: number | null
+          resolution_evidence?: Json
+          resolution_method?: string | null
+          resolution_status?: string
+          telephone?: string | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_entities_origin_source_record_id_fkey"
+            columns: ["origin_source_record_id"]
+            isOneToOne: true
+            referencedRelation: "source_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_entity_aliases: {
+        Row: {
+          alias: string
+          alias_type: string
+          created_at: string
+          entity_id: string
+          id: string
+          source_record_id: string | null
+        }
+        Insert: {
+          alias: string
+          alias_type?: string
+          created_at?: string
+          entity_id: string
+          id?: string
+          source_record_id?: string | null
+        }
+        Update: {
+          alias?: string
+          alias_type?: string
+          created_at?: string
+          entity_id?: string
+          id?: string
+          source_record_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_entity_aliases_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "business_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_entity_aliases_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_entity_financials: {
+        Row: {
+          accounts_period_end: string | null
+          employee_count: number | null
+          entity_id: string
+          financial_data: Json
+          financial_status: string | null
+          provider_key: string | null
+          source_record_id: string | null
+          turnover: number | null
+          turnover_currency: string
+          updated_at: string
+        }
+        Insert: {
+          accounts_period_end?: string | null
+          employee_count?: number | null
+          entity_id: string
+          financial_data?: Json
+          financial_status?: string | null
+          provider_key?: string | null
+          source_record_id?: string | null
+          turnover?: number | null
+          turnover_currency?: string
+          updated_at?: string
+        }
+        Update: {
+          accounts_period_end?: string | null
+          employee_count?: number | null
+          entity_id?: string
+          financial_data?: Json
+          financial_status?: string | null
+          provider_key?: string | null
+          source_record_id?: string | null
+          turnover?: number | null
+          turnover_currency?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_entity_financials_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: true
+            referencedRelation: "business_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_entity_financials_provider_key_fkey"
+            columns: ["provider_key"]
+            isOneToOne: false
+            referencedRelation: "provider_config"
+            referencedColumns: ["provider_key"]
+          },
+          {
+            foreignKeyName: "business_entity_financials_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_entity_identifiers: {
+        Row: {
+          created_at: string
+          entity_id: string
+          id: string
+          identifier_type: string
+          identifier_value: string
+          is_primary: boolean
+          provider_key: string | null
+          source_record_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          id?: string
+          identifier_type: string
+          identifier_value: string
+          is_primary?: boolean
+          provider_key?: string | null
+          source_record_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          id?: string
+          identifier_type?: string
+          identifier_value?: string
+          is_primary?: boolean
+          provider_key?: string | null
+          source_record_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_entity_identifiers_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "business_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_entity_identifiers_provider_key_fkey"
+            columns: ["provider_key"]
+            isOneToOne: false
+            referencedRelation: "provider_config"
+            referencedColumns: ["provider_key"]
+          },
+          {
+            foreignKeyName: "business_entity_identifiers_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_entity_profiles: {
+        Row: {
+          description: string | null
+          employee_count: number | null
+          employee_count_at: string | null
+          entity_id: string
+          industry: string | null
+          profile: Json
+          provider_key: string | null
+          sic_codes: string[]
+          source_record_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          description?: string | null
+          employee_count?: number | null
+          employee_count_at?: string | null
+          entity_id: string
+          industry?: string | null
+          profile?: Json
+          provider_key?: string | null
+          sic_codes?: string[]
+          source_record_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          description?: string | null
+          employee_count?: number | null
+          employee_count_at?: string | null
+          entity_id?: string
+          industry?: string | null
+          profile?: Json
+          provider_key?: string | null
+          sic_codes?: string[]
+          source_record_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_entity_profiles_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: true
+            referencedRelation: "business_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_entity_profiles_provider_key_fkey"
+            columns: ["provider_key"]
+            isOneToOne: false
+            referencedRelation: "provider_config"
+            referencedColumns: ["provider_key"]
+          },
+          {
+            foreignKeyName: "business_entity_profiles_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_entity_properties: {
+        Row: {
+          confidence: number | null
+          created_at: string
+          entity_id: string
+          property_id: string
+          relationship: string
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string
+          entity_id: string
+          property_id: string
+          relationship?: string
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string
+          entity_id?: string
+          property_id?: string
+          relationship?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_entity_properties_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "business_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_entity_properties_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "business_properties"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_locations: {
+        Row: {
+          address_text: string | null
+          county: string | null
+          created_at: string
+          entity_id: string | null
+          full_postcode: string | null
+          id: string
+          latitude: number | null
+          local_authority: string | null
+          location: unknown
+          longitude: number | null
+          origin_source_record_id: string | null
+          postcode_area: string | null
+          postcode_district: string | null
+          region: string | null
+          resolution_confidence: number | null
+          resolution_evidence: Json
+          resolution_method: string | null
+          resolution_status: string
+          town_city: string | null
+          updated_at: string
+          uprn: string | null
+        }
+        Insert: {
+          address_text?: string | null
+          county?: string | null
+          created_at?: string
+          entity_id?: string | null
+          full_postcode?: string | null
+          id?: string
+          latitude?: number | null
+          local_authority?: string | null
+          location?: unknown
+          longitude?: number | null
+          origin_source_record_id?: string | null
+          postcode_area?: string | null
+          postcode_district?: string | null
+          region?: string | null
+          resolution_confidence?: number | null
+          resolution_evidence?: Json
+          resolution_method?: string | null
+          resolution_status?: string
+          town_city?: string | null
+          updated_at?: string
+          uprn?: string | null
+        }
+        Update: {
+          address_text?: string | null
+          county?: string | null
+          created_at?: string
+          entity_id?: string | null
+          full_postcode?: string | null
+          id?: string
+          latitude?: number | null
+          local_authority?: string | null
+          location?: unknown
+          longitude?: number | null
+          origin_source_record_id?: string | null
+          postcode_area?: string | null
+          postcode_district?: string | null
+          region?: string | null
+          resolution_confidence?: number | null
+          resolution_evidence?: Json
+          resolution_method?: string | null
+          resolution_status?: string
+          town_city?: string | null
+          updated_at?: string
+          uprn?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_locations_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "business_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_locations_origin_source_record_id_fkey"
+            columns: ["origin_source_record_id"]
+            isOneToOne: true
+            referencedRelation: "source_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_properties: {
+        Row: {
+          address_text: string | null
+          created_at: string
+          id: string
+          is_commercial: boolean
+          occupancy_status: string | null
+          postcode: string | null
+          property_type: string | null
+          provider_key: string | null
+          source_record_id: string | null
+          title_relationship: Json
+          uprn: string | null
+        }
+        Insert: {
+          address_text?: string | null
+          created_at?: string
+          id?: string
+          is_commercial?: boolean
+          occupancy_status?: string | null
+          postcode?: string | null
+          property_type?: string | null
+          provider_key?: string | null
+          source_record_id?: string | null
+          title_relationship?: Json
+          uprn?: string | null
+        }
+        Update: {
+          address_text?: string | null
+          created_at?: string
+          id?: string
+          is_commercial?: boolean
+          occupancy_status?: string | null
+          postcode?: string | null
+          property_type?: string | null
+          provider_key?: string | null
+          source_record_id?: string | null
+          title_relationship?: Json
+          uprn?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_properties_provider_key_fkey"
+            columns: ["provider_key"]
+            isOneToOne: false
+            referencedRelation: "provider_config"
+            referencedColumns: ["provider_key"]
+          },
+          {
+            foreignKeyName: "business_properties_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       companies: {
         Row: {
@@ -570,6 +1284,61 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_people: {
+        Row: {
+          confidence: number | null
+          created_at: string
+          entity_id: string
+          id: string
+          is_decision_maker: boolean
+          person_id: string
+          relationship: string | null
+          source_record_id: string | null
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string
+          entity_id: string
+          id?: string
+          is_decision_maker?: boolean
+          person_id: string
+          relationship?: string | null
+          source_record_id?: string | null
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string
+          entity_id?: string
+          id?: string
+          is_decision_maker?: boolean
+          person_id?: string
+          relationship?: string | null
+          source_record_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_people_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "business_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_people_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_people_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
             referencedColumns: ["id"]
           },
         ]
@@ -773,6 +1542,118 @@ export type Database = {
           },
         ]
       }
+      contact_enrichment_requests: {
+        Row: {
+          company_id: string
+          completed_at: string | null
+          estimated_cost: number | null
+          id: string
+          metadata: Json
+          opportunity_id: string
+          provider_key: string | null
+          requested_at: string
+          status: string
+        }
+        Insert: {
+          company_id: string
+          completed_at?: string | null
+          estimated_cost?: number | null
+          id?: string
+          metadata?: Json
+          opportunity_id: string
+          provider_key?: string | null
+          requested_at?: string
+          status?: string
+        }
+        Update: {
+          company_id?: string
+          completed_at?: string | null
+          estimated_cost?: number | null
+          id?: string
+          metadata?: Json
+          opportunity_id?: string
+          provider_key?: string | null
+          requested_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_enrichment_requests_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_enrichment_requests_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contact_enrichment_results: {
+        Row: {
+          confidence: number | null
+          expires_at: string | null
+          id: string
+          opportunity_id: string
+          provider_key: string
+          request_id: string
+          result: Json
+          retrieved_at: string
+          rights_snapshot: Json
+          source_record_id: string | null
+        }
+        Insert: {
+          confidence?: number | null
+          expires_at?: string | null
+          id?: string
+          opportunity_id: string
+          provider_key: string
+          request_id: string
+          result?: Json
+          retrieved_at?: string
+          rights_snapshot?: Json
+          source_record_id?: string | null
+        }
+        Update: {
+          confidence?: number | null
+          expires_at?: string | null
+          id?: string
+          opportunity_id?: string
+          provider_key?: string
+          request_id?: string
+          result?: Json
+          retrieved_at?: string
+          rights_snapshot?: Json
+          source_record_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_enrichment_results_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_enrichment_results_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "contact_enrichment_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_enrichment_results_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contact_enrichment_usage: {
         Row: {
           company_id: string
@@ -801,6 +1682,256 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contact_intelligence_records: {
+        Row: {
+          company_id: string
+          confidence: number | null
+          created_at: string
+          email: string | null
+          entity_type: string
+          expires_at: string | null
+          id: string
+          job_title: string | null
+          lawful_basis: string | null
+          opportunity_id: string
+          organisation_name: string | null
+          person_name: string | null
+          phone: string | null
+          planning_application_id: string
+          provider: string
+          purpose: string | null
+          raw_payload: Json
+          retrieved_at: string
+          source_url: string | null
+          suppression_status: string
+          website: string | null
+        }
+        Insert: {
+          company_id: string
+          confidence?: number | null
+          created_at?: string
+          email?: string | null
+          entity_type: string
+          expires_at?: string | null
+          id?: string
+          job_title?: string | null
+          lawful_basis?: string | null
+          opportunity_id: string
+          organisation_name?: string | null
+          person_name?: string | null
+          phone?: string | null
+          planning_application_id: string
+          provider: string
+          purpose?: string | null
+          raw_payload?: Json
+          retrieved_at?: string
+          source_url?: string | null
+          suppression_status?: string
+          website?: string | null
+        }
+        Update: {
+          company_id?: string
+          confidence?: number | null
+          created_at?: string
+          email?: string | null
+          entity_type?: string
+          expires_at?: string | null
+          id?: string
+          job_title?: string | null
+          lawful_basis?: string | null
+          opportunity_id?: string
+          organisation_name?: string | null
+          person_name?: string | null
+          phone?: string | null
+          planning_application_id?: string
+          provider?: string
+          purpose?: string | null
+          raw_payload?: Json
+          retrieved_at?: string
+          source_url?: string | null
+          suppression_status?: string
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_intelligence_records_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_intelligence_records_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "application_trade_opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_intelligence_records_planning_application_id_fkey"
+            columns: ["planning_application_id"]
+            isOneToOne: false
+            referencedRelation: "planning_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contact_permissions: {
+        Row: {
+          channels: string[]
+          company_id: string
+          created_at: string
+          granted_at: string
+          id: string
+          opportunity_id: string
+          permission_text: string
+          permission_text_version: string
+          permission_type: string
+          quote_request_id: string
+          response_link_id: string
+          source: string
+          withdrawn_at: string | null
+        }
+        Insert: {
+          channels?: string[]
+          company_id: string
+          created_at?: string
+          granted_at?: string
+          id?: string
+          opportunity_id: string
+          permission_text: string
+          permission_text_version: string
+          permission_type?: string
+          quote_request_id: string
+          response_link_id: string
+          source?: string
+          withdrawn_at?: string | null
+        }
+        Update: {
+          channels?: string[]
+          company_id?: string
+          created_at?: string
+          granted_at?: string
+          id?: string
+          opportunity_id?: string
+          permission_text?: string
+          permission_text_version?: string
+          permission_type?: string
+          quote_request_id?: string
+          response_link_id?: string
+          source?: string
+          withdrawn_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_permissions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_permissions_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "application_trade_opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_permissions_quote_request_id_fkey"
+            columns: ["quote_request_id"]
+            isOneToOne: false
+            referencedRelation: "quote_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_permissions_response_link_id_fkey"
+            columns: ["response_link_id"]
+            isOneToOne: false
+            referencedRelation: "outreach_response_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contact_points: {
+        Row: {
+          confidence: number | null
+          contact_type: string
+          data_rights: Json
+          display_allowed: boolean
+          entity_id: string | null
+          export_allowed: boolean
+          id: string
+          is_professional: boolean
+          last_verified_at: string | null
+          person_id: string | null
+          provider_key: string | null
+          retrieved_at: string
+          source_record_id: string | null
+          suppression_status: string
+          value: string
+          verification_status: string
+        }
+        Insert: {
+          confidence?: number | null
+          contact_type: string
+          data_rights?: Json
+          display_allowed?: boolean
+          entity_id?: string | null
+          export_allowed?: boolean
+          id?: string
+          is_professional?: boolean
+          last_verified_at?: string | null
+          person_id?: string | null
+          provider_key?: string | null
+          retrieved_at?: string
+          source_record_id?: string | null
+          suppression_status?: string
+          value: string
+          verification_status?: string
+        }
+        Update: {
+          confidence?: number | null
+          contact_type?: string
+          data_rights?: Json
+          display_allowed?: boolean
+          entity_id?: string | null
+          export_allowed?: boolean
+          id?: string
+          is_professional?: boolean
+          last_verified_at?: string | null
+          person_id?: string | null
+          provider_key?: string | null
+          retrieved_at?: string
+          source_record_id?: string | null
+          suppression_status?: string
+          value?: string
+          verification_status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_points_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "business_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_points_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_points_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
             referencedColumns: ["id"]
           },
         ]
@@ -840,6 +1971,61 @@ export type Database = {
           status?: string
         }
         Relationships: []
+      }
+      contact_suppressions: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          opportunity_id: string | null
+          reason: string
+          response_link_id: string | null
+          revoked_at: string | null
+          scope: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          opportunity_id?: string | null
+          reason: string
+          response_link_id?: string | null
+          revoked_at?: string | null
+          scope?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          opportunity_id?: string | null
+          reason?: string
+          response_link_id?: string | null
+          revoked_at?: string | null
+          scope?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_suppressions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_suppressions_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "application_trade_opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_suppressions_response_link_id_fkey"
+            columns: ["response_link_id"]
+            isOneToOne: false
+            referencedRelation: "outreach_response_links"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       coverage_area_postcodes: {
         Row: {
@@ -1057,6 +2243,560 @@ export type Database = {
           },
         ]
       }
+      customer_geographies: {
+        Row: {
+          company_id: string
+          created_at: string
+          criteria: Json
+          geography_type: string
+          id: string
+          is_active: boolean
+          label: string
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          criteria?: Json
+          geography_type: string
+          id?: string
+          is_active?: boolean
+          label: string
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          criteria?: Json
+          geography_type?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_geographies_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_markets: {
+        Row: {
+          company_id: string
+          created_at: string
+          ends_at: string | null
+          exclusive: boolean
+          geography_id: string | null
+          id: string
+          market_id: string
+          starts_at: string | null
+          status: string
+          supplier_category_id: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          ends_at?: string | null
+          exclusive?: boolean
+          geography_id?: string | null
+          id?: string
+          market_id: string
+          starts_at?: string | null
+          status?: string
+          supplier_category_id?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          ends_at?: string | null
+          exclusive?: boolean
+          geography_id?: string | null
+          id?: string
+          market_id?: string
+          starts_at?: string | null
+          status?: string
+          supplier_category_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_markets_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_markets_geography_id_fkey"
+            columns: ["geography_id"]
+            isOneToOne: false
+            referencedRelation: "customer_geographies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_markets_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "opportunity_markets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_markets_supplier_category_id_fkey"
+            columns: ["supplier_category_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_preferences: {
+        Row: {
+          alert_channels: string[]
+          company_id: string
+          created_at: string
+          id: string
+          market_id: string | null
+          minimum_score: number | null
+          require_verified_contact: boolean
+          temperatures: string[]
+          updated_at: string
+        }
+        Insert: {
+          alert_channels?: string[]
+          company_id: string
+          created_at?: string
+          id?: string
+          market_id?: string | null
+          minimum_score?: number | null
+          require_verified_contact?: boolean
+          temperatures?: string[]
+          updated_at?: string
+        }
+        Update: {
+          alert_channels?: string[]
+          company_id?: string
+          created_at?: string
+          id?: string
+          market_id?: string | null
+          minimum_score?: number | null
+          require_verified_contact?: boolean
+          temperatures?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_preferences_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_preferences_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "opportunity_markets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_profile_terms: {
+        Row: {
+          company_id: string
+          confidence: number | null
+          created_at: string
+          id: string
+          source: string
+          term: string
+          term_type: string
+        }
+        Insert: {
+          company_id: string
+          confidence?: number | null
+          created_at?: string
+          id?: string
+          source?: string
+          term: string
+          term_type: string
+        }
+        Update: {
+          company_id?: string
+          confidence?: number | null
+          created_at?: string
+          id?: string
+          source?: string
+          term?: string
+          term_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_profile_terms_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_profiles: {
+        Row: {
+          company_id: string
+          created_at: string
+          exclusions: string | null
+          ideal_customer: string | null
+          normalization_error: string | null
+          normalization_provider: string | null
+          normalization_status: string
+          normalized_at: string | null
+          normalized_profile: Json
+          profile_version: number
+          updated_at: string
+          updated_by: string | null
+          what_do_you_sell: string
+          where_do_you_sell: string | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          exclusions?: string | null
+          ideal_customer?: string | null
+          normalization_error?: string | null
+          normalization_provider?: string | null
+          normalization_status?: string
+          normalized_at?: string | null
+          normalized_profile?: Json
+          profile_version?: number
+          updated_at?: string
+          updated_by?: string | null
+          what_do_you_sell: string
+          where_do_you_sell?: string | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          exclusions?: string | null
+          ideal_customer?: string | null
+          normalization_error?: string | null
+          normalization_provider?: string | null
+          normalization_status?: string
+          normalized_at?: string | null
+          normalized_profile?: Json
+          profile_version?: number
+          updated_at?: string
+          updated_by?: string | null
+          what_do_you_sell?: string
+          where_do_you_sell?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_profiles_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      demo_accounts: {
+        Row: {
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      epc_intelligence_records: {
+        Row: {
+          air_conditioning: boolean | null
+          built_form: string | null
+          certificate_number: string
+          certificate_scope: string
+          co2_emissions_current: number | null
+          company_id: string
+          construction_age_band: string | null
+          current_band: string | null
+          current_efficiency: number | null
+          energy_consumption_current: number | null
+          energy_mix: string | null
+          expires_at: string | null
+          floor_area: number | null
+          fuel_sources: string[]
+          has_heat_pump: boolean | null
+          has_solar_pv: boolean | null
+          id: string
+          improvement_signals: string[]
+          main_fuel: string | null
+          main_heating_description: string | null
+          mains_gas: boolean | null
+          match_confidence: number
+          matched_address: string | null
+          opportunity_id: string
+          other_fuel_description: string | null
+          planning_application_id: string
+          postcode: string | null
+          potential_band: string | null
+          potential_efficiency: number | null
+          property_type: string | null
+          registration_date: string | null
+          renewable_sources: string[]
+          retrieved_at: string
+          roof_description: string | null
+          signal_summary: string | null
+          solar_water_heating: boolean | null
+          updated_at: string
+          uprn: string | null
+          walls_description: string | null
+          windows_description: string | null
+        }
+        Insert: {
+          air_conditioning?: boolean | null
+          built_form?: string | null
+          certificate_number: string
+          certificate_scope?: string
+          co2_emissions_current?: number | null
+          company_id: string
+          construction_age_band?: string | null
+          current_band?: string | null
+          current_efficiency?: number | null
+          energy_consumption_current?: number | null
+          energy_mix?: string | null
+          expires_at?: string | null
+          floor_area?: number | null
+          fuel_sources?: string[]
+          has_heat_pump?: boolean | null
+          has_solar_pv?: boolean | null
+          id?: string
+          improvement_signals?: string[]
+          main_fuel?: string | null
+          main_heating_description?: string | null
+          mains_gas?: boolean | null
+          match_confidence?: number
+          matched_address?: string | null
+          opportunity_id: string
+          other_fuel_description?: string | null
+          planning_application_id: string
+          postcode?: string | null
+          potential_band?: string | null
+          potential_efficiency?: number | null
+          property_type?: string | null
+          registration_date?: string | null
+          renewable_sources?: string[]
+          retrieved_at?: string
+          roof_description?: string | null
+          signal_summary?: string | null
+          solar_water_heating?: boolean | null
+          updated_at?: string
+          uprn?: string | null
+          walls_description?: string | null
+          windows_description?: string | null
+        }
+        Update: {
+          air_conditioning?: boolean | null
+          built_form?: string | null
+          certificate_number?: string
+          certificate_scope?: string
+          co2_emissions_current?: number | null
+          company_id?: string
+          construction_age_band?: string | null
+          current_band?: string | null
+          current_efficiency?: number | null
+          energy_consumption_current?: number | null
+          energy_mix?: string | null
+          expires_at?: string | null
+          floor_area?: number | null
+          fuel_sources?: string[]
+          has_heat_pump?: boolean | null
+          has_solar_pv?: boolean | null
+          id?: string
+          improvement_signals?: string[]
+          main_fuel?: string | null
+          main_heating_description?: string | null
+          mains_gas?: boolean | null
+          match_confidence?: number
+          matched_address?: string | null
+          opportunity_id?: string
+          other_fuel_description?: string | null
+          planning_application_id?: string
+          postcode?: string | null
+          potential_band?: string | null
+          potential_efficiency?: number | null
+          property_type?: string | null
+          registration_date?: string | null
+          renewable_sources?: string[]
+          retrieved_at?: string
+          roof_description?: string | null
+          signal_summary?: string | null
+          solar_water_heating?: boolean | null
+          updated_at?: string
+          uprn?: string | null
+          walls_description?: string | null
+          windows_description?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "epc_intelligence_records_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "epc_intelligence_records_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "application_trade_opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "epc_intelligence_records_planning_application_id_fkey"
+            columns: ["planning_application_id"]
+            isOneToOne: false
+            referencedRelation: "planning_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      event_evidence: {
+        Row: {
+          created_at: string
+          event_id: string
+          evidence_type: string
+          excerpt: string | null
+          id: string
+          metadata: Json
+          source_record_id: string
+          source_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          evidence_type?: string
+          excerpt?: string | null
+          id?: string
+          metadata?: Json
+          source_record_id: string
+          source_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          evidence_type?: string
+          excerpt?: string | null
+          id?: string
+          metadata?: Json
+          source_record_id?: string
+          source_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_evidence_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_evidence_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          b2b_status: string
+          commercial_relevance: number | null
+          confidence: number
+          created_at: string
+          customer_eligible: boolean
+          dedupe_key: string
+          entity_id: string
+          event_type: string
+          factual_data: Json
+          id: string
+          is_factual: boolean
+          location_id: string | null
+          observed_at: string
+          occurred_at: string
+          source_record_id: string
+        }
+        Insert: {
+          b2b_status?: string
+          commercial_relevance?: number | null
+          confidence?: number
+          created_at?: string
+          customer_eligible?: boolean
+          dedupe_key: string
+          entity_id: string
+          event_type: string
+          factual_data?: Json
+          id?: string
+          is_factual?: boolean
+          location_id?: string | null
+          observed_at?: string
+          occurred_at: string
+          source_record_id: string
+        }
+        Update: {
+          b2b_status?: string
+          commercial_relevance?: number | null
+          confidence?: number
+          created_at?: string
+          customer_eligible?: boolean
+          dedupe_key?: string
+          entity_id?: string
+          event_type?: string
+          factual_data?: Json
+          id?: string
+          is_factual?: boolean
+          location_id?: string | null
+          observed_at?: string
+          occurred_at?: string
+          source_record_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "business_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "business_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ingestion_runs: {
         Row: {
           applications_created: number
@@ -1110,6 +2850,115 @@ export type Database = {
           status?: string
         }
         Relationships: []
+      }
+      intelligence_ingestion_runs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_summary: string | null
+          id: string
+          metadata: Json
+          opportunities_created: number
+          provider_key: string
+          records_accepted: number
+          records_failed: number
+          records_rejected: number
+          records_seen: number
+          run_type: string
+          started_at: string
+          status: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_summary?: string | null
+          id?: string
+          metadata?: Json
+          opportunities_created?: number
+          provider_key: string
+          records_accepted?: number
+          records_failed?: number
+          records_rejected?: number
+          records_seen?: number
+          run_type: string
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_summary?: string | null
+          id?: string
+          metadata?: Json
+          opportunities_created?: number
+          provider_key?: string
+          records_accepted?: number
+          records_failed?: number
+          records_rejected?: number
+          records_seen?: number
+          run_type?: string
+          started_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intelligence_ingestion_runs_provider_key_fkey"
+            columns: ["provider_key"]
+            isOneToOne: false
+            referencedRelation: "provider_config"
+            referencedColumns: ["provider_key"]
+          },
+        ]
+      }
+      intelligence_signal_rules: {
+        Row: {
+          can_qualify_existing_business: boolean
+          created_at: string
+          event_type: string
+          id: string
+          is_active: boolean
+          minimum_confidence: number
+          provider_key: string | null
+          rule_key: string
+          signal_family: string
+          signal_type: string
+          updated_at: string
+        }
+        Insert: {
+          can_qualify_existing_business?: boolean
+          created_at?: string
+          event_type: string
+          id?: string
+          is_active?: boolean
+          minimum_confidence?: number
+          provider_key?: string | null
+          rule_key: string
+          signal_family: string
+          signal_type: string
+          updated_at?: string
+        }
+        Update: {
+          can_qualify_existing_business?: boolean
+          created_at?: string
+          event_type?: string
+          id?: string
+          is_active?: boolean
+          minimum_confidence?: number
+          provider_key?: string | null
+          rule_key?: string
+          signal_family?: string
+          signal_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intelligence_signal_rules_provider_key_fkey"
+            columns: ["provider_key"]
+            isOneToOne: false
+            referencedRelation: "provider_config"
+            referencedColumns: ["provider_key"]
+          },
+        ]
       }
       lead_actions: {
         Row: {
@@ -1312,6 +3161,422 @@ export type Database = {
           },
         ]
       }
+      lead_unlocks: {
+        Row: {
+          amount_pence: number
+          application_trade_opportunity_id: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          id: string
+          lead_match_id: string | null
+          market_signal_trade_match_id: string | null
+          status: string
+          stripe_checkout_session_id: string | null
+          stripe_payment_intent_id: string | null
+          unlocked_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount_pence?: number
+          application_trade_opportunity_id?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          id?: string
+          lead_match_id?: string | null
+          market_signal_trade_match_id?: string | null
+          status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          unlocked_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount_pence?: number
+          application_trade_opportunity_id?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          id?: string
+          lead_match_id?: string | null
+          market_signal_trade_match_id?: string | null
+          status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
+          unlocked_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_unlocks_application_trade_opportunity_id_fkey"
+            columns: ["application_trade_opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "application_trade_opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_unlocks_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_unlocks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lead_unlocks_lead_match_id_fkey"
+            columns: ["lead_match_id"]
+            isOneToOne: false
+            referencedRelation: "lead_match_current_state"
+            referencedColumns: ["lead_match_id"]
+          },
+          {
+            foreignKeyName: "lead_unlocks_lead_match_id_fkey"
+            columns: ["lead_match_id"]
+            isOneToOne: false
+            referencedRelation: "lead_matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      market_signal_company_states: {
+        Row: {
+          company_id: string
+          contacted_at: string | null
+          contract_value_gbp: number | null
+          created_at: string
+          current_action: string
+          first_viewed_at: string | null
+          id: string
+          lost_at: string | null
+          market_signal_trade_match_id: string
+          note: string | null
+          quoted_at: string | null
+          updated_at: string
+          won_at: string | null
+        }
+        Insert: {
+          company_id: string
+          contacted_at?: string | null
+          contract_value_gbp?: number | null
+          created_at?: string
+          current_action?: string
+          first_viewed_at?: string | null
+          id?: string
+          lost_at?: string | null
+          market_signal_trade_match_id: string
+          note?: string | null
+          quoted_at?: string | null
+          updated_at?: string
+          won_at?: string | null
+        }
+        Update: {
+          company_id?: string
+          contacted_at?: string | null
+          contract_value_gbp?: number | null
+          created_at?: string
+          current_action?: string
+          first_viewed_at?: string | null
+          id?: string
+          lost_at?: string | null
+          market_signal_trade_match_id?: string
+          note?: string | null
+          quoted_at?: string | null
+          updated_at?: string
+          won_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_signal_company_states_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_signal_company_states_market_signal_trade_match_id_fkey"
+            columns: ["market_signal_trade_match_id"]
+            isOneToOne: false
+            referencedRelation: "market_signal_trade_matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      market_signal_fetch_jobs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          processed_at: string | null
+          provider: string
+          request_id: number
+          request_url: string
+          requested_limit: number
+          response_status: number | null
+          since_at: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          processed_at?: string | null
+          provider: string
+          request_id: number
+          request_url: string
+          requested_limit?: number
+          response_status?: number | null
+          since_at: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          processed_at?: string | null
+          provider?: string
+          request_id?: number
+          request_url?: string
+          requested_limit?: number
+          response_status?: number | null
+          since_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      market_signal_trade_matches: {
+        Row: {
+          ai_confidence: number | null
+          created_at: string
+          estimated_trade_value_high: number | null
+          estimated_trade_value_low: number | null
+          fit_score: number | null
+          id: string
+          is_active: boolean
+          match_method: string
+          match_reasons: string[]
+          opportunity_bucket: string | null
+          recommended_action: string | null
+          scored_at: string | null
+          signal_id: string
+          trade_category_id: string
+        }
+        Insert: {
+          ai_confidence?: number | null
+          created_at?: string
+          estimated_trade_value_high?: number | null
+          estimated_trade_value_low?: number | null
+          fit_score?: number | null
+          id?: string
+          is_active?: boolean
+          match_method?: string
+          match_reasons?: string[]
+          opportunity_bucket?: string | null
+          recommended_action?: string | null
+          scored_at?: string | null
+          signal_id: string
+          trade_category_id: string
+        }
+        Update: {
+          ai_confidence?: number | null
+          created_at?: string
+          estimated_trade_value_high?: number | null
+          estimated_trade_value_low?: number | null
+          fit_score?: number | null
+          id?: string
+          is_active?: boolean
+          match_method?: string
+          match_reasons?: string[]
+          opportunity_bucket?: string | null
+          recommended_action?: string | null
+          scored_at?: string | null
+          signal_id?: string
+          trade_category_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "market_signal_trade_matches_signal_id_fkey"
+            columns: ["signal_id"]
+            isOneToOne: false
+            referencedRelation: "market_signals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "market_signal_trade_matches_trade_category_id_fkey"
+            columns: ["trade_category_id"]
+            isOneToOne: false
+            referencedRelation: "trade_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      market_signals: {
+        Row: {
+          buyer_identifier: string | null
+          buyer_name: string | null
+          contact: Json
+          content_hash: string | null
+          contract_end_date: string | null
+          contract_start_date: string | null
+          cpv_codes: string[]
+          created_at: string
+          deadline_at: string | null
+          delivery_postcodes: string[]
+          delivery_regions: string[]
+          estimated_project_value_high: number | null
+          estimated_project_value_low: number | null
+          external_ocid: string | null
+          id: string
+          is_active: boolean
+          latitude: number | null
+          location_confidence: string
+          location_text: string | null
+          longitude: number | null
+          notice_type: string | null
+          postcode_district: string | null
+          procurement_stage: string | null
+          published_at: string | null
+          raw_payload: Json
+          signal_type: string
+          source: string
+          source_signal_id: string
+          source_updated_at: string | null
+          source_url: string | null
+          summary: string | null
+          supplier_name: string | null
+          title: string
+          updated_at: string
+          value_currency: string
+        }
+        Insert: {
+          buyer_identifier?: string | null
+          buyer_name?: string | null
+          contact?: Json
+          content_hash?: string | null
+          contract_end_date?: string | null
+          contract_start_date?: string | null
+          cpv_codes?: string[]
+          created_at?: string
+          deadline_at?: string | null
+          delivery_postcodes?: string[]
+          delivery_regions?: string[]
+          estimated_project_value_high?: number | null
+          estimated_project_value_low?: number | null
+          external_ocid?: string | null
+          id?: string
+          is_active?: boolean
+          latitude?: number | null
+          location_confidence?: string
+          location_text?: string | null
+          longitude?: number | null
+          notice_type?: string | null
+          postcode_district?: string | null
+          procurement_stage?: string | null
+          published_at?: string | null
+          raw_payload?: Json
+          signal_type: string
+          source: string
+          source_signal_id: string
+          source_updated_at?: string | null
+          source_url?: string | null
+          summary?: string | null
+          supplier_name?: string | null
+          title: string
+          updated_at?: string
+          value_currency?: string
+        }
+        Update: {
+          buyer_identifier?: string | null
+          buyer_name?: string | null
+          contact?: Json
+          content_hash?: string | null
+          contract_end_date?: string | null
+          contract_start_date?: string | null
+          cpv_codes?: string[]
+          created_at?: string
+          deadline_at?: string | null
+          delivery_postcodes?: string[]
+          delivery_regions?: string[]
+          estimated_project_value_high?: number | null
+          estimated_project_value_low?: number | null
+          external_ocid?: string | null
+          id?: string
+          is_active?: boolean
+          latitude?: number | null
+          location_confidence?: string
+          location_text?: string | null
+          longitude?: number | null
+          notice_type?: string | null
+          postcode_district?: string | null
+          procurement_stage?: string | null
+          published_at?: string | null
+          raw_payload?: Json
+          signal_type?: string
+          source?: string
+          source_signal_id?: string
+          source_updated_at?: string | null
+          source_url?: string | null
+          summary?: string | null
+          supplier_name?: string | null
+          title?: string
+          updated_at?: string
+          value_currency?: string
+        }
+        Relationships: []
+      }
+      need_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_default: boolean
+          market_id: string
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          market_id: string
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          market_id?: string
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "need_categories_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "opportunity_markets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_log: {
         Row: {
           company_id: string | null
@@ -1446,6 +3711,929 @@ export type Database = {
           },
         ]
       }
+      opportunities: {
+        Row: {
+          b2b_eligible: boolean
+          buying_window_end: string | null
+          buying_window_start: string | null
+          created_at: string
+          customer_visible: boolean
+          detected_at: string
+          eligibility_reason: string | null
+          entity_id: string
+          id: string
+          last_scored_at: string | null
+          legacy_application_trade_opportunity_id: string | null
+          likely_requirements: Json
+          location_id: string | null
+          market_id: string
+          qualification_method: string | null
+          score: number | null
+          source_attribution: Json
+          status: string
+          supplier_category_id: string
+          temperature: string | null
+          title: string
+          updated_at: string
+          why_now: string | null
+        }
+        Insert: {
+          b2b_eligible?: boolean
+          buying_window_end?: string | null
+          buying_window_start?: string | null
+          created_at?: string
+          customer_visible?: boolean
+          detected_at?: string
+          eligibility_reason?: string | null
+          entity_id: string
+          id?: string
+          last_scored_at?: string | null
+          legacy_application_trade_opportunity_id?: string | null
+          likely_requirements?: Json
+          location_id?: string | null
+          market_id: string
+          qualification_method?: string | null
+          score?: number | null
+          source_attribution?: Json
+          status?: string
+          supplier_category_id: string
+          temperature?: string | null
+          title: string
+          updated_at?: string
+          why_now?: string | null
+        }
+        Update: {
+          b2b_eligible?: boolean
+          buying_window_end?: string | null
+          buying_window_start?: string | null
+          created_at?: string
+          customer_visible?: boolean
+          detected_at?: string
+          eligibility_reason?: string | null
+          entity_id?: string
+          id?: string
+          last_scored_at?: string | null
+          legacy_application_trade_opportunity_id?: string | null
+          likely_requirements?: Json
+          location_id?: string | null
+          market_id?: string
+          qualification_method?: string | null
+          score?: number | null
+          source_attribution?: Json
+          status?: string
+          supplier_category_id?: string
+          temperature?: string | null
+          title?: string
+          updated_at?: string
+          why_now?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunities_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "business_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_legacy_application_trade_opportunity_id_fkey"
+            columns: ["legacy_application_trade_opportunity_id"]
+            isOneToOne: true
+            referencedRelation: "application_trade_opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "business_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "opportunity_markets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_supplier_category_id_fkey"
+            columns: ["supplier_category_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunity_activity_events: {
+        Row: {
+          channel: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          event_type: string
+          id: string
+          lead_match_id: string | null
+          market_signal_trade_match_id: string | null
+          metadata: Json
+          occurred_at: string
+          opportunity_id: string | null
+          provider: string | null
+          provider_reference: string | null
+        }
+        Insert: {
+          channel?: string | null
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          event_type: string
+          id?: string
+          lead_match_id?: string | null
+          market_signal_trade_match_id?: string | null
+          metadata?: Json
+          occurred_at?: string
+          opportunity_id?: string | null
+          provider?: string | null
+          provider_reference?: string | null
+        }
+        Update: {
+          channel?: string | null
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          event_type?: string
+          id?: string
+          lead_match_id?: string | null
+          market_signal_trade_match_id?: string | null
+          metadata?: Json
+          occurred_at?: string
+          opportunity_id?: string | null
+          provider?: string | null
+          provider_reference?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_activity_events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_activity_events_lead_match_id_fkey"
+            columns: ["lead_match_id"]
+            isOneToOne: false
+            referencedRelation: "lead_match_current_state"
+            referencedColumns: ["lead_match_id"]
+          },
+          {
+            foreignKeyName: "opportunity_activity_events_lead_match_id_fkey"
+            columns: ["lead_match_id"]
+            isOneToOne: false
+            referencedRelation: "lead_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_activity_events_market_signal_trade_match_id_fkey"
+            columns: ["market_signal_trade_match_id"]
+            isOneToOne: false
+            referencedRelation: "market_signal_trade_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_activity_events_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "application_trade_opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunity_contacts: {
+        Row: {
+          contact_point_id: string | null
+          created_at: string
+          id: string
+          opportunity_id: string
+          person_id: string | null
+          priority: number
+          reason: string | null
+          unlocked: boolean
+        }
+        Insert: {
+          contact_point_id?: string | null
+          created_at?: string
+          id?: string
+          opportunity_id: string
+          person_id?: string | null
+          priority?: number
+          reason?: string | null
+          unlocked?: boolean
+        }
+        Update: {
+          contact_point_id?: string | null
+          created_at?: string
+          id?: string
+          opportunity_id?: string
+          person_id?: string | null
+          priority?: number
+          reason?: string | null
+          unlocked?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_contacts_contact_point_id_fkey"
+            columns: ["contact_point_id"]
+            isOneToOne: false
+            referencedRelation: "contact_points"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_contacts_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_contacts_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunity_customer_matches: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          legacy_lead_match_id: string | null
+          match_reasons: Json
+          match_score: number | null
+          matched_at: string
+          opportunity_id: string
+          status: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          legacy_lead_match_id?: string | null
+          match_reasons?: Json
+          match_score?: number | null
+          matched_at?: string
+          opportunity_id: string
+          status?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          legacy_lead_match_id?: string | null
+          match_reasons?: Json
+          match_score?: number | null
+          matched_at?: string
+          opportunity_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_customer_matches_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_customer_matches_legacy_lead_match_id_fkey"
+            columns: ["legacy_lead_match_id"]
+            isOneToOne: true
+            referencedRelation: "lead_match_current_state"
+            referencedColumns: ["lead_match_id"]
+          },
+          {
+            foreignKeyName: "opportunity_customer_matches_legacy_lead_match_id_fkey"
+            columns: ["legacy_lead_match_id"]
+            isOneToOne: true
+            referencedRelation: "lead_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_customer_matches_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunity_feedback: {
+        Row: {
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          note: string | null
+          opportunity_id: string
+          outcome: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          opportunity_id: string
+          outcome: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          note?: string | null
+          opportunity_id?: string
+          outcome?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_feedback_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_feedback_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_feedback_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunity_markets: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      opportunity_needs: {
+        Row: {
+          created_at: string
+          evidence: Json
+          need_category_id: string
+          opportunity_id: string
+          relevance: number
+        }
+        Insert: {
+          created_at?: string
+          evidence?: Json
+          need_category_id: string
+          opportunity_id: string
+          relevance?: number
+        }
+        Update: {
+          created_at?: string
+          evidence?: Json
+          need_category_id?: string
+          opportunity_id?: string
+          relevance?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_needs_need_category_id_fkey"
+            columns: ["need_category_id"]
+            isOneToOne: false
+            referencedRelation: "need_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_needs_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunity_research_reports: {
+        Row: {
+          company_id: string
+          created_at: string
+          error_message: string | null
+          expires_at: string | null
+          generated_at: string | null
+          generated_by: string | null
+          id: string
+          input_hash: string | null
+          model: string | null
+          opportunity_id: string
+          report: Json
+          sources: Json
+          status: string
+          summary: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          error_message?: string | null
+          expires_at?: string | null
+          generated_at?: string | null
+          generated_by?: string | null
+          id?: string
+          input_hash?: string | null
+          model?: string | null
+          opportunity_id: string
+          report?: Json
+          sources?: Json
+          status: string
+          summary?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          error_message?: string | null
+          expires_at?: string | null
+          generated_at?: string | null
+          generated_by?: string | null
+          id?: string
+          input_hash?: string | null
+          model?: string | null
+          opportunity_id?: string
+          report?: Json
+          sources?: Json
+          status?: string
+          summary?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_research_reports_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_research_reports_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "application_trade_opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunity_score_factors: {
+        Row: {
+          contribution: number
+          created_at: string
+          factor_key: string
+          id: string
+          opportunity_score_id: string
+          raw_value: number
+          weight: number
+        }
+        Insert: {
+          contribution: number
+          created_at?: string
+          factor_key: string
+          id?: string
+          opportunity_score_id: string
+          raw_value: number
+          weight: number
+        }
+        Update: {
+          contribution?: number
+          created_at?: string
+          factor_key?: string
+          id?: string
+          opportunity_score_id?: string
+          raw_value?: number
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_score_factors_opportunity_score_id_fkey"
+            columns: ["opportunity_score_id"]
+            isOneToOne: false
+            referencedRelation: "opportunity_scores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunity_scores: {
+        Row: {
+          computed_at: string
+          formula_version: string
+          id: string
+          inputs: Json
+          opportunity_id: string
+          score: number
+          temperature: string
+        }
+        Insert: {
+          computed_at?: string
+          formula_version: string
+          id?: string
+          inputs?: Json
+          opportunity_id: string
+          score: number
+          temperature: string
+        }
+        Update: {
+          computed_at?: string
+          formula_version?: string
+          id?: string
+          inputs?: Json
+          opportunity_id?: string
+          score?: number
+          temperature?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_scores_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opportunity_signals: {
+        Row: {
+          created_at: string
+          opportunity_id: string
+          relationship: string
+          signal_id: string
+        }
+        Insert: {
+          created_at?: string
+          opportunity_id: string
+          relationship?: string
+          signal_id: string
+        }
+        Update: {
+          created_at?: string
+          opportunity_id?: string
+          relationship?: string
+          signal_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunity_signals_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunity_signals_signal_id_fkey"
+            columns: ["signal_id"]
+            isOneToOne: false
+            referencedRelation: "signals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      outreach_deliveries: {
+        Row: {
+          audience_type: string | null
+          channel: string
+          company_id: string
+          content_snapshot: string | null
+          cost_pence: number | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          delivered_at: string | null
+          error_message: string | null
+          failed_at: string | null
+          id: string
+          lead_match_id: string | null
+          market_signal_trade_match_id: string | null
+          opportunity_id: string | null
+          provider: string | null
+          provider_job_id: string | null
+          recipient_address: Json | null
+          recipient_name: string | null
+          sent_at: string | null
+          status: string
+          strategy_key: string | null
+          template_key: string | null
+          template_version: string | null
+          tracking_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          audience_type?: string | null
+          channel: string
+          company_id: string
+          content_snapshot?: string | null
+          cost_pence?: number | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          delivered_at?: string | null
+          error_message?: string | null
+          failed_at?: string | null
+          id?: string
+          lead_match_id?: string | null
+          market_signal_trade_match_id?: string | null
+          opportunity_id?: string | null
+          provider?: string | null
+          provider_job_id?: string | null
+          recipient_address?: Json | null
+          recipient_name?: string | null
+          sent_at?: string | null
+          status?: string
+          strategy_key?: string | null
+          template_key?: string | null
+          template_version?: string | null
+          tracking_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          audience_type?: string | null
+          channel?: string
+          company_id?: string
+          content_snapshot?: string | null
+          cost_pence?: number | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          delivered_at?: string | null
+          error_message?: string | null
+          failed_at?: string | null
+          id?: string
+          lead_match_id?: string | null
+          market_signal_trade_match_id?: string | null
+          opportunity_id?: string | null
+          provider?: string | null
+          provider_job_id?: string | null
+          recipient_address?: Json | null
+          recipient_name?: string | null
+          sent_at?: string | null
+          status?: string
+          strategy_key?: string | null
+          template_key?: string | null
+          template_version?: string | null
+          tracking_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outreach_deliveries_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_deliveries_lead_match_id_fkey"
+            columns: ["lead_match_id"]
+            isOneToOne: false
+            referencedRelation: "lead_match_current_state"
+            referencedColumns: ["lead_match_id"]
+          },
+          {
+            foreignKeyName: "outreach_deliveries_lead_match_id_fkey"
+            columns: ["lead_match_id"]
+            isOneToOne: false
+            referencedRelation: "lead_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_deliveries_market_signal_trade_match_id_fkey"
+            columns: ["market_signal_trade_match_id"]
+            isOneToOne: false
+            referencedRelation: "market_signal_trade_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_deliveries_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "application_trade_opportunities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      outreach_response_events: {
+        Row: {
+          company_id: string
+          created_at: string
+          event_type: string
+          id: string
+          metadata: Json
+          opportunity_id: string
+          response_link_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          event_type: string
+          id?: string
+          metadata?: Json
+          opportunity_id: string
+          response_link_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          metadata?: Json
+          opportunity_id?: string
+          response_link_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outreach_response_events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_response_events_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "application_trade_opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_response_events_response_link_id_fkey"
+            columns: ["response_link_id"]
+            isOneToOne: false
+            referencedRelation: "outreach_response_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      outreach_response_links: {
+        Row: {
+          audience_type: string
+          channel: string
+          company_id: string
+          created_at: string
+          created_by: string | null
+          expires_at: string
+          first_opened_at: string | null
+          id: string
+          last_opened_at: string | null
+          market_signal_trade_match_id: string | null
+          open_count: number
+          opportunity_id: string | null
+          outreach_delivery_id: string | null
+          status: string
+          token_hash: string
+          updated_at: string
+        }
+        Insert: {
+          audience_type: string
+          channel: string
+          company_id: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          first_opened_at?: string | null
+          id?: string
+          last_opened_at?: string | null
+          market_signal_trade_match_id?: string | null
+          open_count?: number
+          opportunity_id?: string | null
+          outreach_delivery_id?: string | null
+          status?: string
+          token_hash: string
+          updated_at?: string
+        }
+        Update: {
+          audience_type?: string
+          channel?: string
+          company_id?: string
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string
+          first_opened_at?: string | null
+          id?: string
+          last_opened_at?: string | null
+          market_signal_trade_match_id?: string | null
+          open_count?: number
+          opportunity_id?: string | null
+          outreach_delivery_id?: string | null
+          status?: string
+          token_hash?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outreach_response_links_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_response_links_market_signal_trade_match_id_fkey"
+            columns: ["market_signal_trade_match_id"]
+            isOneToOne: false
+            referencedRelation: "market_signal_trade_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_response_links_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "application_trade_opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "outreach_response_links_outreach_delivery_id_fkey"
+            columns: ["outreach_delivery_id"]
+            isOneToOne: false
+            referencedRelation: "outreach_deliveries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      people: {
+        Row: {
+          created_at: string
+          family_name: string | null
+          full_name: string
+          given_name: string | null
+          id: string
+          job_title: string | null
+          profile_url: string | null
+          resolution_confidence: number | null
+          resolution_status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          family_name?: string | null
+          full_name: string
+          given_name?: string | null
+          id?: string
+          job_title?: string | null
+          profile_url?: string | null
+          resolution_confidence?: number | null
+          resolution_status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          family_name?: string | null
+          full_name?: string
+          given_name?: string | null
+          id?: string
+          job_title?: string | null
+          profile_url?: string | null
+          resolution_confidence?: number | null
+          resolution_status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       planning_application_updates: {
         Row: {
           change_type: Database["public"]["Enums"]["application_update_change_type"]
@@ -1524,6 +4712,7 @@ export type Database = {
           estimated_value_gbp: number | null
           first_seen_at: string
           floorspace_sqm: number | null
+          graph_source_record_id: string | null
           id: string
           is_commercial: boolean | null
           last_seen_at: string
@@ -1562,6 +4751,7 @@ export type Database = {
           estimated_value_gbp?: number | null
           first_seen_at?: string
           floorspace_sqm?: number | null
+          graph_source_record_id?: string | null
           id?: string
           is_commercial?: boolean | null
           last_seen_at?: string
@@ -1600,6 +4790,7 @@ export type Database = {
           estimated_value_gbp?: number | null
           first_seen_at?: string
           floorspace_sqm?: number | null
+          graph_source_record_id?: string | null
           id?: string
           is_commercial?: boolean | null
           last_seen_at?: string
@@ -1623,7 +4814,15 @@ export type Database = {
           updated_at?: string
           validated_date?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "planning_applications_graph_source_record_id_fkey"
+            columns: ["graph_source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       postcode_districts: {
         Row: {
@@ -1658,6 +4857,47 @@ export type Database = {
         }
         Relationships: []
       }
+      product_events: {
+        Row: {
+          company_id: string | null
+          created_at: string
+          event_name: string
+          id: string
+          metadata: Json
+          route: string | null
+          source: string | null
+          user_id: string | null
+        }
+        Insert: {
+          company_id?: string | null
+          created_at?: string
+          event_name: string
+          id?: string
+          metadata?: Json
+          route?: string | null
+          source?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          company_id?: string | null
+          created_at?: string
+          event_name?: string
+          id?: string
+          metadata?: Json
+          route?: string | null
+          source?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1685,6 +4925,436 @@ export type Database = {
         }
         Relationships: []
       }
+      property_intelligence_records: {
+        Row: {
+          avm_confidence: number | null
+          bathrooms: number | null
+          bedrooms: number | null
+          company_id: string
+          created_at: string
+          estimated_value_gbp: number | null
+          expires_at: string | null
+          garden: boolean | null
+          id: string
+          last_transaction_date: string | null
+          last_transaction_price_gbp: number | null
+          latest_trigger_date: string | null
+          latest_trigger_type: string | null
+          likely_to_sell_percentile: number | null
+          match_confidence: number
+          match_method: string
+          matched_address: string | null
+          opportunity_id: string
+          parking: boolean | null
+          planning_application_id: string
+          planning_history: Json
+          postcode: string | null
+          provider: string
+          retrieved_at: string
+          timing_reasons: Json
+          timing_signal: string
+          transaction_history: Json
+          trigger_history: Json
+          updated_at: string
+          uprn: string
+          value_max_gbp: number | null
+          value_min_gbp: number | null
+        }
+        Insert: {
+          avm_confidence?: number | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          company_id: string
+          created_at?: string
+          estimated_value_gbp?: number | null
+          expires_at?: string | null
+          garden?: boolean | null
+          id?: string
+          last_transaction_date?: string | null
+          last_transaction_price_gbp?: number | null
+          latest_trigger_date?: string | null
+          latest_trigger_type?: string | null
+          likely_to_sell_percentile?: number | null
+          match_confidence?: number
+          match_method?: string
+          matched_address?: string | null
+          opportunity_id: string
+          parking?: boolean | null
+          planning_application_id: string
+          planning_history?: Json
+          postcode?: string | null
+          provider: string
+          retrieved_at?: string
+          timing_reasons?: Json
+          timing_signal?: string
+          transaction_history?: Json
+          trigger_history?: Json
+          updated_at?: string
+          uprn: string
+          value_max_gbp?: number | null
+          value_min_gbp?: number | null
+        }
+        Update: {
+          avm_confidence?: number | null
+          bathrooms?: number | null
+          bedrooms?: number | null
+          company_id?: string
+          created_at?: string
+          estimated_value_gbp?: number | null
+          expires_at?: string | null
+          garden?: boolean | null
+          id?: string
+          last_transaction_date?: string | null
+          last_transaction_price_gbp?: number | null
+          latest_trigger_date?: string | null
+          latest_trigger_type?: string | null
+          likely_to_sell_percentile?: number | null
+          match_confidence?: number
+          match_method?: string
+          matched_address?: string | null
+          opportunity_id?: string
+          parking?: boolean | null
+          planning_application_id?: string
+          planning_history?: Json
+          postcode?: string | null
+          provider?: string
+          retrieved_at?: string
+          timing_reasons?: Json
+          timing_signal?: string
+          transaction_history?: Json
+          trigger_history?: Json
+          updated_at?: string
+          uprn?: string
+          value_max_gbp?: number | null
+          value_min_gbp?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "property_intelligence_records_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_intelligence_records_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "application_trade_opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "property_intelligence_records_planning_application_id_fkey"
+            columns: ["planning_application_id"]
+            isOneToOne: false
+            referencedRelation: "planning_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      provider_config: {
+        Row: {
+          adapter_key: string
+          b2b_only: boolean
+          config: Json
+          cost_model: string | null
+          created_at: string
+          crm_export_allowed: boolean
+          customer_display_allowed: boolean
+          daily_request_limit: number | null
+          display_name: string
+          enabled: boolean
+          environment: string
+          essential: boolean
+          health_status: string
+          last_successful_run: string | null
+          monthly_budget: number | null
+          priority: number
+          provider_category: string | null
+          provider_key: string
+          request_cost: number | null
+          supports_company_enrichment: boolean
+          supports_contact_enrichment: boolean
+          supports_events: boolean
+          supports_jobs: boolean
+          supports_property: boolean
+          supports_technographics: boolean
+          updated_at: string
+        }
+        Insert: {
+          adapter_key: string
+          b2b_only?: boolean
+          config?: Json
+          cost_model?: string | null
+          created_at?: string
+          crm_export_allowed?: boolean
+          customer_display_allowed?: boolean
+          daily_request_limit?: number | null
+          display_name: string
+          enabled?: boolean
+          environment?: string
+          essential?: boolean
+          health_status?: string
+          last_successful_run?: string | null
+          monthly_budget?: number | null
+          priority?: number
+          provider_category?: string | null
+          provider_key: string
+          request_cost?: number | null
+          supports_company_enrichment?: boolean
+          supports_contact_enrichment?: boolean
+          supports_events?: boolean
+          supports_jobs?: boolean
+          supports_property?: boolean
+          supports_technographics?: boolean
+          updated_at?: string
+        }
+        Update: {
+          adapter_key?: string
+          b2b_only?: boolean
+          config?: Json
+          cost_model?: string | null
+          created_at?: string
+          crm_export_allowed?: boolean
+          customer_display_allowed?: boolean
+          daily_request_limit?: number | null
+          display_name?: string
+          enabled?: boolean
+          environment?: string
+          essential?: boolean
+          health_status?: string
+          last_successful_run?: string | null
+          monthly_budget?: number | null
+          priority?: number
+          provider_category?: string | null
+          provider_key?: string
+          request_cost?: number | null
+          supports_company_enrichment?: boolean
+          supports_contact_enrichment?: boolean
+          supports_events?: boolean
+          supports_jobs?: boolean
+          supports_property?: boolean
+          supports_technographics?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      provider_data_rights: {
+        Row: {
+          attribution_required: boolean
+          cache_allowed: boolean
+          created_at: string
+          crm_export_allowed: boolean
+          customer_display_allowed: boolean
+          customer_export_allowed: boolean
+          field_key: string
+          id: string
+          internal_use_only: boolean
+          notes: string | null
+          provider_key: string
+          retention_period_days: number | null
+        }
+        Insert: {
+          attribution_required?: boolean
+          cache_allowed?: boolean
+          created_at?: string
+          crm_export_allowed?: boolean
+          customer_display_allowed?: boolean
+          customer_export_allowed?: boolean
+          field_key?: string
+          id?: string
+          internal_use_only?: boolean
+          notes?: string | null
+          provider_key: string
+          retention_period_days?: number | null
+        }
+        Update: {
+          attribution_required?: boolean
+          cache_allowed?: boolean
+          created_at?: string
+          crm_export_allowed?: boolean
+          customer_display_allowed?: boolean
+          customer_export_allowed?: boolean
+          field_key?: string
+          id?: string
+          internal_use_only?: boolean
+          notes?: string | null
+          provider_key?: string
+          retention_period_days?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_data_rights_provider_key_fkey"
+            columns: ["provider_key"]
+            isOneToOne: false
+            referencedRelation: "provider_config"
+            referencedColumns: ["provider_key"]
+          },
+        ]
+      }
+      provider_usage: {
+        Row: {
+          credits_used: number | null
+          customer_revenue_pence: number | null
+          endpoint: string | null
+          estimated_cost: number | null
+          id: string
+          ingestion_run_id: string | null
+          metadata: Json
+          operation: string
+          provider_key: string
+          records_failed: number
+          records_matched: number
+          requested_at: string
+          succeeded: boolean
+          units: number
+        }
+        Insert: {
+          credits_used?: number | null
+          customer_revenue_pence?: number | null
+          endpoint?: string | null
+          estimated_cost?: number | null
+          id?: string
+          ingestion_run_id?: string | null
+          metadata?: Json
+          operation: string
+          provider_key: string
+          records_failed?: number
+          records_matched?: number
+          requested_at?: string
+          succeeded?: boolean
+          units?: number
+        }
+        Update: {
+          credits_used?: number | null
+          customer_revenue_pence?: number | null
+          endpoint?: string | null
+          estimated_cost?: number | null
+          id?: string
+          ingestion_run_id?: string | null
+          metadata?: Json
+          operation?: string
+          provider_key?: string
+          records_failed?: number
+          records_matched?: number
+          requested_at?: string
+          succeeded?: boolean
+          units?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_usage_ingestion_run_id_fkey"
+            columns: ["ingestion_run_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_ingestion_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_usage_provider_key_fkey"
+            columns: ["provider_key"]
+            isOneToOne: false
+            referencedRelation: "provider_config"
+            referencedColumns: ["provider_key"]
+          },
+        ]
+      }
+      quote_requests: {
+        Row: {
+          audience_type: string
+          company_id: string
+          email: string | null
+          id: string
+          lead_match_id: string | null
+          market_signal_trade_match_id: string | null
+          message: string | null
+          name: string
+          opportunity_id: string | null
+          phone: string | null
+          preferred_contact_method: string
+          response_link_id: string
+          status: string
+          submitted_at: string
+          updated_at: string
+        }
+        Insert: {
+          audience_type: string
+          company_id: string
+          email?: string | null
+          id?: string
+          lead_match_id?: string | null
+          market_signal_trade_match_id?: string | null
+          message?: string | null
+          name: string
+          opportunity_id?: string | null
+          phone?: string | null
+          preferred_contact_method: string
+          response_link_id: string
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+        }
+        Update: {
+          audience_type?: string
+          company_id?: string
+          email?: string | null
+          id?: string
+          lead_match_id?: string | null
+          market_signal_trade_match_id?: string | null
+          message?: string | null
+          name?: string
+          opportunity_id?: string | null
+          phone?: string | null
+          preferred_contact_method?: string
+          response_link_id?: string
+          status?: string
+          submitted_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_requests_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_requests_lead_match_id_fkey"
+            columns: ["lead_match_id"]
+            isOneToOne: false
+            referencedRelation: "lead_match_current_state"
+            referencedColumns: ["lead_match_id"]
+          },
+          {
+            foreignKeyName: "quote_requests_lead_match_id_fkey"
+            columns: ["lead_match_id"]
+            isOneToOne: false
+            referencedRelation: "lead_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_requests_market_signal_trade_match_id_fkey"
+            columns: ["market_signal_trade_match_id"]
+            isOneToOne: false
+            referencedRelation: "market_signal_trade_matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_requests_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "application_trade_opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_requests_response_link_id_fkey"
+            columns: ["response_link_id"]
+            isOneToOne: false
+            referencedRelation: "outreach_response_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rate_limit_events: {
         Row: {
           created_at: string
@@ -1705,6 +5375,335 @@ export type Database = {
           scope?: string
         }
         Relationships: []
+      }
+      scoring_rules: {
+        Row: {
+          created_at: string
+          factor_key: string
+          formula_version: string
+          id: string
+          is_active: boolean
+          market_id: string | null
+          max_value: number
+          min_value: number
+          weight: number
+        }
+        Insert: {
+          created_at?: string
+          factor_key: string
+          formula_version: string
+          id?: string
+          is_active?: boolean
+          market_id?: string | null
+          max_value?: number
+          min_value?: number
+          weight: number
+        }
+        Update: {
+          created_at?: string
+          factor_key?: string
+          formula_version?: string
+          id?: string
+          is_active?: boolean
+          market_id?: string | null
+          max_value?: number
+          min_value?: number
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scoring_rules_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "opportunity_markets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      signal_evidence: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          rationale: string | null
+          signal_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          rationale?: string | null
+          signal_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          rationale?: string | null
+          signal_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signal_evidence_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "signal_evidence_signal_id_fkey"
+            columns: ["signal_id"]
+            isOneToOne: false
+            referencedRelation: "signals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      signals: {
+        Row: {
+          b2b_status: string
+          buying_window_end: string | null
+          buying_window_start: string | null
+          commercial_relevance: number | null
+          confidence: number | null
+          created_at: string
+          customer_eligible: boolean
+          dedupe_key: string
+          entity_id: string
+          first_detected_at: string
+          generation_method: string
+          generation_version: string
+          id: string
+          interpretation: Json
+          last_confirmed_at: string
+          location_id: string | null
+          signal_family: string | null
+          signal_type: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          b2b_status?: string
+          buying_window_end?: string | null
+          buying_window_start?: string | null
+          commercial_relevance?: number | null
+          confidence?: number | null
+          created_at?: string
+          customer_eligible?: boolean
+          dedupe_key: string
+          entity_id: string
+          first_detected_at?: string
+          generation_method?: string
+          generation_version?: string
+          id?: string
+          interpretation?: Json
+          last_confirmed_at?: string
+          location_id?: string | null
+          signal_family?: string | null
+          signal_type: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          b2b_status?: string
+          buying_window_end?: string | null
+          buying_window_start?: string | null
+          commercial_relevance?: number | null
+          confidence?: number | null
+          created_at?: string
+          customer_eligible?: boolean
+          dedupe_key?: string
+          entity_id?: string
+          first_detected_at?: string
+          generation_method?: string
+          generation_version?: string
+          id?: string
+          interpretation?: Json
+          last_confirmed_at?: string
+          location_id?: string | null
+          signal_family?: string | null
+          signal_type?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signals_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "business_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "signals_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "business_locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      source_record_links: {
+        Row: {
+          confidence: number | null
+          created_at: string
+          entity_id: string | null
+          event_id: string | null
+          id: string
+          link_type: string
+          location_id: string | null
+          metadata: Json
+          opportunity_id: string | null
+          signal_id: string | null
+          source_record_id: string
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string
+          entity_id?: string | null
+          event_id?: string | null
+          id?: string
+          link_type: string
+          location_id?: string | null
+          metadata?: Json
+          opportunity_id?: string | null
+          signal_id?: string | null
+          source_record_id: string
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string
+          entity_id?: string | null
+          event_id?: string | null
+          id?: string
+          link_type?: string
+          location_id?: string | null
+          metadata?: Json
+          opportunity_id?: string | null
+          signal_id?: string | null
+          source_record_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_record_links_entity_id_fkey"
+            columns: ["entity_id"]
+            isOneToOne: false
+            referencedRelation: "business_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_record_links_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_record_links_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "business_locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_record_links_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_record_links_signal_id_fkey"
+            columns: ["signal_id"]
+            isOneToOne: false
+            referencedRelation: "signals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_record_links_source_record_id_fkey"
+            columns: ["source_record_id"]
+            isOneToOne: false
+            referencedRelation: "source_records"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      source_records: {
+        Row: {
+          b2b_status: string
+          commercial_relevance: number | null
+          content_hash: string | null
+          external_id: string
+          first_seen_at: string
+          id: string
+          include_in_customer_opportunities: boolean
+          include_in_entity_resolution: boolean
+          include_in_signal_generation: boolean
+          ingestion_run_id: string | null
+          is_consumer_record: boolean
+          is_fixture: boolean
+          last_seen_at: string
+          payload: Json
+          provider_key: string
+          record_type: string
+          retrieved_at: string
+          rights_snapshot: Json
+          source_published_at: string | null
+          source_url: string | null
+        }
+        Insert: {
+          b2b_status?: string
+          commercial_relevance?: number | null
+          content_hash?: string | null
+          external_id: string
+          first_seen_at?: string
+          id?: string
+          include_in_customer_opportunities?: boolean
+          include_in_entity_resolution?: boolean
+          include_in_signal_generation?: boolean
+          ingestion_run_id?: string | null
+          is_consumer_record?: boolean
+          is_fixture?: boolean
+          last_seen_at?: string
+          payload?: Json
+          provider_key: string
+          record_type: string
+          retrieved_at?: string
+          rights_snapshot?: Json
+          source_published_at?: string | null
+          source_url?: string | null
+        }
+        Update: {
+          b2b_status?: string
+          commercial_relevance?: number | null
+          content_hash?: string | null
+          external_id?: string
+          first_seen_at?: string
+          id?: string
+          include_in_customer_opportunities?: boolean
+          include_in_entity_resolution?: boolean
+          include_in_signal_generation?: boolean
+          ingestion_run_id?: string | null
+          is_consumer_record?: boolean
+          is_fixture?: boolean
+          last_seen_at?: string
+          payload?: Json
+          provider_key?: string
+          record_type?: string
+          retrieved_at?: string
+          rights_snapshot?: Json
+          source_published_at?: string | null
+          source_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_records_ingestion_run_id_fkey"
+            columns: ["ingestion_run_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_ingestion_runs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       spatial_ref_sys: {
         Row: {
@@ -1820,6 +5819,92 @@ export type Database = {
             columns: ["territory_claim_id"]
             isOneToOne: true
             referencedRelation: "territory_claims"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          source_trade_category_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          slug: string
+          source_trade_category_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          slug?: string
+          source_trade_category_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_categories_source_trade_category_id_fkey"
+            columns: ["source_trade_category_id"]
+            isOneToOne: true
+            referencedRelation: "trade_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_need_mappings: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          match_method: string
+          match_weight: number
+          need_category_id: string
+          supplier_category_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          match_method?: string
+          match_weight?: number
+          need_category_id: string
+          supplier_category_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          match_method?: string
+          match_weight?: number
+          need_category_id?: string
+          supplier_category_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_need_mappings_need_category_id_fkey"
+            columns: ["need_category_id"]
+            isOneToOne: false
+            referencedRelation: "need_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_need_mappings_supplier_category_id_fkey"
+            columns: ["supplier_category_id"]
+            isOneToOne: false
+            referencedRelation: "supplier_categories"
             referencedColumns: ["id"]
           },
         ]
@@ -1944,6 +6029,68 @@ export type Database = {
             columns: ["territory_id"]
             isOneToOne: false
             referencedRelation: "territories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      territory_market_events: {
+        Row: {
+          company_id: string
+          event_type: string
+          id: string
+          occurred_at: string
+          postcode_district: string
+          source_claim_id: string
+          territory_id: string
+          trade_category_id: string
+        }
+        Insert: {
+          company_id: string
+          event_type: string
+          id?: string
+          occurred_at?: string
+          postcode_district: string
+          source_claim_id: string
+          territory_id: string
+          trade_category_id: string
+        }
+        Update: {
+          company_id?: string
+          event_type?: string
+          id?: string
+          occurred_at?: string
+          postcode_district?: string
+          source_claim_id?: string
+          territory_id?: string
+          trade_category_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "territory_market_events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "territory_market_events_source_claim_id_fkey"
+            columns: ["source_claim_id"]
+            isOneToOne: false
+            referencedRelation: "territory_claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "territory_market_events_territory_id_fkey"
+            columns: ["territory_id"]
+            isOneToOne: false
+            referencedRelation: "territories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "territory_market_events_trade_category_id_fkey"
+            columns: ["trade_category_id"]
+            isOneToOne: false
+            referencedRelation: "trade_categories"
             referencedColumns: ["id"]
           },
         ]
@@ -2255,6 +6402,32 @@ export type Database = {
             Returns: string
           }
       auth_company_ids: { Args: never; Returns: string[] }
+      browse_b2b_preview_feed: {
+        Args: {
+          p_limit?: number
+          p_postcode_district: string
+          p_profile?: Json
+        }
+        Returns: {
+          access_level: string
+          buyer_name: string
+          deadline_at: string
+          estimated_project_value_high: number
+          estimated_trade_value_high: number
+          estimated_trade_value_low: number
+          headline: string
+          opportunity_bucket: string
+          profile_match: number
+          published_at: string
+          recommended_action: string
+          score: number
+          source_kind: string
+          source_record_id: string
+          source_url: string
+          stage: string
+          summary: string
+        }[]
+      }
       browse_data_coverage: {
         Args: never
         Returns: {
@@ -2281,6 +6454,46 @@ export type Database = {
           latest_ingest_status: string
           latest_updated: number
           provider: string
+        }[]
+      }
+      browse_intelligence_feed_coverage: {
+        Args: never
+        Returns: {
+          award_count: number
+          commercial_count: number
+          latest_record_at: string
+          pipeline_count: number
+          record_count: number
+          source_key: string
+          source_kind: string
+          source_label: string
+          tender_count: number
+        }[]
+      }
+      browse_market_signal_map: {
+        Args: { p_limit?: number; p_trade_slug?: string }
+        Returns: {
+          access_level: string
+          buyer_name: string
+          deadline_at: string
+          delivery_postcode: string
+          delivery_regions: string[]
+          estimated_trade_value_high: number
+          estimated_trade_value_low: number
+          fit_score: number
+          latitude: number
+          location_label: string
+          location_scope: string
+          longitude: number
+          market_signal_trade_match_id: string
+          opportunity_bucket: string
+          postcode_district: string
+          signal_type: string
+          source_url: string
+          title: string
+          trade_category_id: string
+          trade_name: string
+          trade_slug: string
         }[]
       }
       browse_nearby_opportunities: {
@@ -2340,6 +6553,34 @@ export type Database = {
           trade_slug: string
         }[]
       }
+      browse_opportunity_map_v2: {
+        Args: { p_limit?: number; p_trade_slug?: string }
+        Returns: {
+          commercial_estimated_trade_value_high: number
+          commercial_estimated_trade_value_low: number
+          commercial_opportunity_count: number
+          commercial_teaser_estimated_trade_value_high: number
+          commercial_teaser_estimated_trade_value_low: number
+          commercial_teaser_project_type: string
+          commercial_teaser_status: string
+          estimated_trade_value_high: number
+          estimated_trade_value_low: number
+          latitude: number
+          longitude: number
+          monthly_price_pence: number
+          opportunity_count: number
+          post_town: string
+          postcode_district: string
+          teaser_estimated_trade_value_high: number
+          teaser_estimated_trade_value_low: number
+          teaser_project_type: string
+          teaser_status: string
+          territory_status: string
+          trade_category_id: string
+          trade_name: string
+          trade_slug: string
+        }[]
+      }
       browse_opportunity_teaser: {
         Args: { p_opportunity_id: string }
         Returns: {
@@ -2361,6 +6602,63 @@ export type Database = {
           trade_category_slug: string
         }[]
       }
+      browse_owned_market_signals: {
+        Args: { p_limit?: number }
+        Returns: {
+          buyer_name: string
+          current_action: string
+          deadline_at: string
+          estimated_trade_value_high: number
+          estimated_trade_value_low: number
+          fit_score: number
+          market_signal_trade_match_id: string
+          opportunity_bucket: string
+          postcode_district: string
+          procurement_stage: string
+          published_at: string
+          recommended_action: string
+          signal_type: string
+          source_url: string
+          title: string
+          trade_name: string
+          trade_slug: string
+        }[]
+      }
+      browse_owned_market_signals_v2: {
+        Args: { p_limit?: number }
+        Returns: {
+          buyer_name: string
+          current_action: string
+          deadline_at: string
+          estimated_trade_value_high: number
+          estimated_trade_value_low: number
+          fit_score: number
+          location_label: string
+          location_scope: string
+          market_signal_trade_match_id: string
+          opportunity_bucket: string
+          postcode_district: string
+          procurement_stage: string
+          published_at: string
+          recommended_action: string
+          signal_type: string
+          source_url: string
+          title: string
+          trade_name: string
+          trade_slug: string
+        }[]
+      }
+      browse_recent_territory_market_events: {
+        Args: { p_limit?: number }
+        Returns: {
+          event_id: string
+          event_type: string
+          occurred_at: string
+          postcode_district: string
+          trade_name: string
+          trade_slug: string
+        }[]
+      }
       browse_territory_teaser: {
         Args: { p_postcode_district: string; p_trade_slug: string }
         Returns: {
@@ -2368,6 +6666,46 @@ export type Database = {
           estimated_trade_value_low: number
           planning_status: Database["public"]["Enums"]["planning_application_status"]
           project_type: string
+        }[]
+      }
+      browse_territory_trade_intelligence: {
+        Args: { p_postcode_district: string; p_trade_slug: string }
+        Returns: {
+          commercial_development_count: number
+          contract_award_count: number
+          estimated_trade_value_gbp: number
+          owns_territory: boolean
+          planning_count: number
+          postcode_district: string
+          public_pipeline_count: number
+          tender_count: number
+          total_opportunity_count: number
+          trade_name: string
+          trade_slug: string
+        }[]
+      }
+      browse_territory_trade_signal_feed: {
+        Args: {
+          p_limit?: number
+          p_postcode_district: string
+          p_trade_slug: string
+        }
+        Returns: {
+          access_level: string
+          buyer_name: string
+          deadline_at: string
+          estimated_trade_value_high: number
+          estimated_trade_value_low: number
+          headline: string
+          opportunity_bucket: string
+          published_at: string
+          recommended_action: string
+          score: number
+          source_kind: string
+          source_record_id: string
+          source_url: string
+          stage: string
+          summary: string
         }[]
       }
       cancel_lead_follow_up: {
@@ -2420,6 +6758,10 @@ export type Database = {
           planning_application_id: string
           previous_status: Database["public"]["Enums"]["classification_status"]
         }[]
+      }
+      company_has_market_signal_access: {
+        Args: { p_company_id: string; p_match_id: string }
+        Returns: boolean
       }
       complete_contact_enrichment_lookup: {
         Args: { p_error_code?: string; p_lookup_id: string; p_status: string }
@@ -2567,6 +6909,10 @@ export type Database = {
         | { Args: { schema_name: string; table_name: string }; Returns: string }
         | { Args: { table_name: string }; Returns: string }
       enablelongtransactions: { Args: never; Returns: string }
+      enqueue_market_signal_fetches: {
+        Args: { p_limit?: number; p_since?: string }
+        Returns: number
+      }
       equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
       expire_stale_territory_reservations: { Args: never; Returns: undefined }
       geometry: { Args: { "": string }; Returns: unknown }
@@ -2667,6 +7013,25 @@ export type Database = {
         Returns: boolean
       }
       geomfromewkt: { Args: { "": string }; Returns: unknown }
+      get_conversion_learning_benchmarks: {
+        Args: { p_min_platform_sample?: number }
+        Returns: {
+          audience_type: string
+          channel: string
+          opened_count: number
+          quote_count: number
+          quote_rate: number
+          response_count: number
+          response_rate: number
+          sample_size: number
+          scope: string
+          source_type: string
+          trade_name: string
+          win_rate: number
+          won_count: number
+          won_value_gbp: number
+        }[]
+      }
       get_outreach_generation_status: {
         Args: { p_opportunity_id: string }
         Returns: {
@@ -2676,6 +7041,43 @@ export type Database = {
           monthly_used: number
           remaining_generations: number
           used_generations: number
+        }[]
+      }
+      get_owned_market_signal: {
+        Args: { p_match_id: string }
+        Returns: {
+          buyer_identifier: string
+          buyer_name: string
+          contact: Json
+          contract_end_date: string
+          contract_start_date: string
+          cpv_codes: string[]
+          current_action: string
+          deadline_at: string
+          estimated_trade_value_high: number
+          estimated_trade_value_low: number
+          external_ocid: string
+          fit_score: number
+          location_text: string
+          market_signal_trade_match_id: string
+          match_reasons: string[]
+          notice_type: string
+          opportunity_bucket: string
+          postcode_district: string
+          procurement_stage: string
+          project_value_high: number
+          project_value_low: number
+          published_at: string
+          recommended_action: string
+          signal_id: string
+          signal_type: string
+          source: string
+          source_url: string
+          summary: string
+          supplier_name: string
+          title: string
+          trade_name: string
+          trade_slug: string
         }[]
       }
       gettransactionid: { Args: never; Returns: unknown }
@@ -2745,6 +7147,23 @@ export type Database = {
         }
       }
       longtransactionsenabled: { Args: never; Returns: boolean }
+      market_signal_is_current: {
+        Args: { p_deadline: string; p_published: string; p_type: string }
+        Returns: boolean
+      }
+      normalise_market_signal_region: {
+        Args: { p_region: string }
+        Returns: string
+      }
+      opt_out_quote_link: {
+        Args: { p_reason?: string; p_token_hash: string }
+        Returns: {
+          already_opted_out: boolean
+          company_id: string
+          opportunity_id: string
+          response_link_id: string
+        }[]
+      }
       populate_geometry_columns:
         | { Args: { tbl_oid: unknown; use_typmod?: boolean }; Returns: number }
         | { Args: { use_typmod?: boolean }; Returns: string }
@@ -2786,8 +7205,25 @@ export type Database = {
       postgis_version: { Args: never; Returns: string }
       postgis_wagyu_version: { Args: never; Returns: string }
       prune_rate_limit_events: { Args: never; Returns: undefined }
+      queue_public_market_signal_fetch: {
+        Args: { p_url: string }
+        Returns: number
+      }
+      read_public_market_signal_fetch: {
+        Args: { p_request_id: number }
+        Returns: {
+          content: string
+          error_msg: string
+          status_code: number
+          timed_out: boolean
+        }[]
+      }
       remove_company_member: {
         Args: { p_membership_id: string }
+        Returns: undefined
+      }
+      replace_customer_profile_terms: {
+        Args: { p_company_id: string; p_terms: Json }
         Returns: undefined
       }
       rescore_stale_opportunities: { Args: never; Returns: undefined }
@@ -2850,6 +7286,96 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      score_opportunity_factors: {
+        Args: {
+          p_factors: Json
+          p_formula_version?: string
+          p_market_id: string
+        }
+        Returns: {
+          formula_version: string
+          score: number
+          temperature: string
+        }[]
+      }
+      search_assistant_knowledge: {
+        Args: {
+          p_match_count?: number
+          p_query: string
+          p_query_embedding?: string
+        }
+        Returns: {
+          category: string
+          content: string
+          document_slug: string
+          document_title: string
+          heading: string
+          relevance: number
+        }[]
+      }
+      search_market_trade_signals: {
+        Args: {
+          p_limit?: number
+          p_location: string
+          p_signal_type?: string
+          p_trade_slug?: string
+        }
+        Returns: {
+          access_level: string
+          buyer_name: string
+          deadline_at: string
+          estimated_trade_value_high: number
+          estimated_trade_value_low: number
+          fit_score: number
+          market_signal_trade_match_id: string
+          post_town: string
+          postcode_district: string
+          procurement_stage: string
+          recommended_action: string
+          signal_type: string
+          source_url: string
+          title: string
+          total_matches: number
+          trade_name: string
+          trade_slug: string
+        }[]
+      }
+      search_opportunity_teasers: {
+        Args: {
+          p_limit?: number
+          p_location: string
+          p_status?: string
+          p_trade_slug?: string
+        }
+        Returns: {
+          access_level: string
+          estimated_trade_value_high: number
+          estimated_trade_value_low: number
+          monthly_price_pence: number
+          opportunity_bucket: string
+          opportunity_id: string
+          opportunity_score: number
+          planning_status: string
+          post_town: string
+          postcode_district: string
+          project_type: string
+          recommended_action: string
+          summary: string
+          territory_status: string
+          total_matches: number
+          trade_name: string
+          trade_slug: string
+        }[]
+      }
+      set_market_signal_action: {
+        Args: {
+          p_action: string
+          p_contract_value_gbp?: number
+          p_match_id: string
+          p_note?: string
+        }
+        Returns: undefined
       }
       st_3dclosestpoint: {
         Args: { geom1: unknown; geom2: unknown }
@@ -3431,6 +7957,38 @@ export type Database = {
       st_wrapx: {
         Args: { geom: unknown; move: number; wrap: number }
         Returns: unknown
+      }
+      submit_quote_link_response: {
+        Args: {
+          p_email: string
+          p_message: string
+          p_name: string
+          p_permission_text: string
+          p_permission_text_version: string
+          p_phone: string
+          p_preferred_contact_method: string
+          p_token_hash: string
+        }
+        Returns: {
+          already_submitted: boolean
+          audience_type: string
+          company_id: string
+          lead_match_id: string
+          opportunity_id: string
+          quote_request_id: string
+        }[]
+      }
+      sync_application_trade_opportunity_to_graph: {
+        Args: { p_legacy_opportunity_id: string }
+        Returns: string
+      }
+      sync_legacy_lead_match_to_graph: {
+        Args: { p_lead_match_id: string }
+        Returns: undefined
+      }
+      sync_planning_application_to_graph: {
+        Args: { p_planning_application_id: string }
+        Returns: string
       }
       unlockrows: { Args: { "": string }; Returns: number }
       updategeometrysrid: {
