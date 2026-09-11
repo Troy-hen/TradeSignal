@@ -17,10 +17,10 @@ export async function POST(request: Request) {
 
   const supabase = await createClient();
   const { data } = await supabase
-    .from("trade_categories")
+    .from("supplier_categories")
     .select("slug, name, description")
     .eq("is_active", true)
-    .order("display_order")
+    .order("name")
     .limit(120);
   const profile = await normaliseSellingProfile(parsed.data.what_do_you_sell, data ?? []);
   return NextResponse.json({ profile });
