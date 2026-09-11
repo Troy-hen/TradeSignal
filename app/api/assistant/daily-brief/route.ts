@@ -55,7 +55,7 @@ export async function GET() {
     const evidence = buildEvidence(workspace, Array.isArray(benchmarks) ? benchmarks : []);
     const targets = buildTargets(workspace);
 
-    const model = process.env.ASK_MYTRADEBOX_MODEL ?? "gpt-5-mini";
+    const model = process.env.ASK_TRADESIGNAL_MODEL ?? process.env.ASK_MYTRADEBOX_MODEL ?? "gpt-5-mini";
     const response = await openai.responses.create({
       model,
       input: [
