@@ -34,10 +34,10 @@ export async function POST(request: Request) {
   ].filter(Boolean).join("\n");
 
   const { data: candidates } = await supabase
-    .from("trade_categories")
+    .from("supplier_categories")
     .select("slug, name, description")
     .eq("is_active", true)
-    .order("display_order")
+    .order("name")
     .limit(120);
 
   const normalized = await normaliseSellingProfile(context, candidates ?? []);
