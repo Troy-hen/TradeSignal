@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isConfiguredDemoUser } from "@/lib/auth/demo";
 import { getStripeClient } from "@/lib/stripe/client";
 import {
+  countLeadUnlocksForVertical,
   createLeadUnlockIntent,
   findLeadUnlock,
   isPaidUnlock,
@@ -62,10 +63,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "checkout_in_progress" }, { status: 409 });
   }
 
+  const verticalKey = verticalKeyFromTarget(targetExists.data);
+  if (!verticalKey) {
+    return NextResponse.json({ error: "opportunity_not_categorised" }, { status: 409 });
+  }
+  const verticalUnlockCount = await countLeadUnlocksForVertical(company.id, verticalKey);
+  if (verticalUnlockCount >= 3) {
+    return NextResponse.json({ error: "vertical_unlock_limit_reached", vertical: verticalKey, limit: 3 }, { status: 409 });
+  }
+
   const { row, error: intentError } = await createLeadUnlockIntent({
     companyId: company.id,
     userId: user.id,
     target,
+    verticalKey,
   });
   if (intentError || !row) {
     console.error("lead unlock intent failed", intentError);
@@ -154,6 +165,14 @@ export async function POST(request: Request) {
 function hasRpcRow(value: unknown): boolean {
   if (Array.isArray(value)) return value.length > 0;
   return Boolean(value && typeof value === "object");
+}
+
+function verticalKeyFromTarget(value: unknown): string | null {
+  const row = Array.isArray(value) ? value[0] : value;
+  if (!row || typeof row !== "object") return null;
+  const record = row as Record<string, unknown>;
+  const key = record.trade_category_slug ?? record.trade_slug;
+  return typeof key === "string" && key.trim() ? key.trim().toLowerCase() : null;
 }
 
 function destinationFor(target: LeadUnlockTarget, request: Request, baseUrl?: string): string {
