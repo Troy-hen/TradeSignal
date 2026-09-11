@@ -3,7 +3,6 @@ import Link from "next/link";
 import { requireCurrentCompany } from "@/lib/auth/get-current-company";
 import { createClient } from "@/lib/supabase/server";
 import { OpportunityBadge, formatGbpRange } from "@/components/opportunity-badge";
-import { ClaimTerritoryButton } from "@/components/claim-territory-button";
 import { LockedOpportunityPreview } from "@/components/locked-opportunity-preview";
 import { LeadActionPanel } from "@/components/lead-action-panel";
 import { FollowUpPanel } from "@/components/follow-up-panel";
@@ -15,7 +14,6 @@ import { getOpportunityRelationshipIntelligence } from "@/lib/data/opportunity-i
 import { getStoredPropertyIntelligence } from "@/lib/data/property-intelligence";
 import { isPropertyIntelligenceConfigured } from "@/lib/property-intelligence";
 import type { Database } from "@/lib/types/database";
-import { formatMonthlyGbp } from "@/lib/coverage/pricing";
 
 type Opportunity = Database["public"]["Tables"]["application_trade_opportunities"]["Row"];
 type OpportunityTeaser = Database["public"]["Functions"]["browse_opportunity_teaser"]["Returns"][number];
@@ -277,19 +275,19 @@ function formatKeyFacts(value: unknown): string[] {
 }
 
 function LockedBrief({ teaser }: { teaser: OpportunityTeaser }) {
-  const priceLabel = formatMonthlyGbp(teaser.monthly_price_pence ?? 0);
-  const isAvailable = teaser.territory_status === "available";
   return (
     <div className="min-w-0">
-      <Link href="/territories" className="inline-flex items-center gap-2 text-sm font-semibold text-slate transition hover:text-charcoal">← Territory Explorer</Link>
+      <Link href="/opportunities" className="inline-flex items-center gap-2 text-sm font-semibold text-slate transition hover:text-charcoal">← Marketplace</Link>
       <div className="mt-4 rounded-3xl border border-light-grey bg-white p-6 sm:p-8">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Opportunity preview</p>
         <h1 className="mt-2 text-2xl font-bold tracking-tight text-charcoal sm:text-3xl">See the opportunity brief</h1>
         <p className="mt-3 text-sm text-slate">{teaser.postcode_district} · {teaser.trade_category_name}</p>
       </div>
-      <div className="mt-6"><LockedOpportunityPreview title="Claim to reveal the full brief" body="The address, planning reference, project summary, MyTradeBox intelligence, value estimate and recommended next move are reserved for the territory holder." teaser={{ projectType: teaser.project_type, status: teaser.planning_status, estimatedTradeValueLow: teaser.estimated_trade_value_low, estimatedTradeValueHigh: teaser.estimated_trade_value_high }} /></div>
+      <div className="mt-6"><LockedOpportunityPreview title="Unlock the full brief for £20" body="Choose this individual opportunity to reveal the company, contact detail, evidence trail and recommended next move." teaser={{ projectType: teaser.project_type, status: teaser.planning_status, estimatedTradeValueLow: teaser.estimated_trade_value_low, estimatedTradeValueHigh: teaser.estimated_trade_value_high }} /></div>
       <div className="mt-6 rounded-3xl border border-light-grey bg-charcoal p-6 text-white">
-        {isAvailable ? <><p className="font-semibold">Unlock {teaser.postcode_district} for {teaser.trade_category_name}</p><p className="mt-1 text-sm text-white/60">One exclusive territory for your business, from {priceLabel}/month.</p><div className="mt-4"><ClaimTerritoryButton postcodeDistrict={teaser.postcode_district} tradeCategoryId={teaser.trade_category_id} priceLabel={priceLabel} /></div></> : <><p className="font-semibold">This territory is already claimed.</p><p className="mt-1 text-sm text-white/60">The opportunity brief is available to the current territory holder.</p></>}
+        <p className="font-semibold">Make this opportunity actionable</p>
+        <p className="mt-1 text-sm text-white/60">The preview is free. Unlock this individual lead for £20 to reveal the complete brief and contact detail, then push it into your CRM.</p>
+        <Link href="/coverage" className="mt-4 inline-flex rounded-xl bg-signal-orange px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#e95f00]">Review coverage and unlocks →</Link>
       </div>
     </div>
   );

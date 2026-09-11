@@ -15,12 +15,7 @@ type TerritoryPreviewResult = {
   estimated_trade_value_gbp: number;
   territory_status: string;
   monthly_price_pence: number;
-  teaser?: {
-    project_type: string | null;
-    planning_status: string | null;
-    estimated_trade_value_low: number | null;
-    estimated_trade_value_high: number | null;
-  } | null;
+  teaser?: { project_type: string | null; planning_status: string | null; estimated_trade_value_low: number | null; estimated_trade_value_high: number | null } | null;
 };
 
 export function TerritorySearchForm({ trades, defaultDistrict, defaultTradeSlug }: { trades: TradeOption[]; defaultDistrict?: string; defaultTradeSlug?: string }) {
@@ -36,35 +31,22 @@ export function TerritorySearchForm({ trades, defaultDistrict, defaultTradeSlug 
     e.preventDefault();
     const cleaned = normalisePostcodeDistrict(district);
     if (!cleaned || !tradeSlug) return;
-
     setIsLoading(true);
     setError(null);
     setResult(null);
-
     try {
       const response = await fetch("/api/territory-availability?postcode=" + encodeURIComponent(cleaned) + "&trade=" + encodeURIComponent(tradeSlug));
       const body = await response.json();
       if (!response.ok) {
-        setError(response.status === 429 ? "Too many searches — please wait a moment and try again." : body.error === "unknown_postcode_district" ? "We do not have live planning data for that postcode district yet." : body.error === "unknown_trade" ? "We could not recognise that trade." : "We could not check that territory. Please try again.");
+        setError(response.status === 429 ? "Too many searches — please wait a moment and try again." : body.error === "unknown_postcode_district" ? "We do not have live planning data for that starting location yet." : body.error === "unknown_trade" ? "We could not recognise that supplier category." : "We could not check that location. Please try again.");
         return;
       }
-
       const preview = body as TerritoryPreviewResult;
       const tradeName = trades.find((trade) => trade.slug === tradeSlug)?.name ?? tradeSlug;
       setResult(preview);
       setCheckedDistrict(cleaned);
       setCheckedTradeName(tradeName);
-      trackProductEvent("territory_previewed", {
-        source: "territory_explorer_search",
-        metadata: {
-          postcode_district: cleaned,
-          trade_slug: tradeSlug,
-          trade_name: tradeName,
-          territory_status: preview.territory_status,
-          applications_30d: Number(preview.applications_last_30d ?? 0),
-          estimated_trade_value_gbp: Number(preview.estimated_trade_value_gbp ?? 0),
-        },
-      });
+      trackProductEvent("territory_previewed", { source: "coverage_explorer_search", metadata: { postcode_district: cleaned, trade_slug: tradeSlug, trade_name: tradeName, territory_status: preview.territory_status, applications_30d: Number(preview.applications_last_30d ?? 0), estimated_trade_value_gbp: Number(preview.estimated_trade_value_gbp ?? 0) } });
     } catch {
       setError("Network error — please try again.");
     } finally {
@@ -74,40 +56,9 @@ export function TerritorySearchForm({ trades, defaultDistrict, defaultTradeSlug 
 
   return (
     <div className="space-y-4">
-      <form onSubmit={handleSubmit} className="rounded-3xl border border-signal-orange/15 bg-signal-orange/[0.035] p-5 shadow-[0_18px_50px_rgba(31,41,55,0.06)] sm:p-7">
-        <div className="flex items-start gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-signal-orange text-white shadow-sm shadow-signal-orange/20"><MapPinIcon /></span>
-          <div><p className="font-semibold text-charcoal">Find your local signal</p><p className="mt-1 text-sm leading-6 text-slate">Search a postcode district and trade to preview the opportunity before deciding whether it belongs in My coverage.</p></div>
-        </div>
-        <div className="mt-6 grid gap-4">
-          <label className="block min-w-0"><span className="mb-2 block text-xs font-semibold uppercase tracking-[0.11em] text-slate">Postcode district</span><input value={district} onChange={(e) => setDistrict(e.target.value)} placeholder="e.g. NR15" autoComplete="postal-code" required maxLength={8} className="w-full min-w-0 rounded-xl border border-light-grey bg-white px-4 py-3 text-sm text-charcoal placeholder:text-slate/60 focus:border-signal-orange focus:outline-none focus:ring-2 focus:ring-signal-orange/15" /></label>
-          <label className="block min-w-0"><span className="mb-2 block text-xs font-semibold uppercase tracking-[0.11em] text-slate">Your trade</span><select value={tradeSlug} onChange={(e) => setTradeSlug(e.target.value)} className="w-full min-w-0 rounded-xl border border-light-grey bg-white px-4 py-3 text-sm text-charcoal focus:border-signal-orange focus:outline-none focus:ring-2 focus:ring-signal-orange/15">{trades.map((t) => <option key={t.id} value={t.slug}>{t.name}</option>)}</select></label>
-        </div>
-        <button type="submit" disabled={isLoading || trades.length === 0} className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-signal-orange px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#e95f00] disabled:cursor-not-allowed disabled:opacity-60">{isLoading ? "Checking…" : "Preview this territory"}{!isLoading && <span className="ml-2">→</span>}</button>
-        {trades.length === 0 && <p role="status" className="mt-3 text-center text-xs text-danger">Trade options are temporarily unavailable. Please refresh and try again.</p>}
-        <p className="mt-3 text-center text-xs text-slate">Try NR15, IP22 or SW11.</p>
-      </form>
-
+      <form onSubmit={handleSubmit} className="rounded-3xl border border-signal-orange/15 bg-signal-orange/[0.035] p-5 shadow-[0_18px_50px_rgba(31,41,55,0.06)] sm:p-7"><div className="flex items-start gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-signal-orange text-white shadow-sm shadow-signal-orange/20"><MapPinIcon /></span><div><p className="font-semibold text-charcoal">Preview a starting location</p><p className="mt-1 text-sm leading-6 text-slate">Choose what you sell and a postcode district to preview the current opportunity signal. Final coverage can use broader geography.</p></div></div><div className="mt-6 grid gap-4"><label className="block min-w-0"><span className="mb-2 block text-xs font-semibold uppercase tracking-[0.11em] text-slate">Starting location</span><input value={district} onChange={(e) => setDistrict(e.target.value)} placeholder="e.g. NR15" autoComplete="postal-code" required maxLength={8} className="w-full min-w-0 rounded-xl border border-light-grey bg-white px-4 py-3 text-sm text-charcoal placeholder:text-slate/60 focus:border-signal-orange focus:outline-none focus:ring-2 focus:ring-signal-orange/15" /></label><label className="block min-w-0"><span className="mb-2 block text-xs font-semibold uppercase tracking-[0.11em] text-slate">What do you sell?</span><select value={tradeSlug} onChange={(e) => setTradeSlug(e.target.value)} className="w-full min-w-0 rounded-xl border border-light-grey bg-white px-4 py-3 text-sm text-charcoal focus:border-signal-orange focus:outline-none focus:ring-2 focus:ring-signal-orange/15">{trades.map((trade) => <option key={trade.id} value={trade.slug}>{trade.name}</option>)}</select></label></div><button type="submit" disabled={isLoading || trades.length === 0} className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-signal-orange px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#e95f00] disabled:cursor-not-allowed disabled:opacity-60">{isLoading ? "Checking…" : "Preview this signal"}{!isLoading && <span className="ml-2">→</span>}</button>{trades.length === 0 && <p role="status" className="mt-3 text-center text-xs text-danger">Supplier categories are temporarily unavailable. Please refresh and try again.</p>}<p className="mt-3 text-center text-xs text-slate">Try NR15, IP22 or SW11.</p></form>
       {error && <p role="alert" className="rounded-2xl bg-danger/10 px-4 py-3 text-sm font-medium text-danger">{error}</p>}
-
-      {result && (
-        <section role="status" className="overflow-hidden rounded-3xl border border-signal-orange/20 bg-white shadow-[0_18px_50px_rgba(255,106,0,0.08)]">
-          <div className="bg-signal-orange/[0.07] p-5 sm:p-6">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0"><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-signal-orange">Territory preview</p><h3 className="mt-2 text-xl font-bold tracking-tight text-charcoal">{checkedDistrict} · {checkedTradeName}</h3></div>
-              <span className={"rounded-full px-3 py-1.5 text-xs font-semibold " + (result.territory_status === "available" ? "bg-success/10 text-success" : "bg-slate/10 text-slate")}>{result.territory_status === "available" ? "Available" : "Claimed"}</span>
-            </div>
-            <dl className="mt-5 grid grid-cols-2 gap-3"><PreviewMetric label="Projects · 30d" value={String(result.applications_last_30d)} /><PreviewMetric label="High priority" value={String(result.high_priority_count)} /><PreviewMetric label="Construction activity" value={formatGbp(result.estimated_construction_activity_gbp)} /><PreviewMetric label="Est. trade value" value={formatGbp(result.estimated_trade_value_gbp)} /></dl>
-          </div>
-          <div className="p-4 sm:p-5">
-            <LockedOpportunityPreview compact title="A real project teaser from this district" body="The project type, status and indicative trade value are visible. Add the territory to My coverage to unlock the address, planning reference, full brief and contact timing." teaser={result.teaser ? { projectType: result.teaser.project_type, status: result.teaser.planning_status, estimatedTradeValueLow: result.teaser.estimated_trade_value_low, estimatedTradeValueHigh: result.teaser.estimated_trade_value_high } : null} />
-            <div className="mt-4 flex flex-col gap-3 rounded-2xl bg-soft-surface p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div><p className="text-sm font-semibold text-charcoal">{result.territory_status === "available" ? "Want the full local feed?" : "See the territory status and options"}</p><p className="mt-1 text-xs leading-5 text-slate">Explore here; manage the postcode districts you own from My coverage.</p></div>
-              <Link href={"/territories/" + encodeURIComponent(checkedDistrict) + "/" + encodeURIComponent(tradeSlug)} className="inline-flex shrink-0 items-center justify-center rounded-xl bg-signal-orange px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#e95f00]">{result.territory_status === "available" ? "View & claim" : "View territory"}</Link>
-            </div>
-          </div>
-        </section>
-      )}
+      {result && <section role="status" className="overflow-hidden rounded-3xl border border-signal-orange/20 bg-white shadow-[0_18px_50px_rgba(255,106,0,0.08)]"><div className="bg-signal-orange/[0.07] p-5 sm:p-6"><div className="flex flex-wrap items-start justify-between gap-3"><div className="min-w-0"><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-signal-orange">Opportunity preview</p><h3 className="mt-2 text-xl font-bold tracking-tight text-charcoal">{checkedDistrict} · {checkedTradeName}</h3></div><span className="rounded-full bg-success/10 px-3 py-1.5 text-xs font-semibold text-success">Preview ready</span></div><dl className="mt-5 grid grid-cols-2 gap-3"><PreviewMetric label="Signals · 30d" value={String(result.applications_last_30d)} /><PreviewMetric label="High priority" value={String(result.high_priority_count)} /><PreviewMetric label="Activity value" value={formatGbp(result.estimated_construction_activity_gbp)} /><PreviewMetric label="Profile-fit value" value={formatGbp(result.estimated_trade_value_gbp)} /></dl></div><div className="p-4 sm:p-5"><LockedOpportunityPreview compact title="Review the opportunity shape" body="The teaser shows enough to decide whether it is worth your time. Unlock the complete opportunity for £20 when the fit is clear." teaser={result.teaser ? { projectType: result.teaser.project_type, status: result.teaser.planning_status, estimatedTradeValueLow: result.teaser.estimated_trade_value_low, estimatedTradeValueHigh: result.teaser.estimated_trade_value_high } : null} /><div className="mt-4 flex flex-col gap-3 rounded-2xl bg-soft-surface p-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold text-charcoal">Choose your coverage next</p><p className="mt-1 text-xs leading-5 text-slate">Local, Regional or Nationwide. All relevant sources stay included.</p></div><Link href="/coverage" className="inline-flex shrink-0 items-center justify-center rounded-xl bg-signal-orange px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#e95f00]">Set up coverage</Link></div></div></section>}
     </div>
   );
 }

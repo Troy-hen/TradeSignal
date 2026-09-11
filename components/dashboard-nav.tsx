@@ -6,7 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: "overview" },
   { href: "/opportunities", label: "Marketplace", icon: "opportunities" },
-  { href: "/markets", label: "Markets", icon: "claimed" },
+  { href: "/coverage", label: "Coverage", icon: "claimed" },
   { href: "/territories", label: "Map", icon: "territories" },
   { href: "/opportunities?action=saved", label: "Saved", icon: "saved", queryAction: "saved" },
   { href: "/crm", label: "CRM", icon: "crm" },

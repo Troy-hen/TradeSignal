@@ -9,7 +9,13 @@ import type { Database } from "@/lib/types/database";
 import type { OpportunityActionFilter } from "@/lib/data/opportunities";
 
 type OpportunityBucket = Database["public"]["Enums"]["opportunity_bucket"];
-const BUCKETS: { value: OpportunityBucket | ""; label: string; helper: string }[] = [{ value: "", label: "All", helper: "Everything matched" }, { value: "hot", label: "Hot", helper: "90+ score" }, { value: "strong", label: "Strong", helper: "75–89 score" }, { value: "possible", label: "Possible", helper: "50–74 score" }, { value: "low", label: "Low", helper: "Below 50" }];
+const BUCKETS: { value: OpportunityBucket | ""; label: string; helper: string }[] = [
+  { value: "", label: "All", helper: "Everything matched" },
+  { value: "hot", label: "Hot", helper: "90+ score" },
+  { value: "strong", label: "Strong", helper: "75–89 score" },
+  { value: "possible", label: "Possible", helper: "50–74 score" },
+  { value: "low", label: "Low", helper: "Below 50" },
+];
 const SOURCES = [["", "All intelligence"], ["planning", "Planning"], ["tender", "Tenders"], ["public_pipeline", "Public pipeline"], ["contract_award", "Awards"], ["commercial_development", "Commercial builds"]] as const;
 const BUYERS = [["", "All buyers"], ["local_authority", "Local authority"]] as const;
 const ACTIONS = [["", "All stages"], ["new", "New"], ["saved", "Saved"], ["contacted", "Contacted"], ["bid_planned", "Bid planned"], ["bid_submitted", "Bid submitted"], ["quoted", "Quoted"], ["won", "Won"], ["lost", "Lost"]] as const;
@@ -33,16 +39,23 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
   const supabase = await createClient();
   const planningSourceSelected = !selectedSource || selectedSource === "planning" || selectedSource === "commercial_development";
 
-  const [{ data: activeClaims }, planningRaw, marketRaw] = await Promise.all([
+  const [{ data: activeClaims }, { data: activePlans }, planningRaw, marketRaw] = await Promise.all([
     supabase.from("territory_claims").select("id").eq("company_id", company.id).eq("status", "active").limit(1),
+    supabase.from("coverage_plans").select("id").eq("company_id", company.id).in("status", ["reserved", "active", "pending_change"]).limit(1),
     selectedBuyer || selectedAction.startsWith("bid_") || !planningSourceSelected ? Promise.resolve([]) : getCompanyOpportunities(company.id, { bucket: selectedBucket ? selectedBucket as OpportunityBucket : undefined, action: planningAction, limit: 300 }),
     selectedSource === "planning" ? Promise.resolve([]) : getOwnedMarketSignals(300),
   ]);
 
-  const marketSignals = marketRaw.filter((item) => { if (selectedSource && item.signal_type !== selectedSource) return false; if (selectedBucket && item.opportunity_bucket !== selectedBucket) return false; if (selectedAction && item.current_action !== selectedAction) return false; if (selectedBuyer === "local_authority" && !isLocalAuthorityBuyer(item.buyer_name)) return false; return true; });
+  const marketSignals = marketRaw.filter((item) => {
+    if (selectedSource && item.signal_type !== selectedSource) return false;
+    if (selectedBucket && item.opportunity_bucket !== selectedBucket) return false;
+    if (selectedAction && item.current_action !== selectedAction) return false;
+    if (selectedBuyer === "local_authority" && !isLocalAuthorityBuyer(item.buyer_name)) return false;
+    return true;
+  });
   const planning = selectedSource === "commercial_development" ? planningRaw.filter((item) => item.isCommercial === true) : planningRaw;
   const totalCount = planning.length + marketSignals.length;
-  const hasActiveClaims = (activeClaims?.length ?? 0) > 0;
+  const hasActiveClaims = (activeClaims?.length ?? 0) > 0 || (activePlans?.length ?? 0) > 0;
   const filtered = Boolean(selectedBucket || selectedAction || selectedSource || selectedBuyer);
   const hotCount = planning.filter((item) => item.bucket === "hot").length + marketSignals.filter((item) => item.opportunity_bucket === "hot").length;
   const savedCount = planning.filter((item) => ["saved", "viewed"].includes(item.currentAction ?? "")).length + marketSignals.filter((item) => ["saved", "viewed"].includes(item.current_action)).length;
@@ -51,15 +64,57 @@ export default async function OpportunitiesPage({ searchParams }: { searchParams
   if (selectedBucket) exportParams.set("bucket", selectedBucket);
   if (planningAction) exportParams.set("action", planningAction);
   const exportHref = `/api/opportunities/export${exportParams.toString() ? "?" + exportParams.toString() : ""}`;
-  const hrefFor = (overrides: { bucket?: string; action?: string; source?: string; buyer?: string }) => { const params = new URLSearchParams(); const nextBucket = overrides.bucket !== undefined ? overrides.bucket : selectedBucket; const nextAction = overrides.action !== undefined ? overrides.action : selectedAction; const nextSource = overrides.source !== undefined ? overrides.source : selectedSource; const nextBuyer = overrides.buyer !== undefined ? overrides.buyer : selectedBuyer; if (nextBucket) params.set("bucket", nextBucket); if (nextAction) params.set("action", nextAction); if (nextSource) params.set("source", nextSource); if (nextBuyer) params.set("buyer", nextBuyer); return params.toString() ? `/opportunities?${params}` : "/opportunities"; };
+  const hrefFor = (overrides: { bucket?: string; action?: string; source?: string; buyer?: string }) => {
+    const params = new URLSearchParams();
+    const nextBucket = overrides.bucket !== undefined ? overrides.bucket : selectedBucket;
+    const nextAction = overrides.action !== undefined ? overrides.action : selectedAction;
+    const nextSource = overrides.source !== undefined ? overrides.source : selectedSource;
+    const nextBuyer = overrides.buyer !== undefined ? overrides.buyer : selectedBuyer;
+    if (nextBucket) params.set("bucket", nextBucket);
+    if (nextAction) params.set("action", nextAction);
+    if (nextSource) params.set("source", nextSource);
+    if (nextBuyer) params.set("buyer", nextBuyer);
+    return params.toString() ? `/opportunities?${params}` : "/opportunities";
+  };
 
-  return <div className="min-w-0 space-y-8">
-    <section className="overflow-hidden rounded-[2rem] bg-charcoal p-6 text-white shadow-xl shadow-charcoal/10 sm:p-9"><div className="flex min-w-0 flex-col gap-6 lg:flex-row lg:items-end lg:justify-between"><div className="max-w-3xl"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Marketplace</p><h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-5xl">Opportunities worth your attention.</h1><p className="mt-4 text-sm leading-7 text-white/65 sm:text-base">A qualified feed across your owned markets. Every card is a decision surface: why now, how strong the fit is, what the evidence says and what to do next.</p></div><div className="flex shrink-0 flex-wrap gap-2"><a href={exportHref} className="inline-flex items-center justify-center rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-white/85 transition hover:border-white/35 hover:bg-white/5">Export planning CSV ↓</a><Link href="/markets" className="inline-flex items-center justify-center rounded-xl bg-signal-orange px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#e95f00]">Browse markets <span className="ml-2">→</span></Link></div></div><div className="mt-8 grid gap-3 border-t border-white/10 pt-6 sm:grid-cols-3"><HeaderStat label="Visible matches" value={String(totalCount)} detail="Across your current coverage" /><HeaderStat label="Hot now" value={String(hotCount)} detail="Highest current fit" /><HeaderStat label="Saved" value={String(savedCount)} detail="Ready for a follow-up" /></div></section>
+  return (
+    <div className="min-w-0 space-y-8">
+      <section className="overflow-hidden rounded-[2rem] bg-charcoal p-6 text-white shadow-xl shadow-charcoal/10 sm:p-9">
+        <div className="flex min-w-0 flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Unified marketplace</p>
+            <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-5xl">Opportunities worth your attention.</h1>
+            <p className="mt-4 text-sm leading-7 text-white/65 sm:text-base">One feed across every enabled intelligence source. Your business profile and coverage decide what is relevant; every card explains why now, fit, evidence and next action.</p>
+          </div>
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <a href={exportHref} className="inline-flex items-center justify-center rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-white/85 transition hover:border-white/35 hover:bg-white/5">Export planning CSV ↓</a>
+            <Link href="/coverage" className="inline-flex items-center justify-center rounded-xl bg-signal-orange px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#e95f00]">Manage coverage <span className="ml-2">→</span></Link>
+          </div>
+        </div>
+        <div className="mt-8 grid gap-3 border-t border-white/10 pt-6 sm:grid-cols-3"><HeaderStat label="Visible matches" value={String(totalCount)} detail="Across your current coverage" /><HeaderStat label="Hot now" value={String(hotCount)} detail="Highest current fit" /><HeaderStat label="Saved" value={String(savedCount)} detail="Ready for a follow-up" /></div>
+      </section>
 
-    <section className="rounded-3xl border border-light-grey bg-white p-4 sm:p-5"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold text-charcoal">Shape the market you see</p><p className="mt-1 text-xs text-slate">Filter by signal source, score or workflow stage. Identity and named-contact data remain protected by your entitlement and unlock rules.</p></div><p className="text-xs font-medium text-slate">{totalCount} {totalCount === 1 ? "opportunity" : "opportunities"}</p></div><div className="mt-4 flex gap-2 overflow-x-auto pb-1">{SOURCES.map(([value, label]) => <Link key={value} href={hrefFor({ source: value })} className={`min-w-max rounded-xl border px-3 py-2 text-sm font-semibold transition ${selectedSource === value ? "border-signal-orange bg-signal-orange text-white" : "border-light-grey bg-white text-charcoal hover:border-signal-orange/40"}`}>{label}</Link>)}</div><div className="mt-4 flex gap-2 overflow-x-auto border-t border-light-grey pt-4 pb-1">{BUYERS.map(([value, label]) => <Link key={value} href={hrefFor({ buyer: value })} className={`min-w-max rounded-xl border px-3 py-2 text-sm font-semibold transition ${selectedBuyer === value ? "border-signal-orange bg-signal-orange/10 text-signal-orange" : "border-light-grey bg-white text-charcoal hover:border-signal-orange/40"}`}>{label}</Link>)}</div><div className="mt-4 flex gap-2 overflow-x-auto border-t border-light-grey pt-4 pb-1">{BUCKETS.map((item) => <Link key={item.value} href={hrefFor({ bucket: item.value })} className={`flex min-w-max items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition ${selectedBucket === item.value ? "border-charcoal bg-charcoal text-white" : "border-light-grey bg-white text-charcoal hover:border-charcoal/30"}`}><span>{item.label}</span><span className={selectedBucket === item.value ? "text-white/60" : "text-slate"}>{item.helper}</span></Link>)}</div><div className="mt-4 flex flex-wrap gap-2 border-t border-light-grey pt-4">{ACTIONS.map(([value, label]) => <Link key={value} href={hrefFor({ action: value })} className={`rounded-xl border px-3 py-2 text-xs font-semibold transition ${selectedAction === value ? "border-charcoal bg-charcoal text-white" : "border-light-grey bg-white text-charcoal hover:border-signal-orange/40"}`}>{label}</Link>)}</div></section>
+      <section className="rounded-3xl border border-light-grey bg-white p-4 sm:p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold text-charcoal">Refine your opportunity feed</p><p className="mt-1 text-xs text-slate">Filter by source, score or workflow stage. Full company and contact detail becomes available only when you unlock an individual opportunity for £20.</p></div><p className="text-xs font-medium text-slate">{totalCount} {totalCount === 1 ? "opportunity" : "opportunities"}</p></div>
+        <div className="mt-4 flex gap-2 overflow-x-auto pb-1">{SOURCES.map(([value, label]) => <Link key={value} href={hrefFor({ source: value })} className={`min-w-max rounded-xl border px-3 py-2 text-sm font-semibold transition ${selectedSource === value ? "border-signal-orange bg-signal-orange text-white" : "border-light-grey bg-white text-charcoal hover:border-signal-orange/40"}`}>{label}</Link>)}</div>
+        <div className="mt-4 flex gap-2 overflow-x-auto border-t border-light-grey pt-4 pb-1">{BUYERS.map(([value, label]) => <Link key={value} href={hrefFor({ buyer: value })} className={`min-w-max rounded-xl border px-3 py-2 text-sm font-semibold transition ${selectedBuyer === value ? "border-signal-orange bg-signal-orange/10 text-signal-orange" : "border-light-grey bg-white text-charcoal hover:border-signal-orange/30"}`}>{label}</Link>)}</div>
+        <div className="mt-4 flex gap-2 overflow-x-auto border-t border-light-grey pt-4 pb-1">{BUCKETS.map((item) => <Link key={item.value} href={hrefFor({ bucket: item.value })} className={`flex min-w-max items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition ${selectedBucket === item.value ? "border-charcoal bg-charcoal text-white" : "border-light-grey bg-white text-charcoal hover:border-charcoal/30"}`}><span>{item.label}</span><span className={selectedBucket === item.value ? "text-white/60" : "text-slate"}>{item.helper}</span></Link>)}</div>
+        <div className="mt-4 flex flex-wrap gap-2 border-t border-light-grey pt-4">{ACTIONS.map(([value, label]) => <Link key={value} href={hrefFor({ action: value })} className={`rounded-xl border px-3 py-2 text-xs font-semibold transition ${selectedAction === value ? "border-charcoal bg-charcoal text-white" : "border-light-grey bg-white text-charcoal hover:border-signal-orange/40"}`}>{label}</Link>)}</div>
+      </section>
 
-    {totalCount === 0 ? <div className="rounded-3xl border border-dashed border-light-grey bg-white p-10 text-center sm:p-14"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-signal-orange/10 text-xl text-signal-orange">✦</div>{hasActiveClaims ? <><h2 className="mt-5 text-lg font-semibold text-charcoal">{filtered ? "Nothing matches these filters." : "No new opportunities in your coverage yet."}</h2><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate">{filtered ? "Clear the filters to return to your complete marketplace feed." : "MyTradeBox will keep watching planning, procurement and commercial signals across your patch."}</p>{filtered && <Link href="/opportunities" className="mt-5 inline-flex rounded-xl bg-charcoal px-4 py-2.5 text-sm font-semibold text-white">Clear filters</Link>}</> : <><h2 className="mt-5 text-lg font-semibold text-charcoal">Choose a market to unlock your opportunity feed.</h2><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate">Select a postcode district and supplier category to start monitoring local buying signals.</p><Link href="/territories" className="mt-5 inline-flex rounded-xl bg-charcoal px-4 py-2.5 text-sm font-semibold text-white">Explore your first market →</Link></>}</div> : <div className="space-y-6">{planning.length > 0 && <section><div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold uppercase tracking-[0.12em] text-slate">{selectedSource === "commercial_development" ? "Commercial planning opportunities" : "Projects & fit-outs"}</h2><span className="text-xs text-slate">{planning.length}</span></div><ul className="space-y-3">{planning.map((item) => <li key={item.leadMatchId}><OpportunityRow item={item} /></li>)}</ul></section>}{marketSignals.length > 0 && <section><div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold uppercase tracking-[0.12em] text-slate">Public & commercial intelligence</h2><span className="text-xs text-slate">{marketSignals.length}</span></div><ul className="space-y-3">{marketSignals.map((item) => <li key={item.market_signal_trade_match_id}><MarketSignalRow item={item} /></li>)}</ul></section>}</div>}
-  </div>;
+      {totalCount === 0 ? (
+        <div className="rounded-3xl border border-dashed border-light-grey bg-white p-10 text-center sm:p-14">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-signal-orange/10 text-xl text-signal-orange">✦</div>
+          {hasActiveClaims ? <><h2 className="mt-5 text-lg font-semibold text-charcoal">{filtered ? "Nothing matches these filters." : "No new opportunities in your coverage yet."}</h2><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate">{filtered ? "Clear the filters to return to your complete marketplace feed." : "MyTradeBox will keep watching every enabled intelligence source across your coverage."}</p>{filtered && <Link href="/opportunities" className="mt-5 inline-flex rounded-xl bg-charcoal px-4 py-2.5 text-sm font-semibold text-white">Clear filters</Link>}</> : <><h2 className="mt-5 text-lg font-semibold text-charcoal">Set up your coverage to see relevant opportunities.</h2><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate">Tell us what you sell, who you sell to and where you operate. The intelligence engine will decide which signals belong in your feed.</p><Link href="/coverage" className="mt-5 inline-flex rounded-xl bg-charcoal px-4 py-2.5 text-sm font-semibold text-white">Set up coverage →</Link></>}
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {planning.length > 0 && <section><div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold uppercase tracking-[0.12em] text-slate">{selectedSource === "commercial_development" ? "Commercial planning opportunities" : "Projects & fit-outs"}</h2><span className="text-xs text-slate">{planning.length}</span></div><ul className="space-y-3">{planning.map((item) => <li key={item.leadMatchId}><OpportunityRow item={item} /></li>)}</ul></section>}
+          {marketSignals.length > 0 && <section><div className="mb-3 flex items-center justify-between"><h2 className="text-sm font-bold uppercase tracking-[0.12em] text-slate">Public & commercial intelligence</h2><span className="text-xs text-slate">{marketSignals.length}</span></div><ul className="space-y-3">{marketSignals.map((item) => <li key={item.market_signal_trade_match_id}><MarketSignalRow item={item} /></li>)}</ul></section>}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function HeaderStat({ label, value, detail }: { label: string; value: string; detail: string }) { return <div className="rounded-2xl border border-white/10 bg-white/5 p-4"><p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/50">{label}</p><p className="mt-2 text-2xl font-bold tracking-tight text-white">{value}</p><p className="mt-1 text-xs leading-5 text-white/55">{detail}</p></div>; }

@@ -3,125 +3,101 @@ import { requireCurrentCompany } from "@/lib/auth/get-current-company";
 import { createClient } from "@/lib/supabase/server";
 import { formatMonthlyGbp } from "@/lib/coverage/pricing";
 
-const STATUS_COPY: Record<string, { label: string; className: string; dot: string }> = {
-  reserved: { label: "Payment pending", className: "text-warning", dot: "bg-warning" },
-  active: { label: "Active", className: "text-success", dot: "bg-success" },
-  suspended: { label: "Payment issue", className: "text-danger", dot: "bg-danger" },
-  expired: { label: "Expired", className: "text-slate", dot: "bg-slate" },
-  cancelled: { label: "Cancelled", className: "text-slate", dot: "bg-slate" },
-};
-
-export default async function MyTerritoriesPage() {
+export default async function MyCoveragePage() {
   const company = await requireCurrentCompany();
   const supabase = await createClient();
-
-  const { data: claims } = await supabase
-    .from("territory_claims")
-    .select("id, status, reserved_at, activated_at, territory_id")
+  const { data: plans } = await supabase
+    .from("coverage_plans")
+    .select("id, status, monthly_price_pence, billing_mode")
     .eq("company_id", company.id)
+    .in("status", ["reserved", "active", "pending_change", "suspended"])
     .order("created_at", { ascending: false });
 
-  if (!claims || claims.length === 0) {
-    return (
-      <div className="space-y-8">
-        <PageIntro />
-        <div className="rounded-3xl border border-dashed border-light-grey bg-white p-10 text-center sm:p-14">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-signal-orange/10 text-xl text-signal-orange">⌂</div>
-          <h2 className="mt-5 text-lg font-semibold text-charcoal">You haven&apos;t claimed any territories yet.</h2>
-          <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate">
-            Choose an area and trade to create your first focused opportunity feed.
-          </p>
-          <Link href="/territories" className="mt-5 inline-flex rounded-xl bg-signal-orange px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#e95f00]">
-            Find a territory <span className="ml-2">→</span>
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  const territoryIds = [...new Set(claims.map((c) => c.territory_id))];
-  const { data: territories } = await supabase
-    .from("territories")
-    .select("id, postcode_district, monthly_price_pence, trade_category_id")
-    .in("id", territoryIds);
-  const territoryById = new Map((territories ?? []).map((t) => [t.id, t]));
-
-  const tradeIds = [...new Set((territories ?? []).map((t) => t.trade_category_id))];
-  const { data: trades } = await supabase.from("trade_categories").select("id, name, slug").in("id", tradeIds);
-  const tradeById = new Map((trades ?? []).map((t) => [t.id, t]));
+  const planViews = await Promise.all((plans ?? []).map(async (plan) => {
+    const { data: items } = await supabase
+      .from("coverage_plan_items")
+      .select("postcode_district, status")
+      .eq("coverage_plan_id", plan.id)
+      .in("status", ["active", "pending_add"])
+      .order("postcode_district");
+    return {
+      id: plan.id,
+      status: plan.status,
+      billingMode: plan.billing_mode,
+      monthlyPricePence: Number(plan.monthly_price_pence ?? 0),
+      districts: (items ?? []).map((item) => item.postcode_district),
+    };
+  }));
 
   return (
     <div className="space-y-8">
-      <PageIntro />
-
-      <div className="flex items-center justify-between gap-4">
-        <p className="text-sm text-slate">{claims.length} {claims.length === 1 ? "territory" : "territories"} linked to your business</p>
-        <Link href="/territories" className="text-sm font-semibold text-signal-orange hover:text-[#e95f00]">Add territory →</Link>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Coverage summary</p>
+          <h1 className="mt-3 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">Your active reach.</h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate sm:text-base">
+            Review the geography currently connected to your account. Coverage controls where the engine looks; your profile controls which opportunities it prioritises.
+          </p>
+        </div>
+        <Link href="/coverage" className="shrink-0 text-sm font-semibold text-signal-orange hover:text-[#e95f00]">Manage coverage →</Link>
       </div>
 
-      <ul className="grid gap-4 xl:grid-cols-2">
-        {claims.map((claim) => {
-          const territory = territoryById.get(claim.territory_id);
-          const trade = territory ? tradeById.get(territory.trade_category_id) : null;
-          const status = STATUS_COPY[claim.status] ?? STATUS_COPY.expired;
-          const priceLabel = territory ? formatMonthlyGbp(territory.monthly_price_pence) : null;
-
-          return (
-            <li key={claim.id} className="rounded-3xl border border-light-grey bg-white p-5 sm:p-6">
-              <div className="flex items-start justify-between gap-4">
+      {planViews.length === 0 ? (
+        <section className="rounded-3xl border border-dashed border-signal-orange/30 bg-signal-orange/[0.04] p-8 text-center sm:p-12">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">No active geography yet</p>
+          <h2 className="mt-3 text-xl font-bold tracking-tight text-charcoal">Choose how far the engine should look.</h2>
+          <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate">Local, Regional and Nationwide use the same intelligence engine. All relevant opportunities remain included; individual lead unlocks are £20.</p>
+          <Link href="/coverage" className="mt-5 inline-flex rounded-xl bg-signal-orange px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#e95f00]">Set up coverage →</Link>
+        </section>
+      ) : (
+        <ul className="grid gap-4 xl:grid-cols-2">
+          {planViews.map((plan) => (
+            <li key={plan.id} className="rounded-3xl border border-light-grey bg-white p-5 sm:p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Exclusive territory</p>
-                  <h2 className="mt-2 text-xl font-semibold tracking-tight text-charcoal">
-                    {territory?.postcode_district ?? "Unknown district"}
-                  </h2>
-                  <p className="mt-1 text-sm text-slate">{trade?.name ?? "Trade"}</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-success">Connected coverage</p>
+                  <h2 className="mt-2 text-xl font-semibold tracking-tight text-charcoal">{labelForPlan(plan.billingMode)}</h2>
+                  <p className="mt-1 text-sm text-slate">{plan.districts.length > 0 ? plan.districts.join(", ") : "Geography is being prepared"}</p>
                 </div>
-                <span className={`inline-flex items-center gap-2 rounded-full bg-soft-surface px-3 py-1.5 text-xs font-semibold ${status.className}`}>
-                  <span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} />
-                  {status.label}
-                </span>
+                <div className="text-left sm:text-right">
+                  <p className="text-xl font-bold text-charcoal">{formatMonthlyGbp(plan.monthlyPricePence)}</p>
+                  <p className="text-xs text-slate">{humanize(plan.status)} · monthly</p>
+                </div>
               </div>
-
-              <div className="mt-6 grid grid-cols-2 gap-3">
-                <Metric label="Monthly access" value={priceLabel ?? "—"} />
-                <Metric label="Trade" value={trade?.name ?? "—"} />
+              <div className="mt-5 grid grid-cols-2 gap-3">
+                <Metric label="Opportunity access" value="Included" />
+                <Metric label="Lead unlock" value="£20 each" />
               </div>
-
-              {territory && trade && (
-                <Link
-                  href={`/territories/${territory.postcode_district}/${trade.slug}`}
-                  className="mt-5 inline-flex text-sm font-semibold text-signal-orange hover:text-[#e95f00]"
-                >
-                  View territory details →
-                </Link>
-              )}
             </li>
-          );
-        })}
-      </ul>
+          ))}
+        </ul>
+      )}
 
-      <p className="text-sm text-slate">
-        Manage payment details or cancel a territory from <Link href="/billing" className="font-semibold text-signal-orange hover:text-[#e95f00]">Billing</Link>.
-      </p>
+      <section className="rounded-3xl border border-light-grey bg-white p-6 sm:p-8">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-charcoal">Need to change the shape?</p>
+            <p className="mt-1 max-w-2xl text-sm leading-6 text-slate">Switch between county, selected towns or cities, radius, and UK-wide reach from Coverage. There are no separate vertical or source subscriptions.</p>
+          </div>
+          <Link href="/coverage" className="shrink-0 text-sm font-semibold text-signal-orange hover:text-[#e95f00]">Open Coverage →</Link>
+        </div>
+      </section>
     </div>
   );
 }
 
-function PageIntro() {
-  return (
-    <div>
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Territory management</p>
-      <h1 className="mt-3 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">My territories.</h1>
-      <p className="mt-3 max-w-2xl text-sm leading-6 text-slate sm:text-base">The postcode districts and trades your business currently owns. Adjust the shape of each trade plan from Coverage.</p>
-    </div>
-  );
+function labelForPlan(value: string | null) {
+  if (value === "county") return "Local coverage";
+  if (value === "places") return "Place-based coverage";
+  if (value === "radius") return "Radius coverage";
+  if (value === "nationwide") return "Nationwide coverage";
+  return "Coverage plan";
+}
+
+function humanize(value: string) {
+  return value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-light-grey bg-soft-surface p-3">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate">{label}</p>
-      <p className="mt-1 truncate text-sm font-bold text-charcoal">{value}</p>
-    </div>
-  );
+  return <div className="rounded-2xl border border-light-grey bg-soft-surface p-3"><p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate">{label}</p><p className="mt-1 text-sm font-bold text-charcoal">{value}</p></div>;
 }
