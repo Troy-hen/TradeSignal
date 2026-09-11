@@ -54,19 +54,17 @@ export async function GET(request: Request) {
   const { data: postcode } = await supabase.from("postcode_districts").select("id").eq("id", postcodeDistrict).maybeSingle();
   if (!postcode) return NextResponse.json({ error: "unknown_postcode_district" }, { status: 400 });
 
-  // The generated Supabase types are refreshed when the B2B migration is applied.
-  // Keep this route deployable before that type artifact is regenerated.
-  const { data: feedData, error: feedError } = await supabase.rpc("browse_b2b_preview_feed" as never, {
+  const { data: feedData, error: feedError } = await supabase.rpc("browse_b2b_preview_feed", {
     p_postcode_district: postcodeDistrict,
     p_profile: normalizedProfile,
     p_limit: 100,
-  } as never);
+  });
   if (feedError) {
     console.error("B2B public preview failed", feedError);
     return NextResponse.json({ error: "lookup_failed" }, { status: 500 });
   }
 
-  const feed = (feedData ?? []) as unknown as PreviewRow[];
+  const feed = (feedData ?? []) as PreviewRow[];
   const result = feed[0] ?? null;
   const marketCounts = new Map<string, number>();
   for (const row of feed) marketCounts.set(row.source_kind, (marketCounts.get(row.source_kind) ?? 0) + 1);
