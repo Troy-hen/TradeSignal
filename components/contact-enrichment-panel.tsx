@@ -19,7 +19,7 @@ export function ContactEnrichmentPanel({ intelligence, sourceUrl }: { intelligen
     <section className="mt-6 overflow-hidden rounded-3xl border border-light-grey bg-white">
       <div className="grid gap-0 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
         <div className="bg-charcoal p-5 text-white sm:p-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Project team & contact route</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Contact information</p>
           <h2 className="mt-2 text-xl font-bold tracking-tight">{contactStrategy.headline}</h2>
           <div className="mt-3 inline-flex rounded-full border border-white/10 bg-white/[0.06] px-3 py-1.5 text-xs font-semibold text-white/80">{contactStrategy.label}</div>
           <p className="mt-4 text-sm leading-6 text-white/60">{contactStrategy.explanation}</p>
@@ -28,7 +28,7 @@ export function ContactEnrichmentPanel({ intelligence, sourceUrl }: { intelligen
             <div className="mt-5 rounded-2xl border border-signal-orange/30 bg-signal-orange/10 p-4">
               <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-signal-orange">Recommended first move</p>
               <p className="mt-2 text-sm font-semibold text-white">Personalised postal letter</p>
-              <p className="mt-1 text-xs leading-5 text-white/60">Address to <span className="font-semibold text-white/80">{contactStrategy.suggestedRecipient}</span> at the project address. MyTradeBox does not infer a homeowner&apos;s private email or mobile.</p>
+              <p className="mt-1 text-xs leading-5 text-white/60">Address to <span className="font-semibold text-white/80">{contactStrategy.suggestedRecipient}</span> at the project address. TradeSignal does not infer a homeowner&apos;s private email or mobile.</p>
             </div>
           )}
 
@@ -106,9 +106,9 @@ export function ContactEnrichmentPanel({ intelligence, sourceUrl }: { intelligen
               <p className="text-sm font-semibold text-charcoal">{businessLed ? "No named project team came through in the planning feed." : "No planning organisation supplied."}</p>
               <p className="mt-2 text-sm leading-6 text-slate">
                 {businessLed
-                  ? "The project can still be commercially useful. MyTradeBox will offer a published professional-contact lookup when that service is enabled; the official planning record remains the best source to verify the applicant, agent or project team meanwhile."
+                  ? "The project can still be commercially useful. TradeSignal will offer a published professional-contact lookup when that service is enabled; the official planning record remains the best source to verify the applicant, agent or project team meanwhile."
                   : contactStrategy.primaryChannel === "postal"
-                    ? "That is expected for many homeowner-led projects. MyTradeBox keeps the opportunity actionable through project-address postal outreach rather than trying to discover private consumer contact details."
+                    ? "That is expected for many homeowner-led projects. TradeSignal keeps the opportunity actionable through project-address postal outreach rather than trying to discover private consumer contact details."
                     : "The project is still actionable from its planning details, score, timing and recommended approach. Organisation intelligence appears automatically when a reliable business identity is available."}
               </p>
             </div>
