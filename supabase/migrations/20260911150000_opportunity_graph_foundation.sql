@@ -1284,16 +1284,16 @@ create policy graph_source_records_admin_read on public.source_records
 for select to authenticated using ((select public.is_platform_admin()));
 
 create policy graph_opportunities_read on public.opportunities
-for select to authenticated using ((select private.graph_opportunity_visible(id)));
+for select to authenticated using ((select private.graph_opportunity_visible(opportunities.id)));
 create policy graph_opportunity_signals_read on public.opportunity_signals
-for select to authenticated using ((select private.graph_opportunity_visible(opportunity_id)));
+for select to authenticated using ((select private.graph_opportunity_visible(opportunity_signals.opportunity_id)));
 create policy graph_opportunity_needs_read on public.opportunity_needs
-for select to authenticated using ((select private.graph_opportunity_visible(opportunity_id)));
+for select to authenticated using ((select private.graph_opportunity_visible(opportunity_needs.opportunity_id)));
 create policy graph_opportunity_scores_read on public.opportunity_scores
-for select to authenticated using ((select private.graph_opportunity_visible(opportunity_id)));
+for select to authenticated using ((select private.graph_opportunity_visible(opportunity_scores.opportunity_id)));
 create policy graph_opportunity_score_factors_read on public.opportunity_score_factors
 for select to authenticated using (
-  exists (select 1 from public.opportunity_scores s where s.id = opportunity_score_id and (select private.graph_opportunity_visible(s.opportunity_id)))
+  exists (select 1 from public.opportunity_scores s where s.id = opportunity_score_factors.opportunity_score_id and (select private.graph_opportunity_visible(s.opportunity_id)))
 );
 create policy graph_opportunity_matches_read on public.opportunity_customer_matches
 for select to authenticated using ((select public.is_company_member(company_id)));
@@ -1302,43 +1302,43 @@ for select to authenticated using ((select private.graph_opportunity_visible(opp
 
 create policy graph_entities_read on public.business_entities
 for select to authenticated using (
-  exists (select 1 from public.opportunities o where o.entity_id = id and (select private.graph_opportunity_visible(o.id)))
+  exists (select 1 from public.opportunities o where o.entity_id = business_entities.id and (select private.graph_opportunity_visible(o.id)))
 );
 create policy graph_aliases_read on public.business_entity_aliases
 for select to authenticated using (
-  exists (select 1 from public.opportunities o join public.business_entities e on e.id = o.entity_id where e.id = entity_id and (select private.graph_opportunity_visible(o.id)))
+  exists (select 1 from public.opportunities o join public.business_entities e on e.id = o.entity_id where e.id = business_entity_aliases.entity_id and (select private.graph_opportunity_visible(o.id)))
 );
 create policy graph_locations_read on public.business_locations
 for select to authenticated using (
-  exists (select 1 from public.opportunities o where o.location_id = id and (select private.graph_opportunity_visible(o.id)))
+  exists (select 1 from public.opportunities o where o.location_id = business_locations.id and (select private.graph_opportunity_visible(o.id)))
 );
 create policy graph_people_read on public.people
 for select to authenticated using (
-  exists (select 1 from public.opportunity_contacts oc join public.opportunities o on o.id = oc.opportunity_id where oc.person_id = id and (select private.graph_opportunity_visible(o.id)))
+  exists (select 1 from public.opportunity_contacts oc join public.opportunities o on o.id = oc.opportunity_id where oc.person_id = people.id and (select private.graph_opportunity_visible(o.id)))
 );
 create policy graph_company_people_read on public.company_people
 for select to authenticated using (
-  exists (select 1 from public.opportunity_contacts oc join public.people p on p.id = oc.person_id join public.opportunities o on o.entity_id = company_people.entity_id where p.id = person_id and (select private.graph_opportunity_visible(o.id)))
+  exists (select 1 from public.opportunity_contacts oc join public.people p on p.id = oc.person_id join public.opportunities o on o.entity_id = company_people.entity_id where p.id = company_people.person_id and (select private.graph_opportunity_visible(o.id)))
 );
 create policy graph_contact_points_read on public.contact_points
 for select to authenticated using (
-  exists (select 1 from public.opportunity_contacts oc join public.opportunities o on o.id = oc.opportunity_id where oc.contact_point_id = id and (select private.graph_opportunity_visible(o.id)))
+  exists (select 1 from public.opportunity_contacts oc join public.opportunities o on o.id = oc.opportunity_id where oc.contact_point_id = contact_points.id and (select private.graph_opportunity_visible(o.id)))
 );
 create policy graph_events_read on public.events
 for select to authenticated using (
-  exists (select 1 from public.signal_evidence se join public.signals s on s.id = se.signal_id join public.opportunity_signals os on os.signal_id = s.id where se.event_id = id and (select private.graph_opportunity_visible(os.opportunity_id)))
+  exists (select 1 from public.signal_evidence se join public.signals s on s.id = se.signal_id join public.opportunity_signals os on os.signal_id = s.id where se.event_id = events.id and (select private.graph_opportunity_visible(os.opportunity_id)))
 );
 create policy graph_event_evidence_read on public.event_evidence
 for select to authenticated using (
-  exists (select 1 from public.events e join public.signal_evidence se on se.event_id = e.id join public.opportunity_signals os on os.signal_id = se.signal_id where e.id = event_id and (select private.graph_opportunity_visible(os.opportunity_id)))
+  exists (select 1 from public.events e join public.signal_evidence se on se.event_id = e.id join public.opportunity_signals os on os.signal_id = se.signal_id where e.id = event_evidence.event_id and (select private.graph_opportunity_visible(os.opportunity_id)))
 );
 create policy graph_signals_read on public.signals
 for select to authenticated using (
-  exists (select 1 from public.opportunity_signals os where os.signal_id = id and (select private.graph_opportunity_visible(os.opportunity_id)))
+  exists (select 1 from public.opportunity_signals os where os.signal_id = signals.id and (select private.graph_opportunity_visible(os.opportunity_id)))
 );
 create policy graph_signal_evidence_read on public.signal_evidence
 for select to authenticated using (
-  exists (select 1 from public.opportunity_signals os where os.signal_id = signal_id and (select private.graph_opportunity_visible(os.opportunity_id)))
+  exists (select 1 from public.opportunity_signals os where os.signal_id = signal_evidence.signal_id and (select private.graph_opportunity_visible(os.opportunity_id)))
 );
 
 create policy graph_customer_geographies_member_read on public.customer_geographies
