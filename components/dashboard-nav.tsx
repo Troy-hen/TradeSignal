@@ -9,8 +9,7 @@ const NAV_ITEMS = [
   { href: "/purchased", label: "Purchased", icon: "purchased" },
   { href: "/coverage", label: "Plan & profile", icon: "claimed" },
   { href: "/territories", label: "Map", icon: "territories" },
-  { href: "/opportunities?action=saved", label: "Saved", icon: "saved", queryAction: "saved" },
-  { href: "/notifications", label: "Alerts", icon: "notifications" },
+  { href: "/notifications", label: "Action centre", icon: "notifications" },
   { href: "/billing", label: "Billing", icon: "billing" },
   { href: "/settings", label: "Settings", icon: "settings" },
 ] as const;
