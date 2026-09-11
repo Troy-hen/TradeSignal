@@ -75,7 +75,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
 
   const { data: reportRow, error: insertError } = await db
     .from("opportunity_research_reports")
-    .insert({ company_id: company.id, opportunity_id: id, status: "running", generated_by: user.id, model: process.env.ASK_MYTRADEBOX_MODEL ?? "gpt-5-mini" })
+    .insert({ company_id: company.id, opportunity_id: id, status: "running", generated_by: user.id, model: process.env.ASK_TRADESIGNAL_MODEL ?? process.env.ASK_MYTRADEBOX_MODEL ?? "gpt-5-mini" })
     .select("id")
     .single();
   if (insertError || !reportRow) return NextResponse.json({ error: "research_create_failed" }, { status: 500 });
@@ -148,7 +148,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
 
 async function createResearchResponse(openai: NonNullable<ReturnType<typeof getAssistantOpenAI>>, evidence: unknown) {
   const common = {
-    model: process.env.ASK_MYTRADEBOX_MODEL ?? "gpt-5-mini",
+    model: process.env.ASK_TRADESIGNAL_MODEL ?? process.env.ASK_MYTRADEBOX_MODEL ?? "gpt-5-mini",
     input: [
       {
         role: "system" as const,
