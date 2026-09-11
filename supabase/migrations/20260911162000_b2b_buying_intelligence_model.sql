@@ -424,18 +424,31 @@ where exists (
     and lower(coalesce(ev.factual_data ->> 'is_commercial', 'false')) = 'true'
 );
 
+with ranked_rules as (
+  select
+    sr.id as source_record_id,
+    r.b2b_status,
+    r.include_in_entity_resolution,
+    r.include_in_signal_generation,
+    r.include_in_customer_opportunities,
+    row_number() over (
+      partition by sr.id
+      order by (r.record_type = sr.record_type) desc, r.priority desc
+    ) as rule_rank
+  from public.source_records sr
+  join public.b2b_source_eligibility_rules r
+    on r.provider_key = sr.provider_key
+   and (r.record_type = sr.record_type or r.record_type = '*')
+)
 update public.source_records sr
 set b2b_status = coalesce(rule.b2b_status, sr.b2b_status),
     include_in_entity_resolution = coalesce(rule.include_in_entity_resolution, sr.include_in_entity_resolution),
     include_in_signal_generation = coalesce(rule.include_in_signal_generation, sr.include_in_signal_generation),
     include_in_customer_opportunities = coalesce(rule.include_in_customer_opportunities, sr.include_in_customer_opportunities),
     is_consumer_record = coalesce(rule.b2b_status, sr.b2b_status) = 'ineligible'
-from lateral (
-  select r.* from public.b2b_source_eligibility_rules r
-  where r.provider_key = sr.provider_key and (r.record_type = sr.record_type or r.record_type = '*')
-  order by (r.record_type = sr.record_type) desc, r.priority desc
-  limit 1
-) rule;
+from ranked_rules rule
+where rule.source_record_id = sr.id
+  and rule.rule_rank = 1;
 
 update public.events ev
 set b2b_status = case when lower(coalesce(ev.factual_data ->> 'is_commercial', 'false')) = 'true' then 'eligible' else 'review' end,
