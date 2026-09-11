@@ -3177,6 +3177,7 @@ export type Database = {
           stripe_payment_intent_id: string | null
           unlocked_at: string | null
           updated_at: string
+          vertical_key: string | null
         }
         Insert: {
           amount_pence?: number
@@ -3193,6 +3194,7 @@ export type Database = {
           stripe_payment_intent_id?: string | null
           unlocked_at?: string | null
           updated_at?: string
+          vertical_key?: string | null
         }
         Update: {
           amount_pence?: number
@@ -3209,6 +3211,7 @@ export type Database = {
           stripe_payment_intent_id?: string | null
           unlocked_at?: string | null
           updated_at?: string
+          vertical_key?: string | null
         }
         Relationships: [
           {
