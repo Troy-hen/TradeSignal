@@ -1,7 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient, type SupabaseClient } from "jsr:@supabase/supabase-js@2";
-import { CompaniesHouseAdapter } from "../_shared/providers/companies-house.ts";
-import type { NormalizedProviderRecord } from "../_shared/providers/types.ts";
+import { CompaniesHouseAdapter } from "./providers/companies-house.ts";
+import type { NormalizedProviderRecord } from "./providers/types.ts";
 
 type AdminClient = SupabaseClient;
 type IngestBody = { query?: unknown; limit?: unknown };
