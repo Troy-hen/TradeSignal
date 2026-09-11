@@ -1048,8 +1048,8 @@ declare
 begin
   select * into v_match from public.lead_matches where id = p_lead_match_id;
   if not found then return; end if;
-  select id, score into v_graph_id, v_score
-  from public.opportunities
+  select o.id, o.score into v_graph_id, v_score
+  from public.opportunities o
   where legacy_application_trade_opportunity_id = v_match.application_trade_opportunity_id;
   if v_graph_id is null then return; end if;
 
