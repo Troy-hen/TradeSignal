@@ -28,30 +28,9 @@ export function OpportunityRow({ item, unlocked = false }: { item: OpportunityLi
 }
 
 function inferNeeds(item: OpportunityListItem): string[] {
-  const explicitNeeds = new Set<string>([...(item.matchedNeeds ?? []), ...(item.likelyRequirements ?? [])]);
+  const explicitNeeds = new Set<string>(item.matchedNeeds ?? []);
   if (explicitNeeds.size > 0) return [...explicitNeeds].slice(0, 6);
-  const needs = new Set<string>(item.matchReasons ?? []);
-  const text = `${item.projectType ?? ""} ${item.summary ?? ""} ${item.signalFamily ?? ""}`.toLowerCase();
-  if (/restaurant|cafe|pub|hotel|hospitality|takeaway/.test(text)) {
-    needs.add("Opening infrastructure");
-    needs.add("EPOS and payments");
-    needs.add("Fit-out services");
-  }
-  if (/office|retail|warehouse|industrial|commercial|premises|move|fit.?out/.test(text)) {
-    needs.add("Fit-out and delivery");
-    needs.add("Connectivity");
-    needs.add("Security and access");
-  }
-  if (/care|clinic|dental|health/.test(text)) {
-    needs.add("Care operations");
-    needs.add("IT and compliance");
-  }
-  if (needs.size === 0) {
-    needs.add("Project delivery");
-    needs.add("Supplier services");
-    needs.add("Commercial support");
-  }
-  return [...needs].slice(0, 6);
+  return ["Profile-matched buying signal"];
 }
 
 function humanize(value: string): string {
