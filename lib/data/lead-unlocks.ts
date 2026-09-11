@@ -18,6 +18,7 @@ export type LeadUnlockRow = {
   stripe_checkout_session_id: string | null;
   stripe_payment_intent_id: string | null;
   unlocked_at: string | null;
+  vertical_key: string | null;
 };
 
 type LooseResult = { data: unknown; error: { code?: string; message?: string } | null };
@@ -58,6 +59,12 @@ export async function findLeadUnlockById(id: string): Promise<LeadUnlockRow | nu
   return data;
 }
 
+export async function countLeadUnlocksForVertical(companyId: string, verticalKey: string): Promise<number> {
+  const builder = db().from("lead_unlocks").select("id").eq("company_id", companyId).eq("vertical_key", verticalKey).in("status", ["pending", "paid"]);
+  const { data } = await run<Array<{ id: string }>>(builder);
+  return Array.isArray(data) ? data.length : 0;
+}
+
 export async function listPaidLeadUnlocks(companyId: string): Promise<LeadUnlockRow[]> {
   const builder = db().from("lead_unlocks").select("*").eq("company_id", companyId).eq("status", "paid");
   const { data } = await run<LeadUnlockRow[]>(builder);
@@ -68,6 +75,7 @@ export async function createLeadUnlockIntent(input: {
   companyId: string;
   userId: string;
   target: LeadUnlockTarget;
+  verticalKey: string;
 }): Promise<{ row: LeadUnlockRow | null; error: { code?: string; message?: string } | null }> {
   const filter = targetFilter(input.target);
   const values: Record<string, unknown> = {
@@ -78,6 +86,7 @@ export async function createLeadUnlockIntent(input: {
     amount_pence: LEAD_UNLOCK_AMOUNT_PENCE,
     currency: "gbp",
     status: "pending",
+    vertical_key: input.verticalKey,
   };
 
   const { data, error } = await run<LeadUnlockRow>(
