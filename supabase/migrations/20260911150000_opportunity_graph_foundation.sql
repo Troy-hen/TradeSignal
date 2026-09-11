@@ -1175,7 +1175,7 @@ $$;
 insert into public.supplier_need_mappings (supplier_category_id, need_category_id, match_weight, match_method)
 select sc.id, nc.id, 0.5, 'legacy_default'
 from public.supplier_categories sc
-join public.need_categories nc on nc.market_id = (select om.id from public.opportunity_markets om where = 'moves_fitouts') and nc.is_default
+join public.need_categories nc on nc.market_id = (select om.id from public.opportunity_markets om where om.slug = 'moves_fitouts') and nc.is_default
 on conflict (supplier_category_id, need_category_id) do nothing;
 
 -- One final bridge pass after supplier/need configuration is seeded.
