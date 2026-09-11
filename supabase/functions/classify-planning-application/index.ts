@@ -3,6 +3,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 import { getAiProvider } from "../_shared/ai/index.ts";
 import { buildEnrichmentInput } from "../_shared/ai/prompt.ts";
 import type { AiPromptVersion, EnrichmentResult } from "../_shared/ai/types.ts";
+import { deterministicPlanningFitScore } from "../_shared/scoring/planning-fit.ts";
 
 /**
  * Triggered by pg_cron (Authorization: Bearer <CRON_SECRET>, same scheme as
@@ -184,12 +185,14 @@ async function classifyOne(
     .eq("id", claimedRow.id);
 
   const tradeIdBySlug = new Map(tradeCategories.map((t) => [t.slug, t.id]));
+  const tradeBySlug = new Map(tradeCategories.map((t) => [t.slug, t]));
   const slugByTradeId = new Map(tradeCategories.map((t) => [t.id, t.slug]));
   const matchedSlugs = new Set<string>();
 
   for (const tradeOpp of opportunity.trade_opportunities) {
     const tradeCategoryId = tradeIdBySlug.get(tradeOpp.trade_category_slug);
     if (!tradeCategoryId) continue; // Model returned an unrecognised slug — skip rather than fail the whole batch.
+    const tradeCategory = tradeBySlug.get(tradeOpp.trade_category_slug)!;
     matchedSlugs.add(tradeOpp.trade_category_slug);
 
     await admin.from("application_trade_opportunities").upsert(
@@ -197,7 +200,7 @@ async function classifyOne(
         planning_application_id: application.id,
         application_classification_id: claimedRow.id,
         trade_category_id: tradeCategoryId,
-        fit_score: tradeOpp.fit_score,
+        fit_score: deterministicPlanningFitScore(application, tradeCategory),
         match_reasons: tradeOpp.match_reasons,
         likely_scope: tradeOpp.likely_scope,
         estimated_trade_value_low: tradeOpp.estimated_trade_value_low,

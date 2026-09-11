@@ -7,8 +7,6 @@ import { OpportunityRow } from "@/components/opportunity-row";
 import { MarketSignalRow } from "@/components/market-signal-row";
 import { AppPageHeader } from "@/components/app-page-header";
 
-const UNLOCK_LIMIT = 3;
-
 export default async function PurchasedLeadsPage() {
   const company = await requireCurrentCompany();
   const [allPlanning, unlocks] = await Promise.all([
@@ -40,17 +38,17 @@ export default async function PurchasedLeadsPage() {
       <section className="rounded-3xl border border-success/20 bg-success/[0.035] p-5 sm:p-7">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-success">Your purchase allowance</p>
-            <h2 className="mt-2 text-2xl font-bold tracking-tight text-charcoal">Three unlocks per opportunity category.</h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate">The marketplace removes an unlocked lead from your active feed, while this page keeps the full record available to you. Usage is counted against the category shown below.</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-success">Your lead library</p>
+            <h2 className="mt-2 text-2xl font-bold tracking-tight text-charcoal">Unlimited categories. Individual lead unlocks.</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate">The marketplace removes an unlocked lead from your active feed, while this page keeps its full record available. There is no per-category allowance or vertical lock.</p>
           </div>
           <span className="shrink-0 rounded-2xl bg-white px-4 py-3 text-center text-sm font-bold text-charcoal shadow-sm">{unlocks.length} total</span>
         </div>
         {categoryUsage.length > 0 ? (
           <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {categoryUsage.map((item) => <div key={item.key} className="rounded-2xl border border-white bg-white p-4"><div className="flex items-center justify-between gap-3"><p className="text-sm font-semibold text-charcoal">{item.label}</p><span className="text-xs font-bold text-signal-orange">{item.count}/{UNLOCK_LIMIT}</span></div><div className="mt-3 h-2 overflow-hidden rounded-full bg-soft-surface"><div className="h-full rounded-full bg-signal-orange" style={{ width: `${Math.min(100, (item.count / UNLOCK_LIMIT) * 100)}%` }} /></div><p className="mt-2 text-[11px] text-slate">{item.count >= UNLOCK_LIMIT ? "Allowance reached" : `${UNLOCK_LIMIT - item.count} remaining`}</p></div>)}
+            {categoryUsage.map((item) => <div key={item.key} className="rounded-2xl border border-white bg-white p-4"><div className="flex items-center justify-between gap-3"><p className="text-sm font-semibold text-charcoal">{item.label}</p><span className="text-xs font-bold text-signal-orange">{item.count}</span></div><p className="mt-2 text-[11px] text-slate">Purchased lead{item.count === 1 ? "" : "s"} in this category</p></div>)}
           </div>
-        ) : <p className="mt-5 rounded-2xl bg-white p-4 text-sm text-slate">Your first unlocked lead will appear here with its category allowance.</p>}
+        ) : <p className="mt-5 rounded-2xl bg-white p-4 text-sm text-slate">Your first unlocked lead will appear here.</p>}
       </section>
 
       {unlocks.length === 0 ? (

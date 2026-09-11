@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { B2B_TAXONOMY_GROUPS, INTELLIGENCE_SOURCES } from "@/lib/marketplace/catalog";
+import { B2B_TAXONOMY_GROUPS } from "@/lib/marketplace/catalog";
 import { TerritoryCheckerWidget } from "@/components/territory-checker-widget";
 import { MarketplacePreview } from "@/components/marketing/marketplace-preview";
 import { FaqSection } from "@/components/marketing/faq";

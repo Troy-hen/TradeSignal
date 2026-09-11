@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     .select("slug, name, description")
     .eq("is_active", true)
     .order("name")
-    .limit(120);
+    .limit(250);
 
   const normalized = await normaliseSellingProfile(context, candidates ?? []);
   const normalizedProfile = {

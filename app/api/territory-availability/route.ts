@@ -47,7 +47,7 @@ export async function GET(request: Request) {
   if (!(await checkEdgeRateLimit(ip))) return NextResponse.json({ error: "rate_limited" }, { status: 429 });
 
   const supabase = await createClient();
-  const candidatesQuery = await supabase.from("trade_categories").select("slug, name, description").eq("is_active", true).order("display_order").limit(120);
+  const candidatesQuery = await supabase.from("trade_categories").select("slug, name, description").eq("is_active", true).order("display_order").limit(250);
   const candidates = (candidatesQuery.data ?? []) as ProfileCandidate[];
   const profileText = parsed.data.profile ?? parsed.data.trade ?? "";
   const normalizedProfile = await normaliseSellingProfile(profileText, candidates);

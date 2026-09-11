@@ -12,7 +12,7 @@ type Body = {
   limit?: unknown;
   process_fetch_jobs?: unknown;
 };
-type ProviderStats = { fetched: number; relevant: number; upserted: number; matches: number; errors: number };
+type ProviderStats = { fetched: number; relevant: number; upserted: number; graph_synced: number; matches: number; errors: number };
 type FetchJob = { id: string; provider: string; request_id: number; since_at: string; requested_limit: number };
 
 Deno.serve(async (req: Request) => {
@@ -133,31 +133,36 @@ async function persistSignals(admin: ReturnType<typeof createClient>, signals: N
   stats.fetched = signals.length;
   for (const signal of signals) {
     try {
-      const matches = matchSignalToTrades(signal, trades);
-      if (matches.length === 0) continue;
-      stats.relevant += 1;
       const signalId = await upsertSignal(admin, signal);
       if (!signalId) { stats.errors += 1; continue; }
       stats.upserted += 1;
-      const { error: matchError } = await admin.from("market_signal_trade_matches").upsert(
-        matches.map((match) => ({
-          signal_id: signalId,
-          trade_category_id: match.tradeCategoryId,
-          fit_score: match.fitScore,
-          opportunity_bucket: match.opportunityBucket,
-          estimated_trade_value_low: match.estimatedTradeValueLow,
-          estimated_trade_value_high: match.estimatedTradeValueHigh,
-          recommended_action: match.recommendedAction,
-          ai_confidence: null,
-          match_reasons: match.matchReasons,
-          match_method: match.matchMethod,
-          scored_at: new Date().toISOString(),
-          is_active: true,
-        })),
-        { onConflict: "signal_id,trade_category_id" },
-      );
-      if (matchError) { console.error("market signal match upsert failed", matchError); stats.errors += 1; }
-      else stats.matches += matches.length;
+      const matches = matchSignalToTrades(signal, trades);
+      if (matches.length > 0) {
+        stats.relevant += 1;
+        const { error: matchError } = await admin.from("market_signal_trade_matches").upsert(
+          matches.map((match) => ({
+            signal_id: signalId,
+            trade_category_id: match.tradeCategoryId,
+            fit_score: match.fitScore,
+            opportunity_bucket: match.opportunityBucket,
+            estimated_trade_value_low: match.estimatedTradeValueLow,
+            estimated_trade_value_high: match.estimatedTradeValueHigh,
+            recommended_action: match.recommendedAction,
+            ai_confidence: null,
+            match_reasons: match.matchReasons,
+            match_method: match.matchMethod,
+            scored_at: new Date().toISOString(),
+            is_active: true,
+          })),
+          { onConflict: "signal_id,trade_category_id" },
+        );
+        if (matchError) { console.error("market signal match upsert failed", matchError); stats.errors += 1; }
+        else stats.matches += matches.length;
+      }
+
+      const { error: graphError } = await admin.rpc("sync_market_signal_to_graph", { p_market_signal_id: signalId });
+      if (graphError) { console.error("market signal graph sync failed", graphError); stats.errors += 1; }
+      else stats.graph_synced += 1;
     } catch (error) {
       stats.errors += 1;
       console.error("Failed to persist market signal", error);
@@ -214,7 +219,7 @@ function sourceBaseUrl(provider: string) {
   if (provider === "public-contracts-scotland") return "https://api.publiccontractsscotland.gov.uk/v1/Notices";
   return "";
 }
-function emptyStats(): ProviderStats { return { fetched: 0, relevant: 0, upserted: 0, matches: 0, errors: 0 }; }
+function emptyStats(): ProviderStats { return { fetched: 0, relevant: 0, upserted: 0, graph_synced: 0, matches: 0, errors: 0 }; }
 function normalizeSince(value: unknown) { if (typeof value === "string") { const parsed = new Date(value); if (Number.isFinite(parsed.getTime())) return parsed.toISOString(); } const date = new Date(); date.setUTCDate(date.getUTCDate() - 3); return date.toISOString(); }
 function boundedInt(value: unknown, fallback: number, min: number, max: number) { const parsed = Number(value); return Number.isInteger(parsed) && parsed >= min && parsed <= max ? parsed : fallback; }
 function json(value: unknown, status = 200) { return new Response(JSON.stringify(value), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } }); }

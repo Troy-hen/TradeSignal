@@ -75,8 +75,6 @@ function errorCopy(error: string | undefined): string {
       return "A checkout for this lead is already in progress.";
     case "opportunity_not_found":
       return "This opportunity is no longer available.";
-    case "vertical_unlock_limit_reached":
-      return "You have reached the three-lead limit for this opportunity category. Your purchased leads remain available in Purchased leads.";
     case "opportunity_not_categorised":
       return "This opportunity is still being categorised. Please try again later.";
     case "checkout_unavailable":

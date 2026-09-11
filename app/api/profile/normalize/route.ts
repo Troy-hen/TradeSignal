@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     .select("slug, name, description")
     .eq("is_active", true)
     .order("name")
-    .limit(120);
+    .limit(250);
   const profile = await normaliseSellingProfile(parsed.data.what_do_you_sell, data ?? []);
   return NextResponse.json({ profile });
 }

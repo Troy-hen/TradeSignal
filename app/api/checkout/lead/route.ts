@@ -7,7 +7,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { isConfiguredDemoUser } from "@/lib/auth/demo";
 import { getStripeClient } from "@/lib/stripe/client";
 import {
-  countLeadUnlocksForVertical,
   createLeadUnlockIntent,
   findLeadUnlock,
   isPaidUnlock,
@@ -66,10 +65,6 @@ export async function POST(request: Request) {
   const verticalKey = verticalKeyFromTarget(targetExists.data);
   if (!verticalKey) {
     return NextResponse.json({ error: "opportunity_not_categorised" }, { status: 409 });
-  }
-  const verticalUnlockCount = await countLeadUnlocksForVertical(company.id, verticalKey);
-  if (verticalUnlockCount >= 3) {
-    return NextResponse.json({ error: "vertical_unlock_limit_reached", vertical: verticalKey, limit: 3 }, { status: 409 });
   }
 
   const { row, error: intentError } = await createLeadUnlockIntent({

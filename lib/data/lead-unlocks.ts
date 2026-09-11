@@ -59,12 +59,6 @@ export async function findLeadUnlockById(id: string): Promise<LeadUnlockRow | nu
   return data;
 }
 
-export async function countLeadUnlocksForVertical(companyId: string, verticalKey: string): Promise<number> {
-  const builder = db().from("lead_unlocks").select("id").eq("company_id", companyId).eq("vertical_key", verticalKey).in("status", ["pending", "paid"]);
-  const { data } = await run<Array<{ id: string }>>(builder);
-  return Array.isArray(data) ? data.length : 0;
-}
-
 export async function listPaidLeadUnlocks(companyId: string): Promise<LeadUnlockRow[]> {
   const builder = db().from("lead_unlocks").select("*").eq("company_id", companyId).eq("status", "paid");
   const { data } = await run<LeadUnlockRow[]>(builder);
