@@ -1,29 +1,11 @@
 import Link from "next/link";
 import { INTELLIGENCE_SOURCES } from "@/lib/marketplace/catalog";
+import { AppPageHeader } from "@/components/app-page-header";
 
 export default function MarketsPage() {
   return (
     <div className="min-w-0 space-y-8">
-      <section className="overflow-hidden rounded-[2rem] bg-charcoal p-6 text-white shadow-xl shadow-charcoal/10 sm:p-9">
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-          <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Intelligence sources</p>
-            <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-5xl">One engine. Every relevant signal.</h1>
-            <p className="mt-4 max-w-xl text-sm leading-7 text-white/65 sm:text-base">
-              These are the source layers TradeSignal can connect. They are not products to buy or verticals to select. Tell us what you sell, who you sell to and where you operate; the intelligence engine decides what belongs in your feed.
-            </p>
-          </div>
-          <Link href="/coverage" className="inline-flex shrink-0 items-center justify-center rounded-xl bg-signal-orange px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#e95f00]">
-            Manage coverage <span className="ml-2">→</span>
-          </Link>
-        </div>
-
-        <div className="mt-8 grid gap-3 border-t border-white/10 pt-6 sm:grid-cols-3">
-          <SourceStat label="Connected layers" value={String(INTELLIGENCE_SOURCES.length)} detail="Shown for transparency" />
-          <SourceStat label="Plan access" value="All" detail="Included in Local, Regional and Nationwide" />
-          <SourceStat label="Customer control" value="Profile" detail="Relevance follows your business" />
-        </div>
-      </section>
+      <AppPageHeader eyebrow="Intelligence sources" title="One engine. Every relevant signal." description="These are the source layers TradeSignal can connect. Tell us what you sell, who you sell to and where you operate; the intelligence engine decides what belongs in your feed." actions={<Link href="/coverage" className="inline-flex shrink-0 items-center justify-center rounded-xl bg-signal-orange px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#e95f00]">Manage coverage <span className="ml-2">→</span></Link>} stats={[{ label: "Connected layers", value: String(INTELLIGENCE_SOURCES.length), detail: "Shown for transparency" }, { label: "Plan access", value: "All", detail: "Included in every geography plan" }, { label: "Customer control", value: "Profile", detail: "Relevance follows your business" }]} />
 
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         {INTELLIGENCE_SOURCES.map((source) => (
@@ -51,7 +33,7 @@ export default function MarketsPage() {
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">The product rule</p>
           <h2 className="mt-3 text-2xl font-bold tracking-tight text-charcoal sm:text-3xl">Your profile controls relevance. Geography controls reach.</h2>
-          <p className="mt-3 max-w-xl text-sm leading-6 text-slate">No source subscriptions, no vertical paywalls and no exclusive territories. The same opportunity can be relevant to more than one customer; you only pay when you choose to unlock it.</p>
+          <p className="mt-3 max-w-xl text-sm leading-6 text-slate">Every relevant source is included in your plan. The same opportunity can suit more than one customer; you only pay when you choose to unlock it.</p>
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
           <RuleCard number="01" title="Describe" body="Tell the engine what you sell and who you sell to." />
@@ -61,10 +43,6 @@ export default function MarketsPage() {
       </section>
     </div>
   );
-}
-
-function SourceStat({ label, value, detail }: { label: string; value: string; detail: string }) {
-  return <div className="rounded-2xl border border-white/10 bg-white/5 p-4"><p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/50">{label}</p><p className="mt-2 text-2xl font-bold tracking-tight text-white">{value}</p><p className="mt-1 text-xs leading-5 text-white/55">{detail}</p></div>;
 }
 
 function RuleCard({ number, title, body }: { number: string; title: string; body: string }) {

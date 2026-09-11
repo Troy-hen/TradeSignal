@@ -15,15 +15,15 @@ export const FAQ_ITEMS = [
   },
   {
     question: "What does it cost to unlock a lead?",
-    answer: "Each individual opportunity you choose to unlock is £20. There are no forced lead bundles, vertical add-ons, separate source subscriptions or exclusivity charges.",
+    answer: "Each individual opportunity you choose to unlock is £20. There are no forced lead bundles, vertical add-ons or separate source subscriptions.",
   },
   {
     question: "What can I see before unlocking?",
     answer: "You can see the opportunity type, approximate geography, score, why-now explanation, likely needs, buying window, signal count and source-backed teaser. The complete company profile, contact enrichment and evidence view unlock after purchase.",
   },
   {
-    question: "Are opportunities exclusive?",
-    answer: "No. Relevance is customer-specific, but the underlying opportunity may be relevant to multiple businesses. TradeSignal helps each customer decide whether a particular lead is worth a £20 unlock.",
+    question: "Can the same opportunity suit more than one business?",
+    answer: "Yes. The intelligence engine matches each opportunity to the supplier profiles that are genuinely relevant, and each business decides independently which leads to unlock.",
   },
   {
     question: "Are the values guaranteed?",

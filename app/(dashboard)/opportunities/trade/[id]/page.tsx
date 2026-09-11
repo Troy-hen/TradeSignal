@@ -89,7 +89,7 @@ async function PaidMarketSignal({ item, quoteRequests }: { item: MarketSignalDet
           </div>
           <h1 className="mt-4 max-w-5xl text-2xl font-bold tracking-tight sm:text-3xl">{item.title}</h1>
           {item.summary && <p className="mt-4 max-w-5xl text-sm leading-7 text-white/70">{item.summary}</p>}
-          {isRegional && <p className="mt-3 max-w-4xl text-xs leading-5 text-white/55">The source notice identifies a delivery region rather than an exact project postcode. The location shown here is an approximate delivery area, not an exclusive territory.</p>}
+          {isRegional && <p className="mt-3 max-w-4xl text-xs leading-5 text-white/55">The source notice identifies a delivery region rather than an exact project postcode. The location shown here is an approximate delivery area for discovery.</p>}
         </div>
         <div className="grid gap-px bg-light-grey sm:grid-cols-4">
           <Metric label="Estimated project value" value={formatGbpRange(item.project_value_low, item.project_value_high)} />

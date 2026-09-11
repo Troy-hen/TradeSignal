@@ -88,7 +88,7 @@ export async function POST(request: Request) {
     };
 
     const response = await openai.responses.create({
-      model: process.env.ASK_TRADESIGNAL_MODEL ?? process.env.ASK_MYTRADEBOX_MODEL ?? "gpt-5-mini",
+      model: process.env.ASK_TRADESIGNAL_MODEL ?? "gpt-5-mini",
       input: [
         {
           role: "system",
@@ -176,7 +176,7 @@ function selectWorkspaceEvidence(workspace: Awaited<ReturnType<typeof getWorkspa
 
 async function planRetrieval(openai: NonNullable<ReturnType<typeof getAssistantOpenAI>>, message: string, history: { role: "user" | "assistant"; content: string }[]) {
   const response = await openai.responses.create({
-    model: process.env.ASK_TRADESIGNAL_MODEL ?? process.env.ASK_MYTRADEBOX_MODEL ?? "gpt-5-mini",
+      model: process.env.ASK_TRADESIGNAL_MODEL ?? "gpt-5-mini",
     input: [
       {
         role: "system",

@@ -65,7 +65,7 @@ export function PricingGrid({ compact = false }: { items?: PricingItem[]; compac
         </div>
 
         <div className="mt-7 grid gap-4 rounded-2xl border border-signal-orange/20 bg-signal-orange/[0.055] p-5 sm:grid-cols-2 sm:p-6">
-          <div><p className="text-sm font-semibold text-charcoal">One platform, one intelligence engine</p><p className="mt-1 text-sm leading-6 text-slate">No source subscriptions, vertical add-ons, exclusive territories or forced lead bundles.</p></div>
+          <div><p className="text-sm font-semibold text-charcoal">One platform, one intelligence engine</p><p className="mt-1 text-sm leading-6 text-slate">Every relevant source is included in your plan, with no vertical add-ons or forced lead bundles.</p></div>
           <div><p className="text-sm font-semibold text-charcoal">The only two charges</p><p className="mt-1 text-sm leading-6 text-slate">Your monthly geographic coverage fee and {LEAD_UNLOCK_PRICE_GBP} for each individual opportunity you decide to unlock.</p></div>
         </div>
       </div>

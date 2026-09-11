@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireCurrentCompany } from "@/lib/auth/get-current-company";
 import { createClient } from "@/lib/supabase/server";
 import { CoveragePlanSelector } from "@/components/coverage-plan-selector";
+import { AppPageHeader } from "@/components/app-page-header";
 import { formatMonthlyGbp, LEAD_UNLOCK_PRICE_GBP } from "@/lib/coverage/pricing";
 
 export default async function CoveragePage() {
@@ -14,9 +15,7 @@ export default async function CoveragePage() {
   }));
   return (
     <div className="min-w-0 space-y-8">
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Coverage & profile</p><h1 className="mt-3 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">Tell the engine where to look.</h1><p className="mt-3 max-w-3xl text-sm leading-6 text-slate sm:text-base">Describe what you sell, who you sell to and where you operate. Your profile controls relevance; your coverage plan controls geography. All available intelligence sources stay included.</p></div><Link href="/territories" className="shrink-0 text-sm font-semibold text-signal-orange">Explore opportunity map →</Link></div>
-
-      <section className="grid gap-4 md:grid-cols-3"><SummaryCard label="Profile signal" value="Business-led" detail="Products, customers and exclusions" /><SummaryCard label="Coverage choices" value="3 plans" detail="Local, Regional or Nationwide" /><SummaryCard label="Unlock price" value={LEAD_UNLOCK_PRICE_GBP} detail="Per individual opportunity" /></section>
+      <AppPageHeader eyebrow="Coverage & profile" title="Tell the engine where to look." description="Describe what you sell, who you sell to and where you operate. Your profile controls relevance; your coverage plan controls geography. All available intelligence sources stay included." actions={<Link href="/territories" className="inline-flex items-center justify-center rounded-xl bg-signal-orange px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#e95f00]">Explore opportunity map <span className="ml-2">→</span></Link>} stats={[{ label: "Profile signal", value: "Business-led", detail: "Products, customers and exclusions" }, { label: "Coverage choices", value: "3 plans", detail: "Local, Regional or Nationwide" }, { label: "Unlock price", value: LEAD_UNLOCK_PRICE_GBP, detail: "Per individual opportunity" }]} />
 
       <section className="grid gap-5 rounded-3xl border border-signal-orange/20 bg-signal-orange/[0.045] p-6 sm:p-8 lg:grid-cols-[1fr_0.8fr] lg:items-center"><div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Your customer profile</p><h2 className="mt-2 text-2xl font-bold tracking-tight text-charcoal">Relevance starts with context.</h2><p className="mt-3 max-w-2xl text-sm leading-6 text-slate">Tell the engine what you sell, who you sell to, where you operate and what to leave out. AI turns that context into a relevance profile across all available sources.</p></div><div className="rounded-2xl border border-white bg-white p-5"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate">Next step</p><p className="mt-2 text-sm font-semibold text-charcoal">Complete your profile, then activate coverage.</p><p className="mt-1 text-xs leading-5 text-slate">Your choices are not tied to a vertical or source subscription.</p><Link href="/settings?focus=profile" className="mt-4 inline-flex text-sm font-semibold text-signal-orange">Open business profile →</Link></div></section>
 
@@ -29,5 +28,4 @@ export default async function CoveragePage() {
   );
 }
 
-function SummaryCard({ label, value, detail }: { label: string; value: string; detail: string }) { return <div className="rounded-2xl border border-light-grey bg-white p-5"><p className="text-xs font-semibold uppercase tracking-[0.1em] text-slate">{label}</p><p className="mt-3 text-2xl font-bold tracking-tight text-charcoal">{value}</p><p className="mt-1 text-xs leading-5 text-slate">{detail}</p></div>; }
 function humanizeStatus(value: string) { return value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()); }

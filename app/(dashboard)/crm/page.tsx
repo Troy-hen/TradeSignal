@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireCurrentCompany } from "@/lib/auth/get-current-company";
 import { getCompanyOpportunities, type OpportunityListItem } from "@/lib/data/opportunities";
 import { OpportunityRow } from "@/components/opportunity-row";
+import { AppPageHeader } from "@/components/app-page-header";
 
 type Lane = { key: string; label: string; description: string; predicate: (item: OpportunityListItem) => boolean };
 
@@ -18,21 +19,7 @@ export default async function CrmPage() {
 
   return (
     <div className="min-w-0 space-y-8">
-      <section className="flex min-w-0 flex-col gap-5 rounded-[2rem] bg-charcoal p-6 text-white shadow-xl shadow-charcoal/10 sm:p-9 lg:flex-row lg:items-end lg:justify-between">
-        <div className="max-w-2xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Pipeline workspace</p>
-          <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-5xl">Turn opportunity into outcome.</h1>
-          <p className="mt-4 text-sm leading-7 text-white/65 sm:text-base">The marketplace does not stop at discovery. Save, contact, quote, win or dismiss each signal and keep the feedback attached to the original evidence.</p>
-        </div>
-        <Link href="/opportunities" className="inline-flex shrink-0 items-center justify-center rounded-xl bg-signal-orange px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#e95f00]">Find more opportunities <span className="ml-2">→</span></Link>
-      </section>
-
-      <div className="grid gap-5 xl:grid-cols-4">
-        {LANES.map((lane) => {
-          const count = opportunities.filter(lane.predicate).length;
-          return <div key={lane.key} className="rounded-2xl border border-light-grey bg-white p-5"><div className="flex items-center justify-between gap-3"><p className="text-sm font-semibold text-charcoal">{lane.label}</p><span className="rounded-full bg-soft-surface px-2.5 py-1 text-xs font-bold text-charcoal">{count}</span></div><p className="mt-2 text-xs leading-5 text-slate">{lane.description}</p></div>;
-        })}
-      </div>
+      <AppPageHeader eyebrow="Pipeline workspace" title="Turn opportunity into outcome." description="The marketplace does not stop at discovery. Save, contact, quote, win or dismiss each signal and keep the feedback attached to the original evidence." actions={<Link href="/opportunities" className="inline-flex shrink-0 items-center justify-center rounded-xl bg-signal-orange px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#e95f00]">Find more opportunities <span className="ml-2">→</span></Link>} stats={LANES.map((lane) => ({ label: lane.label, value: String(opportunities.filter(lane.predicate).length), detail: lane.description }))} />
 
       {opportunities.length === 0 ? (
         <section className="rounded-3xl border border-dashed border-signal-orange/30 bg-signal-orange/[0.04] p-8 text-center">
