@@ -76,8 +76,10 @@ function errorCopy(error: string | undefined): string {
     case "opportunity_not_found":
       return "This opportunity is no longer available.";
     case "vertical_unlock_limit_reached":
-      return "You have reached the three-lead limit for this opportunity category. Your purchased leads remain available in Purchased leads.";\n    case "opportunity_not_categorised":
-      return "This opportunity is still being categorised. Please try again later.";\n    case "checkout_unavailable":
+      return "You have reached the three-lead limit for this opportunity category. Your purchased leads remain available in Purchased leads.";
+    case "opportunity_not_categorised":
+      return "This opportunity is still being categorised. Please try again later.";
+    case "checkout_unavailable":
       return "Checkout is unavailable right now. Please try again shortly.";
     default:
       return "We could not start checkout. Please try again.";
