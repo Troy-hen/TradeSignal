@@ -34,7 +34,7 @@ export function buildEnrichmentInput(application: ApplicationForPrompt, tradeCat
     `Postcode district: ${application.postcode_district ?? "unknown"}`,
     `Planning status: ${application.status}`,
     "",
-    "Available trade categories (use exactly these slugs in trade_category_slug — do not invent new ones):",
+    "Available B2B supplier categories (use exactly these slugs in trade_category_slug — do not invent new ones; the catalogue spans digital, software, professional, financial, premises, logistics, specialist and trade services):",
     tradeList,
   ].join("\n");
 }
