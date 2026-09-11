@@ -69,8 +69,7 @@ export function profileRelevanceScore(profile: CustomerRelevanceProfile | null |
 
 export function relevantNeedLabels(profile: CustomerRelevanceProfile | null | undefined, labels: string[]): string[] {
   if (!profile?.what_do_you_sell?.trim() || labels.length === 0) return labels;
-  const matched = labels.filter((label) => profileRelevanceScore(profile, label) > 0);
-  return matched.length > 0 ? matched : labels;
+  return labels.filter((label) => profileRelevanceScore(profile, label) > 0);
 }
 
 export function rankByCustomerProfile<T>(
