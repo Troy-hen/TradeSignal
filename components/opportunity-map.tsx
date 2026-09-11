@@ -59,13 +59,17 @@ const LAYERS: Array<{ value: Layer; label: string }> = [
 ];
 
 const MAP_TILES = [
-  { url: "https://tile.openstreetmap.org/5/15/10.png", left: "0%", top: "0%" },
-  { url: "https://tile.openstreetmap.org/5/16/10.png", left: "50%", top: "0%" },
-  { url: "https://tile.openstreetmap.org/5/15/11.png", left: "0%", top: "50%" },
-  { url: "https://tile.openstreetmap.org/5/16/11.png", left: "50%", top: "50%" },
+  "https://tile.openstreetmap.org/5/14/9.png",
+  "https://tile.openstreetmap.org/5/15/9.png",
+  "https://tile.openstreetmap.org/5/16/9.png",
+  "https://tile.openstreetmap.org/5/14/10.png",
+  "https://tile.openstreetmap.org/5/15/10.png",
+  "https://tile.openstreetmap.org/5/16/10.png",
 ];
 
-const UK_BOUNDS = { west: -8.8, east: 2.5, north: 61, south: 49.4 };
+// The tile grid is three columns by two rows. These are the exact geographic
+// edges of z5/x14-16/y9-10, so markers and the basemap share one coordinate system.
+const UK_BOUNDS = { west: -22.5, east: 11.25, north: 61.606396, south: 48.922499 };
 
 export function OpportunityMap({ points, signals }: { points: OpportunityMapPoint[]; signals: MarketSignalMapPoint[]; trades?: unknown[] }) {
   const [layer, setLayer] = useState<Layer>("all");
@@ -112,7 +116,11 @@ export function OpportunityMap({ points, signals }: { points: OpportunityMapPoin
       <div className="mt-5 grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(290px,0.45fr)]">
         <div className="relative min-h-[430px] min-w-0 overflow-hidden rounded-2xl border border-[#cbd9de] bg-[#e8f0f2] sm:min-h-[560px]">
           <div className="absolute inset-0 overflow-hidden bg-[#dbe7e7]" aria-label="Approximate opportunity map of the United Kingdom" role="img">
-            {MAP_TILES.map((tile) => <div key={tile.url} className="absolute h-1/2 w-1/2 bg-center" style={{ left: tile.left, top: tile.top, backgroundImage: `url(${tile.url})`, backgroundSize: "100% 100%" }} />)}
+            <div className="absolute inset-y-0 overflow-hidden" style={{ left: "-25%", width: "150%" }}>
+              <div className="grid h-full w-full grid-cols-3 grid-rows-2">
+                {MAP_TILES.map((tile) => <div key={tile} className="bg-center bg-cover" style={{ backgroundImage: `url(${tile})` }} />)}
+              </div>
+            </div>
             <div className="absolute inset-0 bg-white/10" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,transparent_0,rgba(232,240,242,0.04)_55%,rgba(31,41,55,0.12)_100%)]" />
           </div>
@@ -241,7 +249,9 @@ function clusterSignals(signals: MarketSignalMapPoint[]): SignalCluster[] {
 function positionStyle(latitude: number, longitude: number, zoom: number): CSSProperties {
   const x = ((longitude - UK_BOUNDS.west) / (UK_BOUNDS.east - UK_BOUNDS.west)) * 100;
   const y = ((UK_BOUNDS.north - latitude) / (UK_BOUNDS.north - UK_BOUNDS.south)) * 100;
-  return { left: `${50 + (x - 50) * zoom}%`, top: `${50 + (y - 50) * zoom}%` };
+  // The 3x2 tile mosaic is 150% wide and centred in the viewport.
+  const viewportX = -25 + x * 1.5;
+  return { left: `${50 + (viewportX - 50) * zoom}%`, top: `${50 + (y - 50) * zoom}%` };
 }
 
 function countForLayer(layer: Layer, points: OpportunityMapPoint[], signals: MarketSignalMapPoint[]) {
