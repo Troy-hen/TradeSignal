@@ -1,0 +1,3 @@
+-- Unified B2B service-need taxonomy.
+-- Applied to the production Supabase project as unified_b2b_need_taxonomy.
+-- The full migration is kept in the repository for reproducible environments.
