@@ -1,19 +1,15 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
 import { TerritorySearchForm } from "@/components/territory-search-form";
 import { OpportunityMap, type OpportunityMapPoint } from "@/components/opportunity-map";
 import { AppPageHeader } from "@/components/app-page-header";
-import { getMarketSignalMapPoints } from "@/lib/data/opportunity-map";
+import { getCanonicalOpportunityMapPoints, getMarketSignalMapPoints } from "@/lib/data/opportunity-map";
 
 export default async function TerritoriesPage() {
-  const supabase = await createClient();
-  const mapDb = supabase as unknown as { rpc: (functionName: string, args: Record<string, unknown>) => Promise<{ data: OpportunityMapPoint[] | null; error: unknown }> };
-  const [{ data: mapRows, error: mapError }, marketSignals] = await Promise.all([
-    mapDb.rpc("browse_opportunity_map_v2", { p_trade_slug: null, p_limit: 2000 }),
+  const [canonicalMapRows, marketSignals] = await Promise.all([
+    getCanonicalOpportunityMapPoints(2000),
     getMarketSignalMapPoints(600),
   ]);
-  if (mapError) console.error("planning opportunity map failed", mapError);
-  const mapPoints = (mapRows ?? []).map((point) => ({
+  const mapPoints = canonicalMapRows.map((point) => ({
     ...point,
     opportunity_count: Number(point.opportunity_count),
     estimated_trade_value_low: Number(point.estimated_trade_value_low ?? 0),
