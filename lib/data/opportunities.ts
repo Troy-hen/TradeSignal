@@ -210,7 +210,7 @@ async function getCanonicalCompanyOpportunities(
       classificationStatus: classification?.classification_status ?? null,
       fitScore: Number(match.match_score ?? legacy?.fit_score ?? graph.score ?? 0),
       aiConfidence: classification?.ai_confidence ?? (typeof firstSignal.confidence === "number" ? firstSignal.confidence : null),
-      recommendedAction: legacy?.recommended_action ?? graph.likely_requirements,
+      recommendedAction: legacy?.recommended_action ?? (stringList(graph.likely_requirements).join(", ") || null),
       recommendedContactTiming: legacy?.recommended_contact_timing ?? null,
       riskFlags: legacy?.risk_flags ?? null,
       entityName: entity?.canonical_name ?? entity?.legal_name ?? null,
