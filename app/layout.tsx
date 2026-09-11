@@ -11,7 +11,7 @@ const sora = Sora({
 const themeInitScript = `try {
   var storedTheme = window.localStorage.getItem("mytradebox-theme");
   var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  var appRoutes = ["/dashboard", "/opportunities", "/territories", "/coverage", "/roi", "/billing", "/settings", "/my-territories", "/admin"];
+  var appRoutes = ["/dashboard", "/opportunities", "/markets", "/territories", "/coverage", "/crm", "/roi", "/billing", "/settings", "/my-territories", "/admin"];
   var isAppRoute = appRoutes.some(function (prefix) {
     return window.location.pathname === prefix || window.location.pathname.indexOf(prefix + "/") === 0;
   });
@@ -27,11 +27,11 @@ const themeInitScript = `try {
 
 export const metadata: Metadata = {
   title: {
-    default: "MyTradeBox — Find the local jobs worth chasing",
+    default: "MyTradeBox — Find businesses ready to buy",
     template: "%s · MyTradeBox",
   },
   description:
-    "MyTradeBox turns UK planning applications into qualified local opportunities for trade businesses.",
+    "MyTradeBox turns UK business and planning signals into qualified, actionable opportunities for trade businesses.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -1,91 +1,19 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { MARKETPLACE_MARKETS } from "@/lib/marketplace/catalog";
 import { TerritoryCheckerWidget } from "@/components/territory-checker-widget";
 import { LockedOpportunityPreview } from "@/components/locked-opportunity-preview";
 import { FaqSection } from "@/components/marketing/faq";
 import { PricingGrid, type PricingItem } from "@/components/marketing/pricing-grid";
 
 const FALLBACK_TRADES: PricingItem[] = [
-  {
-    "slug": "general-builder",
-    "name": "General Builder",
-    "description": "Extensions, conversions and whole-project builds",
-    "monthlyPricePence": 2999
-  },
-  {
-    "slug": "groundworks",
-    "name": "Groundworks",
-    "description": "Excavation, foundations, drainage and site preparation",
-    "monthlyPricePence": 2999
-  },
-  {
-    "slug": "roofing",
-    "name": "Roofing",
-    "description": "Re-roofing, roof extensions and roofline work",
-    "monthlyPricePence": 2999
-  },
-  {
-    "slug": "structural-steel",
-    "name": "Structural Steel",
-    "description": "Steel beams and structural alterations",
-    "monthlyPricePence": 2999
-  },
-  {
-    "slug": "windows-doors",
-    "name": "Windows & Doors",
-    "description": "Replacement and new windows, doors and glazing",
-    "monthlyPricePence": 2999
-  },
-  {
-    "slug": "landscaping",
-    "name": "Landscaping",
-    "description": "Gardens, patios, boundaries and external works",
-    "monthlyPricePence": 2999
-  },
-  {
-    "slug": "electrical",
-    "name": "Electrical",
-    "description": "Rewiring, consumer units, EV charging and new circuits",
-    "monthlyPricePence": 2999
-  },
-  {
-    "slug": "plumbing-heating",
-    "name": "Plumbing & Heating",
-    "description": "Boilers, heating systems, bathrooms and heat pumps",
-    "monthlyPricePence": 2999
-  },
-  {
-    "slug": "brickwork",
-    "name": "Brickwork",
-    "description": "Blockwork, brickwork and masonry",
-    "monthlyPricePence": 2999
-  },
-  {
-    "slug": "demolition",
-    "name": "Demolition",
-    "description": "Full or partial demolition and strip-out",
-    "monthlyPricePence": 2999
-  },
-  {
-    "slug": "loft-conversion",
-    "name": "Loft Conversion",
-    "description": "Loft conversions and roof-space development",
-    "monthlyPricePence": 2999
-  },
-  {
-    "slug": "driveways",
-    "name": "Driveways",
-    "description": "Driveways, hardstanding and parking areas",
-    "monthlyPricePence": 2999
-  },
-  {
-    "slug": "renewables",
-    "name": "Renewables",
-    "description": "Solar PV, heat pumps and renewable installations",
-    "monthlyPricePence": 2999
-  }
+  { slug: "general-builder", name: "General Builder", description: "Extensions, conversions and whole-project builds", monthlyPricePence: 2999 },
+  { slug: "groundworks", name: "Groundworks", description: "Excavation, foundations, drainage and site preparation", monthlyPricePence: 2999 },
+  { slug: "roofing", name: "Roofing", description: "Re-roofing, roof extensions and roofline work", monthlyPricePence: 2999 },
+  { slug: "electrical", name: "Electrical", description: "Rewiring, consumer units, EV charging and new circuits", monthlyPricePence: 2999 },
+  { slug: "plumbing-heating", name: "Plumbing & Heating", description: "Boilers, heating systems, bathrooms and heat pumps", monthlyPricePence: 2999 },
+  { slug: "landscaping", name: "Landscaping", description: "Gardens, patios, boundaries and external works", monthlyPricePence: 2999 },
 ];
-
 
 export default async function LandingPage() {
   let tradeOptions: PricingItem[] = FALLBACK_TRADES;
@@ -99,364 +27,62 @@ export default async function LandingPage() {
       .order("display_order");
 
     if (trades && trades.length > 0) {
-      tradeOptions = trades.map((trade) => ({
-        slug: trade.slug,
-        name: trade.name,
-        description: trade.description,
-        monthlyPricePence: trade.default_monthly_price_pence,
-      }));
+      tradeOptions = trades.map((trade) => ({ slug: trade.slug, name: trade.name, description: trade.description, monthlyPricePence: trade.default_monthly_price_pence }));
     }
   } catch {
-    // Keep the marketing page usable while the data service is unavailable.
+    // Keep the marketplace landing page useful while the data service is unavailable.
   }
 
   return (
     <div>
-      <section className="relative overflow-hidden bg-charcoal text-white">
-        <div className="pointer-events-none absolute -right-24 top-16 h-72 w-72 rounded-full border border-signal-orange/20" />
-        <div className="pointer-events-none absolute -bottom-40 left-1/3 h-80 w-80 rounded-full border border-white/10" />
-
-        <div className="relative mx-auto grid max-w-7xl gap-12 px-6 py-14 sm:py-16 lg:grid-cols-[minmax(0,1fr)_minmax(440px,0.96fr)] lg:items-center lg:gap-14 lg:px-8 lg:py-20">
+      <section className="relative overflow-hidden bg-soft-surface px-6 py-12 sm:py-16 lg:px-8 lg:py-24">
+        <div className="pointer-events-none absolute -right-24 top-10 h-80 w-80 rounded-full border border-signal-orange/15" />
+        <div className="pointer-events-none absolute -bottom-48 left-1/3 h-[30rem] w-[30rem] rounded-full border border-charcoal/5" />
+        <div className="relative mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.95fr_1.05fr] lg:items-center lg:gap-16">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-semibold tracking-wide text-white/80">
-              <span className="h-1.5 w-1.5 rounded-full bg-signal-orange" />
-              Planning intelligence for trades
-            </div>
-
-            <h1 className="mt-7 max-w-2xl text-4xl font-bold leading-[1.08] tracking-tight sm:text-5xl lg:text-7xl">
-              Find the local jobs{" "}
-              <span className="text-signal-orange">worth chasing.</span>
-            </h1>
-
-            <p className="mt-6 max-w-xl text-base leading-7 text-white/70 sm:text-lg">
-              MyTradeBox turns planning applications into qualified opportunities for your trade and your local area. See the signal, estimate the value and make the next move before the competition gets there first.
-            </p>
-
-            <div className="mt-9 flex flex-col items-start gap-3 sm:flex-row sm:items-center">
-              <Link
-                href="#how-it-works"
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 px-5 py-3.5 text-sm font-semibold text-white transition hover:border-white/40 hover:bg-white/5"
-              >
-                See how it works
-                <ArrowUpRight />
-              </Link>
-              <span className="text-xs font-medium text-white/55">No account needed to preview</span>
-            </div>
-
-            <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm text-white/65">
-              <span className="inline-flex items-center gap-2">
-                <CheckIcon />
-                Exclusive territories
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <CheckIcon />
-                Trade-specific scoring
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <CheckIcon />
-                Built for the UK
-              </span>
-            </div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-signal-orange/20 bg-white px-3 py-1.5 text-xs font-semibold tracking-wide text-charcoal shadow-sm"><span className="h-1.5 w-1.5 rounded-full bg-signal-orange" />The UK opportunity marketplace</div>
+            <h1 className="mt-7 text-4xl font-bold leading-[1.05] tracking-tight text-charcoal sm:text-5xl lg:text-7xl">Find businesses <span className="text-signal-orange">ready to buy.</span></h1>
+            <p className="mt-6 max-w-xl text-base leading-7 text-slate sm:text-lg">MyTradeBox turns planning, procurement and business-change signals into an exclusive, actionable sales pipeline for your trade.</p>
+            <div className="mt-8 grid gap-3 sm:grid-cols-3"><HeroProof label="Why now" body="See the trigger behind the opportunity." /><HeroProof label="Fit score" body="Prioritise the work worth chasing." /><HeroProof label="Next action" body="Move from signal to conversation." /></div>
+            <div className="mt-9 flex flex-col items-start gap-3 sm:flex-row sm:items-center"><Link href="#market-checker" className="inline-flex items-center justify-center gap-2 rounded-xl bg-signal-orange px-5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-signal-orange/20 transition hover:bg-[#e95f00]">Explore your market <ArrowUpRight /></Link><Link href="#how-it-works" className="inline-flex items-center justify-center gap-2 rounded-xl border border-light-grey bg-white px-5 py-3.5 text-sm font-semibold text-charcoal transition hover:border-signal-orange/40">See how it works</Link></div>
           </div>
 
-          <div id="territory-checker" className="relative mx-auto w-full max-w-xl scroll-mt-36 lg:mt-3">
-            <div className="pointer-events-none absolute -right-5 -top-5 hidden h-24 w-24 rounded-2xl border border-signal-orange/30 sm:block" />
-            <TerritoryCheckerWidget trades={tradeOptions} compact />
-            <p className="mt-4 text-center text-xs font-medium text-white/55">
-              Preview local planning activity, estimated value and territory availability before you sign up.
-            </p>
-          </div>
+          <MarketplacePreview />
         </div>
       </section>
 
-      <section className="border-b border-light-grey bg-white">
-        <div className="mx-auto grid max-w-7xl gap-6 px-6 py-6 sm:grid-cols-3 lg:px-8">
-          <TrustPoint title="See signal, not spreadsheets" body="A clear score, value estimate and next action for every relevant project." />
-          <TrustPoint title="Own your local patch" body="One business per trade and postcode district. No shared leads. No race to the bottom." />
-          <TrustPoint title="Move at the right moment" body="Know what is happening, where it is happening and when to make contact." />
+      <section id="market-checker" className="scroll-mt-24 bg-charcoal px-6 py-16 text-white sm:py-20 lg:px-8">
+        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-start lg:gap-16">
+          <div className="max-w-xl"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Start with your market</p><h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">What do you sell? Where do you sell?</h2><p className="mt-5 text-base leading-7 text-white/65">Preview the local opportunity surface before you create an account. See real activity, indicative value, territory availability and a teaser of the evidence-backed cards inside.</p><div className="mt-8 space-y-4"><MarketStep number="01" title="Choose your supplier category" body="Tell the marketplace what your business can deliver." /><MarketStep number="02" title="Choose your geography" body="Start with a postcode district you already serve." /><MarketStep number="03" title="Review before you commit" body="Check the signal, then decide whether to own the market." /></div></div>
+          <div className="min-w-0"><TerritoryCheckerWidget trades={tradeOptions} compact /><p className="mt-4 text-center text-xs font-medium text-white/45">No account needed to preview. Specific businesses, decision makers and full evidence remain protected until the right entitlement or unlock.</p></div>
         </div>
       </section>
 
-      <section id="how-it-works" className="bg-soft-surface px-6 py-24 sm:py-28">
-        <div className="mx-auto max-w-7xl lg:px-2">
-          <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">How MyTradeBox works</p>
-            <h2 className="mt-4 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">
-              From planning application to paid work, with less guesswork.
-            </h2>
-            <p className="mt-5 text-base leading-7 text-slate sm:text-lg">
-              The useful information is already out there. MyTradeBox brings it together, filters it for your
-              trade and puts the next move in front of you.
-            </p>
-          </div>
-
-          <div className="mt-12 grid gap-5 md:grid-cols-3">
-            <BenefitCard
-              number="01"
-              title="Spot the right jobs"
-              body="Planning applications are matched to the kind of work your business actually delivers, so you spend less time searching and more time qualifying."
-            />
-            <BenefitCard
-              number="02"
-              title="See the opportunity clearly"
-              body="Every match is organised around the details that matter: opportunity score, project type, location, planning status and estimated trade value."
-            />
-            <BenefitCard
-              number="03"
-              title="Approach while it matters"
-              body="Get the context and suggested next action you need to make a confident, timely introduction before the project is already spoken for."
-            />
-          </div>
-        </div>
+      <section id="how-it-works" className="bg-white px-6 py-20 sm:py-24 lg:px-8">
+        <div className="mx-auto max-w-7xl"><div className="max-w-2xl"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">How the marketplace works</p><h2 className="mt-4 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">From public signal to closed-loop pipeline.</h2><p className="mt-5 text-base leading-7 text-slate sm:text-lg">MyTradeBox helps you qualify demand before you spend time chasing it, then keeps the commercial outcome attached to the original signal.</p></div><div className="mt-12 grid gap-5 md:grid-cols-2 xl:grid-cols-4"><StepCard number="01" title="Select a market" body="Choose the opportunity layers that match your service and growth plan." /><StepCard number="02" title="See why now" body="Review the trigger, evidence, timing, value and fit before you act." /><StepCard number="03" title="Unlock when ready" body="Reveal the business and named contact only after the signal earns your attention." /><StepCard number="04" title="Close the loop" body="Send a personalised approach, use QuoteLink and record what happened." /></div></div>
       </section>
 
-      <section className="bg-white px-6 py-24 sm:py-28">
-        <div className="mx-auto grid max-w-7xl items-center gap-14 lg:grid-cols-[0.82fr_1.18fr] lg:px-2">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Built around the next action</p>
-            <h2 className="mt-4 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">
-              Less time hunting. More time quoting the right work.
-            </h2>
-            <p className="mt-5 text-base leading-7 text-slate">
-              MyTradeBox gives you a practical opportunity feed instead of another noisy list of raw planning
-              records.
-            </p>
+      <section className="bg-soft-surface px-6 py-20 sm:py-24 lg:px-8"><div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:px-2"><div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">See the shape before the unlock</p><h2 className="mt-4 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">A marketplace card should tell you what to do next.</h2><p className="mt-5 text-base leading-7 text-slate">Preview enough to make a useful decision. Protect the identity, exact address and contact details until the opportunity is qualified and the access rule is satisfied.</p><ul className="mt-8 space-y-4"><FeatureLine>Project or buying signal, stage and indicative value</FeatureLine><FeatureLine>Evidence trail and source attribution</FeatureLine><FeatureLine>Fit, urgency and recommended next action</FeatureLine><FeatureLine>Named-contact enrichment only when it is worth paying for</FeatureLine></ul><Link href="/signup" className="mt-9 inline-flex items-center gap-2 text-sm font-semibold text-signal-orange hover:text-[#e95f00]">Create your free account <ArrowUpRight /></Link></div><div className="rounded-3xl bg-charcoal p-3 shadow-2xl shadow-charcoal/10 sm:p-5"><div className="rounded-2xl bg-soft-surface p-4 sm:p-6"><div className="flex items-center justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Illustrative marketplace card</p><p className="mt-1 text-lg font-semibold text-charcoal">Qualified before unlocked</p></div><span className="rounded-full bg-signal-orange/10 px-3 py-1.5 text-xs font-bold text-signal-orange">Evidence-led</span></div><div className="mt-5"><LockedOpportunityPreview compact title="Unlock the business when the signal is right" body="The marketplace keeps identity and contact detail protected until your market access or contact unlock applies." teaser={{ projectType: "Commercial fit-out", status: "Signal detected", estimatedTradeValueLow: 12000, estimatedTradeValueHigh: 28000 }} /></div></div></div></div></section>
 
-            <ul className="mt-8 space-y-4">
-              <FeatureLine>Opportunity scores that tell you where to focus first</FeatureLine>
-              <FeatureLine>Estimated project and trade value to qualify the upside</FeatureLine>
-              <FeatureLine>Planning context, location and timing in one view</FeatureLine>
-              <FeatureLine>Suggested outreach to help you make the first move</FeatureLine>
-            </ul>
-
-            <Link
-              href="#territory-checker"
-              className="mt-9 inline-flex items-center gap-2 text-sm font-semibold text-signal-orange transition hover:text-[#e95f00]"
-            >
-              Check a postcode district
-              <ArrowUpRight />
-            </Link>
-          </div>
-
-          <OpportunityFeedPreview />
-        </div>
-      </section>
-
-      <section className="bg-soft-surface px-6 py-24 sm:py-28">
-        <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[0.86fr_1.14fr] lg:px-2">
-          <div className="max-w-xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Territory ownership</p>
-            <h2 className="mt-4 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">
-              Build a local patch you can actually own.
-            </h2>
-            <p className="mt-5 text-base leading-7 text-slate sm:text-lg">
-              MyTradeBox is built around focused, exclusive territories — so the opportunities you see are useful,
-              actionable and yours to pursue.
-            </p>
-
-            <ul className="mt-8 space-y-4">
-              <FeatureLine>One business per trade and postcode district</FeatureLine>
-              <FeatureLine>No shared leads or race to the bottom</FeatureLine>
-              <FeatureLine>Clear territory pricing before you commit</FeatureLine>
-            </ul>
-
-            <Link
-              href="#territory-checker"
-              className="mt-9 inline-flex items-center gap-2 text-sm font-semibold text-signal-orange transition hover:text-[#e95f00]"
-            >
-              Check availability
-              <ArrowUpRight />
-            </Link>
-          </div>
-
-          <div className="rounded-3xl bg-charcoal p-5 text-white shadow-2xl shadow-charcoal/15 sm:p-7">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Live territory view</p>
-                <p className="mt-2 text-2xl font-semibold tracking-tight">Your area · Your trade</p>
-              </div>
-              <span className="inline-flex items-center gap-2 rounded-full bg-success/10 px-3 py-1.5 text-xs font-semibold text-success">
-                <span className="h-1.5 w-1.5 rounded-full bg-success" />
-                Exclusive
-              </span>
-            </div>
-
-            <div className="mt-8 grid grid-cols-3 gap-3">
-              <TerritoryMetric label="New matches" value="Live" />
-              <TerritoryMetric label="High priority" value="Live" />
-              <TerritoryMetric label="Pipeline value" value="Live" />
-            </div>
-
-            <div className="mt-6 flex items-start gap-3 border-t border-white/10 pt-5">
-              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-success/10 text-success">
-                <CheckIcon />
-              </span>
-              <div>
-                <p className="font-semibold">Your local opportunity feed</p>
-                <p className="mt-1 text-sm leading-6 text-white/60">
-                  See the projects worth pursuing without competing against a shared pool of businesses.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-white px-6 py-20 sm:py-24">
-        <div className="mx-auto max-w-7xl lg:px-2">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Made for your trade</p>
-              <h2 className="mt-4 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">
-                A better way to find the work you want.
-              </h2>
-            </div>
-            <p className="max-w-md text-sm leading-6 text-slate">
-              Start with your core service and expand into adjacent opportunities as your territory grows.
-            </p>
-          </div>
-
-          <div className="mt-9 flex flex-wrap gap-2.5">
-            {tradeOptions.map((trade) => (
-              <span
-                key={trade.slug}
-                className="rounded-full border border-light-grey bg-soft-surface px-4 py-2.5 text-sm font-medium text-charcoal"
-              >
-                {trade.name}
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
+      <section className="bg-white px-6 py-20 sm:py-24 lg:px-8"><div className="mx-auto max-w-7xl lg:px-2"><div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Opportunity markets</p><h2 className="mt-4 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">Start with one market. Expand when it proves useful.</h2></div><p className="max-w-md text-sm leading-6 text-slate">The long-term platform brings multiple buying signals into one decision surface, with vendor adapters added progressively and rights preserved by source.</p></div><div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{MARKETPLACE_MARKETS.map((market) => <article key={market.slug} className="rounded-2xl border border-light-grey bg-soft-surface p-5"><div className="flex items-center justify-between gap-3"><p className="text-sm font-semibold text-charcoal">{market.name}</p><span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-slate">{market.stage === "core" ? "Core" : "Expanding"}</span></div><p className="mt-2 text-sm leading-6 text-slate">{market.description}</p><div className="mt-4 flex flex-wrap gap-2">{market.examples.map((example) => <span key={example} className="rounded-full border border-light-grey bg-white px-2.5 py-1 text-[11px] font-medium text-slate">{example}</span>)}</div></article>)}</div></div></section>
 
       <PricingGrid items={tradeOptions} compact />
-
       <FaqSection compact />
 
-      <section className="bg-charcoal px-6 py-20 text-white sm:py-24">
-        <div className="mx-auto flex max-w-7xl flex-col gap-8 lg:flex-row lg:items-end lg:justify-between lg:px-2">
-          <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">
-              Local projects. Real opportunities.
-            </p>
-            <h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-5xl">
-              When the right job appears, be first to know.
-            </h2>
-            <p className="mt-5 max-w-xl text-base leading-7 text-white/65 sm:text-lg">
-              Create your account, choose your territory and start building a more focused local pipeline.
-            </p>
-          </div>
-
-          <Link
-            href="/signup"
-            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-signal-orange px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#e95f00]"
-          >
-            Create your free account
-            <ArrowUpRight />
-          </Link>
-        </div>
-      </section>
+      <section className="bg-charcoal px-6 py-20 text-white sm:py-24 lg:px-8"><div className="mx-auto flex max-w-7xl flex-col gap-8 lg:flex-row lg:items-end lg:justify-between lg:px-2"><div className="max-w-2xl"><p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Build a better local pipeline</p><h2 className="mt-4 text-3xl font-bold tracking-tight sm:text-5xl">Own the right market. Work the right signal.</h2><p className="mt-5 max-w-xl text-base leading-7 text-white/65 sm:text-lg">Start free, preview your area, then build exclusive market coverage around the work your business actually wants.</p></div><Link href="/signup" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-signal-orange px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#e95f00]">Create your free account <ArrowUpRight /></Link></div></section>
     </div>
   );
 }
 
-function OpportunityFeedPreview() {
-  return (
-    <div className="rounded-3xl bg-charcoal p-3 shadow-2xl shadow-charcoal/10 sm:p-4">
-      <div className="rounded-2xl bg-soft-surface p-4 sm:p-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Live territory signal</p>
-            <p className="mt-1 text-lg font-semibold text-charcoal">A clearer local pipeline</p>
-          </div>
-          <span className="rounded-full border border-light-grey bg-white px-3 py-1.5 text-xs font-semibold text-slate">Aggregate view</span>
-        </div>
-
-        <div className="mt-5 grid grid-cols-3 gap-3">
-          <Kpi label="New matches" value="Live" />
-          <Kpi label="High priority" value="Live" />
-          <Kpi label="Est. value" value="Live" />
-        </div>
-
-        <div className="mt-5">
-          <LockedOpportunityPreview
-            compact
-            title="See the signal before you claim"
-            body="Check a postcode district to see the signal. Claim the territory to reveal the projects worth chasing."
-          />
-        </div>
-
-        <div className="mt-5 flex items-center justify-between border-t border-light-grey pt-4 text-sm">
-          <span className="text-slate">Real territory totals appear in the checker</span>
-          <span className="font-semibold text-signal-orange">Check your area →</span>
-        </div>
-      </div>
-    </div>
-  );
+function MarketplacePreview() {
+  return <div className="relative mx-auto w-full max-w-xl"><div className="pointer-events-none absolute -right-6 -top-6 hidden h-24 w-24 rounded-2xl border border-signal-orange/25 sm:block" /><div className="rounded-[2rem] bg-charcoal p-3 shadow-2xl shadow-charcoal/15 sm:p-4"><div className="rounded-3xl bg-white p-4 sm:p-6"><div className="flex items-center justify-between gap-3"><div><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate">Illustrative marketplace view</p><p className="mt-1 text-lg font-semibold text-charcoal">Your opportunity market</p></div><span className="rounded-full bg-signal-orange/10 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.1em] text-signal-orange">Evidence-led</span></div><div className="mt-5 grid grid-cols-3 gap-3"><PreviewMetric label="Hot" value="Focus" tone="orange" /><PreviewMetric label="Warm" value="Review" tone="blue" /><PreviewMetric label="Early" value="Watch" tone="green" /></div><div className="mt-5 space-y-3"><PreviewRow label="Why now" title="New commercial activity detected" detail="Evidence and timing attached" /><PreviewRow label="Fit" title="Matched to your supplier category" detail="Score before unlock" /><PreviewRow label="Next" title="Make the first move" detail="Outreach and feedback loop" /></div><div className="mt-5 flex items-center justify-between border-t border-light-grey pt-4 text-xs"><span className="text-slate">Market × category × geography</span><span className="font-semibold text-signal-orange">Explore →</span></div></div></div><p className="mt-4 text-center text-xs font-medium text-slate">A clearer way to decide which opportunities deserve your time.</p></div>;
 }
 
-function BenefitCard({ number, title, body }: { number: string; title: string; body: string }) {
-  return (
-    <article className="rounded-3xl border border-light-grey bg-white p-6 sm:p-7">
-      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-signal-orange/10 text-sm font-bold text-signal-orange">
-        {number}
-      </div>
-      <h3 className="mt-6 text-xl font-semibold tracking-tight text-charcoal">{title}</h3>
-      <p className="mt-3 text-sm leading-6 text-slate">{body}</p>
-    </article>
-  );
-}
-
-function FeatureLine({ children }: { children: React.ReactNode }) {
-  return (
-    <li className="flex items-start gap-3 text-sm leading-6 text-charcoal">
-      <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-success/10 text-success">
-        <CheckIcon />
-      </span>
-      <span>{children}</span>
-    </li>
-  );
-}
-
-function TrustPoint({ title, body }: { title: string; body: string }) {
-  return (
-    <div className="border-l-2 border-signal-orange pl-4">
-      <p className="text-sm font-semibold text-charcoal">{title}</p>
-      <p className="mt-1 text-sm leading-6 text-slate">{body}</p>
-    </div>
-  );
-}
-
-function TerritoryMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-white/55">{label}</p>
-      <p className="mt-2 text-2xl font-bold tracking-tight text-white">{value}</p>
-    </div>
-  );
-}
-
-function Kpi({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl border border-light-grey bg-white p-3">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate">{label}</p>
-      <p className="mt-1 text-xl font-bold tracking-tight text-charcoal">{value}</p>
-    </div>
-  );
-}
-
-function ArrowUpRight({ className = "h-4 w-4" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="M7 17 17 7M8 7h9v9" />
-    </svg>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" d="m5 12 4.5 4.5L19 7" />
-    </svg>
-  );
-}
+function PreviewMetric({ label, value, tone }: { label: string; value: string; tone: "orange" | "blue" | "green" }) { const styles = { orange: "border-signal-orange/25 bg-signal-orange/[0.06]", blue: "border-slate/15 bg-slate/[0.035]", green: "border-success/20 bg-success/[0.04]" }[tone]; return <div className={`rounded-2xl border p-3 ${styles}`}><p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate">{label}</p><p className="mt-2 text-sm font-bold text-charcoal">{value}</p></div>; }
+function PreviewRow({ label, title, detail }: { label: string; title: string; detail: string }) { return <div className="flex items-center gap-3 rounded-2xl border border-light-grey bg-soft-surface p-3"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-signal-orange/10 text-signal-orange"><span className="h-2 w-2 rounded-full bg-signal-orange" /></span><div className="min-w-0 flex-1"><p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate">{label}</p><p className="mt-0.5 truncate text-sm font-semibold text-charcoal">{title}</p><p className="mt-0.5 text-xs text-slate">{detail}</p></div><span className="text-signal-orange">→</span></div>; }
+function HeroProof({ label, body }: { label: string; body: string }) { return <div className="rounded-2xl border border-light-grey bg-white p-3 shadow-sm"><p className="text-xs font-bold text-charcoal">{label}</p><p className="mt-1 text-[11px] leading-5 text-slate">{body}</p></div>; }
+function MarketStep({ number, title, body }: { number: string; title: string; body: string }) { return <div className="flex gap-3"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white text-xs font-bold text-signal-orange">{number}</span><div><p className="text-sm font-semibold text-white">{title}</p><p className="mt-1 text-xs leading-5 text-white/55">{body}</p></div></div>; }
+function StepCard({ number, title, body }: { number: string; title: string; body: string }) { return <article className="rounded-3xl border border-light-grey bg-soft-surface p-6"><div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-signal-orange/10 text-sm font-bold text-signal-orange">{number}</div><h3 className="mt-6 text-xl font-semibold tracking-tight text-charcoal">{title}</h3><p className="mt-3 text-sm leading-6 text-slate">{body}</p></article>; }
+function FeatureLine({ children }: { children: React.ReactNode }) { return <li className="flex items-start gap-3 text-sm leading-6 text-charcoal"><span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-success/10 text-success"><CheckIcon /></span><span>{children}</span></li>; }
+function CheckIcon() { return <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="m5 12 4.5 4.5L19 7" /></svg>; }
+function ArrowUpRight({ className = "h-4 w-4" }: { className?: string }) { return <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M7 17 17 7M8 7h9v9" /></svg>; }
