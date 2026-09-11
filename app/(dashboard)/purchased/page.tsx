@@ -11,11 +11,11 @@ const UNLOCK_LIMIT = 3;
 
 export default async function PurchasedLeadsPage() {
   const company = await requireCurrentCompany();
-  const [allPlanning, allMarketSignals, unlocks] = await Promise.all([
+  const [allPlanning, unlocks] = await Promise.all([
     getCompanyOpportunities(company.id, { limit: 500 }),
-    getMarketSignalForLeadUnlocks(company.id),
     listPaidLeadUnlocks(company.id),
   ]);
+  const allMarketSignals = await getMarketSignalForLeadUnlocks(unlocks);
 
   const purchasedOpportunityIds = new Set(unlocks.map((unlock) => unlock.application_trade_opportunity_id).filter((value): value is string => Boolean(value)));
   const purchasedMarketSignalIds = new Set(unlocks.map((unlock) => unlock.market_signal_trade_match_id).filter((value): value is string => Boolean(value)));
@@ -75,8 +75,7 @@ export default async function PurchasedLeadsPage() {
   );
 }
 
-async function getMarketSignalForLeadUnlocks(companyId: string): Promise<OwnedMarketSignal[]> {
-  const unlocks = await listPaidLeadUnlocks(companyId);
+async function getMarketSignalForLeadUnlocks(unlocks: LeadUnlockRow[]): Promise<OwnedMarketSignal[]> {
   const ids = unlocks.map((unlock) => unlock.market_signal_trade_match_id).filter((value): value is string => Boolean(value));
   const details = await Promise.all(ids.map((id) => getMarketSignalForLeadUnlock(id)));
   return details.filter((detail): detail is NonNullable<typeof detail> => Boolean(detail)).map((detail) => ({
