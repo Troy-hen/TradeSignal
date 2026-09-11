@@ -1,6 +1,11 @@
 import type { NormalizedMarketSignal } from "./types.ts";
 
-export type TradeCategory = { id: string; name: string; slug: string };
+export type TradeCategory = {
+  id: string;
+  name: string;
+  slug: string;
+  ai_detection_hints?: unknown;
+};
 export type TradeSignalMatch = {
   tradeCategoryId: string;
   fitScore: number;
@@ -101,7 +106,7 @@ export function matchSignalToTrades(signal: NormalizedMarketSignal, trades: Trad
   const matches: TradeSignalMatch[] = [];
 
   for (const trade of trades) {
-    const rule = RULES[trade.slug];
+    const rule = resolveRule(trade);
     if (!rule) continue;
     const strongKeyword = rule.strongKeywords?.find((keyword) => phraseMatch(haystack, keyword));
     const keyword = rule.keywords.find((candidate) => phraseMatch(haystack, candidate));
@@ -121,7 +126,7 @@ export function matchSignalToTrades(signal: NormalizedMarketSignal, trades: Trad
     const reasons: string[] = [];
     if (strongKeyword) reasons.push(`Direct scope match: ${strongKeyword}`);
     else if (keyword) reasons.push(`Scope keyword: ${keyword}`);
-    if (cpv) reasons.push(`Construction category match: CPV ${cpv}`);
+    if (cpv) reasons.push(`CPV scope match: ${cpv}`);
     reasons.push(signalReason(signal.signalType));
 
     const [lowShare, highShare] = direct && rule.directShare ? rule.directShare : rule.broadShare;
@@ -143,6 +148,35 @@ export function matchSignalToTrades(signal: NormalizedMarketSignal, trades: Trad
   }
 
   return matches.sort((a, b) => b.fitScore - a.fitScore);
+}
+
+function resolveRule(trade: TradeCategory): TradeRule | null {
+  const builtIn = RULES[trade.slug];
+  const hints = trade.ai_detection_hints && typeof trade.ai_detection_hints === "object"
+    ? trade.ai_detection_hints as Record<string, unknown>
+    : {};
+  const keywords = stringList(hints.keywords);
+  if (!builtIn && keywords.length === 0) return null;
+  return {
+    keywords: builtIn?.keywords ?? keywords,
+    strongKeywords: builtIn?.strongKeywords ?? stringList(hints.strongKeywords),
+    cpvPrefixes: builtIn?.cpvPrefixes ?? stringList(hints.cpvPrefixes),
+    broadShare: builtIn?.broadShare ?? sharePair(hints.broadShare) ?? [0.08, 0.24],
+    directShare: builtIn?.directShare ?? sharePair(hints.directShare) ?? [0.55, 1],
+  };
+}
+
+function stringList(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+    : [];
+}
+
+function sharePair(value: unknown): [number, number] | undefined {
+  if (!Array.isArray(value) || value.length !== 2) return undefined;
+  const low = Number(value[0]);
+  const high = Number(value[1]);
+  return Number.isFinite(low) && Number.isFinite(high) && low >= 0 && high >= low ? [low, high] : undefined;
 }
 
 function phraseMatch(haystack: string, phrase: string) {
