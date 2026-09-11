@@ -7,6 +7,62 @@ export type IntelligenceSource = {
   providerLine: string;
 };
 
+export type B2BTaxonomyGroup = {
+  slug: string;
+  name: string;
+  description: string;
+  examples: string[];
+};
+
+/**
+ * Customer-facing summary of the breadth of supplier categories the engine
+ * can match. These are examples, not separate plans or subscriptions.
+ */
+export const B2B_TAXONOMY_GROUPS: B2BTaxonomyGroup[] = [
+  {
+    slug: "digital-marketing",
+    name: "Digital and marketing",
+    description: "Digital presence, demand generation and brand work.",
+    examples: ["Web design", "Ecommerce", "SEO", "Social media", "Content", "Branding", "PR"],
+  },
+  {
+    slug: "software-technology",
+    name: "Software, IT and communications",
+    description: "Business systems, connectivity and technology change.",
+    examples: ["CRM", "ERP", "EPOS", "Apps", "Cyber security", "Cloud", "AI", "VoIP"],
+  },
+  {
+    slug: "professional-advisory",
+    name: "Professional and advisory",
+    description: "Specialist expertise that helps a business change, comply or grow.",
+    examples: ["Accountancy", "Consulting", "Legal", "Insurance", "HR", "Recruitment", "Training"],
+  },
+  {
+    slug: "finance-operations",
+    name: "Finance and operations",
+    description: "Financial control, back-office capacity and operational support.",
+    examples: ["Bookkeeping", "Tax", "Payroll", "Finance", "Payments", "BPO", "Credit control"],
+  },
+  {
+    slug: "premises-facilities",
+    name: "Premises and facilities",
+    description: "The people, products and systems needed to run a commercial site.",
+    examples: ["Fit-out", "Office furniture", "Supplies", "Signage", "Cleaning", "Security", "HVAC"],
+  },
+  {
+    slug: "utilities-infrastructure",
+    name: "Utilities and infrastructure",
+    description: "Energy, buildings, networks and physical infrastructure.",
+    examples: ["Broadband", "Energy", "Solar", "EV charging", "Building controls", "Maintenance"],
+  },
+  {
+    slug: "sector-supply-chain",
+    name: "Sector and supply chain",
+    description: "Specialist suppliers for hospitality, care, healthcare, retail, industry and logistics.",
+    examples: ["Hospitality", "Healthcare", "Care", "Retail", "Manufacturing", "Logistics", "Packaging"],
+  },
+];
+
 /**
  * Internal source layers shown for transparency. They are not products,
  * subscriptions or customer-selected verticals; every plan can be matched
