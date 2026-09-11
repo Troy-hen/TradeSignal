@@ -94,7 +94,7 @@ async function getCanonicalCompanyOpportunities(
     .from("opportunity_customer_matches")
     .select("id, opportunity_id, company_id, legacy_lead_match_id, match_score, match_reasons, status, matched_at")
     .eq("company_id", companyId)
-    .eq("status", "active")
+    .neq("status", "dismissed")
     .order("matched_at", { ascending: false })
     .limit(opts?.limit ?? 200);
   if (matchError || !rawMatches?.length) return [];
