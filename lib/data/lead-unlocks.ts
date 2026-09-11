@@ -77,7 +77,6 @@ export async function createLeadUnlockIntent(input: {
   target: LeadUnlockTarget;
   verticalKey: string;
 }): Promise<{ row: LeadUnlockRow | null; error: { code?: string; message?: string } | null }> {
-  const filter = targetFilter(input.target);
   const values: Record<string, unknown> = {
     company_id: input.companyId,
     created_by: input.userId,
