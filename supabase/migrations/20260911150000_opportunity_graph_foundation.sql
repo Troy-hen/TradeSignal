@@ -505,14 +505,14 @@ insert into public.need_categories (market_id, slug, name, description, is_defau
 select m.id, v.slug, v.name, v.description, v.is_default
 from public.opportunity_markets m
 join (values
-  ('hospitality_openings','hospitality_operations','Hospitality operations and opening infrastructure',true),
-  ('hospitality_openings','fit_out_and_technology','Hospitality fit-out, technology and premises services',false),
-  ('moves_fitouts','commercial_fit_out','Commercial fit-out and workplace delivery',true),
-  ('moves_fitouts','workplace_technology','IT, connectivity, AV, security and workplace technology',false),
-  ('care_health','care_operations','Care and health operations, staffing and compliance',true),
-  ('commercial_energy','energy_efficiency','Energy efficiency, retrofit and low-carbon infrastructure',true),
-  ('growing_businesses','growth_enablement','Services required to support business growth and change',true),
-  ('public_contracts','contract_delivery','Services relevant to delivering a public contract',true)
+  ('hospitality_openings','hospitality_operations','Hospitality operations','Hospitality operations and opening infrastructure',true),
+  ('hospitality_openings','fit_out_and_technology','Fit-out and technology','Hospitality fit-out, technology and premises services',false),
+  ('moves_fitouts','commercial_fit_out','Commercial fit-out','Commercial fit-out and workplace delivery',true),
+  ('moves_fitouts','workplace_technology','Workplace technology','IT, connectivity, AV, security and workplace technology',false),
+  ('care_health','care_operations','Care operations','Care and health operations, staffing and compliance',true),
+  ('commercial_energy','energy_efficiency','Energy efficiency','Energy efficiency, retrofit and low-carbon infrastructure',true),
+  ('growing_businesses','growth_enablement','Growth enablement','Services required to support business growth and change',true),
+  ('public_contracts','contract_delivery','Contract delivery','Services relevant to delivering a public contract',true)
 ) as v(market_slug,slug,name,description,is_default) on v.market_slug = m.slug
 on conflict (market_id, slug) do update set name = excluded.name, description = excluded.description, is_default = excluded.is_default, updated_at = now();
 
