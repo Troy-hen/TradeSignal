@@ -28,7 +28,9 @@ export function OpportunityRow({ item, unlocked = false }: { item: OpportunityLi
 }
 
 function inferNeeds(item: OpportunityListItem): string[] {
-  const needs = new Set<string>([...(item.matchedNeeds ?? []), ...(item.likelyRequirements ?? []), ...(item.matchReasons ?? [])]);
+  const explicitNeeds = new Set<string>([...(item.matchedNeeds ?? []), ...(item.likelyRequirements ?? [])]);
+  if (explicitNeeds.size > 0) return [...explicitNeeds].slice(0, 6);
+  const needs = new Set<string>(item.matchReasons ?? []);
   const text = `${item.projectType ?? ""} ${item.summary ?? ""} ${item.signalFamily ?? ""}`.toLowerCase();
   if (/restaurant|cafe|pub|hotel|hospitality|takeaway/.test(text)) {
     needs.add("Opening infrastructure");
