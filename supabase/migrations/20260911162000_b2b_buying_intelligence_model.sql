@@ -172,6 +172,19 @@ create table if not exists public.business_entity_profiles (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists public.business_entity_financials (
+  entity_id uuid primary key references public.business_entities(id) on delete cascade,
+  turnover numeric,
+  turnover_currency text not null default 'GBP',
+  accounts_period_end date,
+  employee_count integer,
+  financial_status text,
+  financial_data jsonb not null default '{}'::jsonb,
+  provider_key text references public.provider_config(provider_key) on delete set null,
+  source_record_id uuid references public.source_records(id) on delete set null,
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists public.business_domains (
   id uuid primary key default gen_random_uuid(),
   entity_id uuid not null references public.business_entities(id) on delete cascade,
