@@ -1,7 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { getCustomerProfile } from "@/lib/data/customer-profile";
-import { rankByCustomerProfile } from "@/lib/profile/relevance";
+import { rankByCustomerProfile, relevantNeedLabels } from "@/lib/profile/relevance";
 import type { Database } from "@/lib/types/database";
 
 type OpportunityBucket = Database["public"]["Enums"]["opportunity_bucket"];
@@ -64,7 +64,11 @@ export async function getCompanyOpportunities(
   ]);
   const source = canonical.length > 0 ? canonical : await getLegacyCompanyOpportunities(companyId, opts);
   const deduplicated = dedupeOpportunityItems(source);
-  return rankByCustomerProfile(deduplicated, profile, opportunityProfileText);
+  const profileAware = deduplicated.map((item) => ({
+    ...item,
+    matchedNeeds: relevantNeedLabels(profile, item.matchedNeeds ?? []),
+  }));
+  return rankByCustomerProfile(profileAware, profile, opportunityProfileText);
 }
 
 type GraphMatch = {
