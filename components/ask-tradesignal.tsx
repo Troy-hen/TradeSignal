@@ -30,10 +30,10 @@ type OpportunityResult = {
 type AssistantResponse = { answer?: string; opportunities?: OpportunityResult[]; error?: string };
 
 const STARTERS = [
-  "What are the strongest opportunities for my profile?",
-  "Show me hospitality openings that may need EPOS or broadband near Norwich",
-  "What buying signals should an accountancy firm act on?",
-  "Why is this opportunity relevant to what I sell?",
+  "What buying windows match my profile this week?",
+  "Which existing businesses in my area look ready to buy?",
+  "Where should I focus if I sell EPOS, broadband or office fit-out?",
+  "Why is this company likely to need what I sell?",
 ];
 
 export function AskTradeSignal({ notificationBarVisible = false }: { notificationBarVisible?: boolean }) {
