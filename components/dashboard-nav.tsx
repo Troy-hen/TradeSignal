@@ -20,7 +20,8 @@ export function DashboardNav({ mobile = false, collapsed = false, notificationCo
   return (
     <nav className={mobile ? "flex min-w-max items-center gap-2 px-4 py-3" : "space-y-1 px-3 py-4"} aria-label="Workspace navigation">
       {NAV_ITEMS.map((item) => {
-        const active = isActive(pathname, searchParams.get("action"), item.href, "queryAction" in item ? item.queryAction : undefined);
+        const queryAction = "queryAction" in item && typeof item.queryAction === "string" ? item.queryAction : undefined;
+        const active = isActive(pathname, searchParams.get("action"), item.href, queryAction);
         const showNotificationBadge = item.href === "/notifications" && notificationCount > 0;
         return (
           <Link key={item.label} href={item.href} title={collapsed ? item.label : undefined} aria-label={collapsed ? item.label : undefined} onClick={onNavigate} className={mobile ? `inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs font-semibold transition ${active ? "border-signal-orange/20 bg-signal-orange/10 text-charcoal" : "border-light-grey bg-white text-slate hover:border-signal-orange/30 hover:text-charcoal"}` : `group relative flex items-center rounded-xl py-2.5 text-sm font-medium transition ${collapsed ? "justify-center px-2" : "gap-3 px-3"} ${active ? "bg-signal-orange/10 text-charcoal" : "text-slate hover:bg-soft-surface hover:text-charcoal"}`}>
