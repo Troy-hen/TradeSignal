@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { TerritorySearchForm } from "@/components/territory-search-form";
-import { OpportunityMap, type OpportunityMapPoint } from "@/components/opportunity-map";
+import { OpportunityMap } from "@/components/opportunity-map";
 import { AppPageHeader } from "@/components/app-page-header";
 import { getCanonicalOpportunityMapPoints, getMarketSignalMapPoints } from "@/lib/data/opportunity-map";
 
@@ -18,10 +18,6 @@ export default async function TerritoriesPage() {
     commercial_estimated_trade_value_low: Number(point.commercial_estimated_trade_value_low ?? 0),
     commercial_estimated_trade_value_high: Number(point.commercial_estimated_trade_value_high ?? 0),
     monthly_price_pence: Number(point.monthly_price_pence ?? 2999),
-    teaser_estimated_trade_value_low: point.teaser_estimated_trade_value_low == null ? null : Number(point.teaser_estimated_trade_value_low),
-    teaser_estimated_trade_value_high: point.teaser_estimated_trade_value_high == null ? null : Number(point.teaser_estimated_trade_value_high),
-    commercial_teaser_estimated_trade_value_low: point.commercial_teaser_estimated_trade_value_low == null ? null : Number(point.commercial_teaser_estimated_trade_value_low),
-    commercial_teaser_estimated_trade_value_high: point.commercial_teaser_estimated_trade_value_high == null ? null : Number(point.commercial_teaser_estimated_trade_value_high),
   }));
 
   return (
