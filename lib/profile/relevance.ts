@@ -25,7 +25,7 @@ const STOP_WORDS = new Set([
 
 const SYNONYMS: Array<[RegExp, string[]]> = [
   [/epos|payment|card terminal|till|ordering/i, ["hospitality", "restaurant", "cafe", "pub", "hotel", "retail", "checkout"]],
-  [/\\bit\\b|managed it|it support|cyber|technology/i, ["managed it", "technology", "cyber", "office", "business"]],
+  [/\bit\b|managed it|it support|cyber|technology/i, ["managed it", "technology", "cyber", "office", "business"]],
   [/account|bookkeep|finance|tax|payroll/i, ["office", "business", "finance", "professional services"]],
   [/fit.?out|shopfit|interior|refurb|refit/i, ["fit-out", "interiors", "office", "retail", "workshop", "premises", "conversion"]],
   [/broadband|connectivity|telecom|voip|wifi|internet/i, ["office", "retail", "warehouse", "business", "premises", "connectivity"]],
