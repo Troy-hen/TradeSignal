@@ -44,6 +44,7 @@ export interface OpportunityListItem {
   matchedNeeds?: string[];
   planningApplicationId?: string | null;
   underlyingOpportunityIds?: string[];
+  canonicalEventKey?: string;
   latitude?: number | null;
   longitude?: number | null;
 }
@@ -178,7 +179,7 @@ async function getCanonicalCompanyOpportunities(
   const signalLinks = (links ?? []) as Array<{ opportunity_id: string; signal_id: string }>;
   const signalIds = [...new Set(signalLinks.map((row) => row.signal_id))];
   const { data: signals } = signalIds.length
-    ? await supabase.from("signals").select("id, signal_type, signal_family, interpretation, confidence, buying_window_start, buying_window_end").in("id", signalIds)
+    ? await supabase.from("signals").select("id, dedupe_key, signal_type, signal_family, interpretation, confidence, buying_window_start, buying_window_end").in("id", signalIds)
     : { data: [] };
   const signalById = new Map((signals ?? []).map((row) => [row.id, row]));
   const signalCountByOpportunity = new Map<string, number>();
@@ -233,6 +234,7 @@ async function getCanonicalCompanyOpportunities(
       leadMatchId: match.legacy_lead_match_id ?? match.id,
       opportunityId,
       canonicalOpportunityId: graph.id,
+      canonicalEventKey: typeof firstSignal.dedupe_key === "string" ? firstSignal.dedupe_key : undefined,
       planningApplicationId: legacy?.planning_application_id ?? null,
       underlyingOpportunityIds: [opportunityId],
       matchedNeeds,
@@ -276,7 +278,7 @@ async function getCanonicalCompanyOpportunities(
 function dedupeOpportunityItems(items: OpportunityListItem[]): OpportunityListItem[] {
   const groups = new Map<string, OpportunityListItem>();
   for (const item of items) {
-    const key = item.planningApplicationId ?? item.canonicalOpportunityId ?? item.opportunityId;
+    const key = item.planningApplicationId ?? item.canonicalEventKey ?? item.canonicalOpportunityId ?? item.opportunityId;
     const existing = groups.get(key);
     if (!existing) {
       groups.set(key, {
@@ -297,6 +299,7 @@ function dedupeOpportunityItems(items: OpportunityListItem[]): OpportunityListIt
       signalCount: (existing.signalCount ?? 0) + (item.signalCount ?? 0),
       currentAction: preferredAction(existing.currentAction, item.currentAction),
       underlyingOpportunityIds: [...new Set([...(existing.underlyingOpportunityIds ?? [existing.opportunityId]), ...(item.underlyingOpportunityIds ?? [item.opportunityId])])],
+      canonicalEventKey: existing.canonicalEventKey ?? item.canonicalEventKey,
       matchedNeeds: uniqueList([...(existing.matchedNeeds ?? []), ...(item.matchedNeeds ?? []), existing.tradeName, item.tradeName]),
       likelyRequirements: uniqueList([...(existing.likelyRequirements ?? []), ...(item.likelyRequirements ?? [])]),
       matchReasons: uniqueList([...(existing.matchReasons ?? []), ...(item.matchReasons ?? [])]),
