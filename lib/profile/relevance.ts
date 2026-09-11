@@ -85,8 +85,7 @@ export function rankByCustomerProfile<T>(
     score: profileRelevanceScore(profile, getText(item)),
   }));
   const relevant = scored.filter((entry) => entry.score > 0);
-  const pool = relevant.length > 0 ? relevant : scored;
-  return pool.sort((a, b) => b.score - a.score || a.index - b.index).map((entry) => entry.item);
+  return relevant.sort((a, b) => b.score - a.score || a.index - b.index).map((entry) => entry.item);
 }
 
 function termMatches(term: string, haystack: string): boolean {
