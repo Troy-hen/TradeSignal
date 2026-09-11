@@ -1,5 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { getCustomerProfile } from "@/lib/data/customer-profile";
+import { rankByCustomerProfile } from "@/lib/profile/relevance";
 import type { Database } from "@/lib/types/database";
 
 type OpportunityBucket = Database["public"]["Enums"]["opportunity_bucket"];
@@ -39,6 +41,11 @@ export interface OpportunityListItem {
   signalCount?: number | null;
   likelyRequirements?: string[];
   matchReasons?: string[];
+  matchedNeeds?: string[];
+  planningApplicationId?: string | null;
+  underlyingOpportunityIds?: string[];
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 /**
@@ -51,8 +58,13 @@ export async function getCompanyOpportunities(
   companyId: string,
   opts?: { bucket?: OpportunityBucket; action?: OpportunityActionFilter; limit?: number },
 ): Promise<OpportunityListItem[]> {
-  const canonical = await getCanonicalCompanyOpportunities(companyId, opts);
-  return canonical.length > 0 ? canonical : getLegacyCompanyOpportunities(companyId, opts);
+  const [profile, canonical] = await Promise.all([
+    getCustomerProfile(companyId),
+    getCanonicalCompanyOpportunities(companyId, opts),
+  ]);
+  const source = canonical.length > 0 ? canonical : await getLegacyCompanyOpportunities(companyId, opts);
+  const deduplicated = dedupeOpportunityItems(source);
+  return rankByCustomerProfile(deduplicated, profile, opportunityProfileText);
 }
 
 type GraphMatch = {
@@ -130,7 +142,7 @@ async function getCanonicalCompanyOpportunities(
 
   const [{ data: entities }, { data: locations }, { data: links }, { data: legacyOpportunities }] = await Promise.all([
     entityIds.length ? supabase.from("business_entities").select("id, canonical_name, legal_name, entity_type").in("id", entityIds) : Promise.resolve({ data: [] }),
-    locationIds.length ? supabase.from("business_locations").select("id, postcode_district, town_city, address_text").in("id", locationIds) : Promise.resolve({ data: [] }),
+    locationIds.length ? supabase.from("business_locations").select("id, postcode_district, town_city, address_text, latitude, longitude").in("id", locationIds) : Promise.resolve({ data: [] }),
     supabase.from("opportunity_signals").select("opportunity_id, signal_id").in("opportunity_id", graphIds),
     legacyIds.length ? supabase.from("application_trade_opportunities").select("id, opportunity_score, opportunity_bucket, postcode_district, trade_category_id, application_classification_id, estimated_trade_value_low, estimated_trade_value_high, fit_score, ai_confidence, likely_scope, recommended_action, recommended_contact_timing, risk_flags, planning_application_id").in("id", legacyIds) : Promise.resolve({ data: [] }),
   ]);
@@ -186,15 +198,22 @@ async function getCanonicalCompanyOpportunities(
     const matchReasons = stringList(match.match_reasons);
     const locationLabel = [location?.postcode_district, location?.town_city].filter(Boolean).join(" · ") || "UK coverage";
     const signalFamily = typeof firstSignal.signal_family === "string" ? firstSignal.signal_family : null;
+    const tradeName = tradeById.get(legacy?.trade_category_id ?? "")?.name ?? "Matched business profile";
+    const opportunityId = legacy?.id ?? graph.id;
     items.push({
       leadMatchId: match.legacy_lead_match_id ?? match.id,
-      opportunityId: legacy?.id ?? graph.id,
+      opportunityId,
       canonicalOpportunityId: graph.id,
+      planningApplicationId: legacy?.planning_application_id ?? null,
+      underlyingOpportunityIds: [opportunityId],
+      matchedNeeds: tradeName === "Matched business profile" ? [] : [tradeName],
+      latitude: numberOrNull(location?.latitude),
+      longitude: numberOrNull(location?.longitude),
       score,
       bucket,
       projectType: classification?.project_type ?? graph.title,
       district: location?.postcode_district ?? legacy?.postcode_district ?? "UK",
-      tradeName: tradeById.get(legacy?.trade_category_id ?? "")?.name ?? "Matched business profile",
+      tradeName,
       planningStatus: application?.status ?? graph.status ?? "current_signal",
       isCommercial: application?.is_commercial ?? true,
       valueLow: legacy?.estimated_trade_value_low ?? null,
@@ -223,6 +242,72 @@ async function getCanonicalCompanyOpportunities(
     });
   }
   return items;
+}
+
+function dedupeOpportunityItems(items: OpportunityListItem[]): OpportunityListItem[] {
+  const groups = new Map<string, OpportunityListItem>();
+  for (const item of items) {
+    const key = item.planningApplicationId ?? item.canonicalOpportunityId ?? item.opportunityId;
+    const existing = groups.get(key);
+    if (!existing) {
+      groups.set(key, {
+        ...item,
+        underlyingOpportunityIds: [...new Set(item.underlyingOpportunityIds ?? [item.opportunityId])],
+        matchedNeeds: uniqueList(item.matchedNeeds ?? [item.tradeName]),
+      });
+      continue;
+    }
+
+    const winner = Number(item.score ?? 0) > Number(existing.score ?? 0) ? item : existing;
+    groups.set(key, {
+      ...winner,
+      valueLow: maxNullable(existing.valueLow, item.valueLow),
+      valueHigh: maxNullable(existing.valueHigh, item.valueHigh),
+      score: Math.max(Number(existing.score ?? 0), Number(item.score ?? 0)),
+      fitScore: Math.max(Number(existing.fitScore ?? 0), Number(item.fitScore ?? 0)),
+      signalCount: (existing.signalCount ?? 0) + (item.signalCount ?? 0),
+      currentAction: preferredAction(existing.currentAction, item.currentAction),
+      underlyingOpportunityIds: [...new Set([...(existing.underlyingOpportunityIds ?? [existing.opportunityId]), ...(item.underlyingOpportunityIds ?? [item.opportunityId])])],
+      matchedNeeds: uniqueList([...(existing.matchedNeeds ?? []), ...(item.matchedNeeds ?? []), existing.tradeName, item.tradeName]),
+      likelyRequirements: uniqueList([...(existing.likelyRequirements ?? []), ...(item.likelyRequirements ?? [])]),
+      matchReasons: uniqueList([...(existing.matchReasons ?? []), ...(item.matchReasons ?? [])]),
+    });
+  }
+  return [...groups.values()].sort((a, b) => Number(b.score ?? 0) - Number(a.score ?? 0));
+}
+
+function opportunityProfileText(item: OpportunityListItem): string {
+  return [
+    item.projectType,
+    item.summary,
+    item.tradeName,
+    ...(item.matchedNeeds ?? []),
+    ...(item.likelyRequirements ?? []),
+    ...(item.matchReasons ?? []),
+    item.entityName,
+    item.locationLabel,
+    item.sourceKind,
+  ].filter(Boolean).join(" ");
+}
+
+function uniqueList(values: Array<string | null | undefined>): string[] {
+  return [...new Set(values.filter((value): value is string => Boolean(value && value.trim())).map((value) => value.trim()))];
+}
+
+function maxNullable(a: number | null, b: number | null): number | null {
+  if (a === null || a === undefined) return b ?? null;
+  if (b === null || b === undefined) return a;
+  return Math.max(a, b);
+}
+
+function preferredAction(a: string | null | undefined, b: string | null | undefined): string | null {
+  const rank: Record<string, number> = { won: 6, quoted: 5, contacted: 4, saved: 3, new: 2, lost: 1 };
+  return (rank[b ?? ""] ?? 0) > (rank[a ?? ""] ?? 0) ? b ?? null : a ?? null;
+}
+
+function numberOrNull(value: unknown): number | null {
+  const parsed = Number(value);
+  return value !== null && value !== undefined && Number.isFinite(parsed) ? parsed : null;
 }
 
 function bucketForScore(score: number): string {
@@ -285,7 +370,7 @@ async function getLegacyCompanyOpportunities(
       .from("application_classifications")
       .select("id, project_type, summary, likely_start_window, opportunity_timing, project_size_category, ai_confidence, classification_status")
       .in("id", classIds),
-    supabase.from("planning_applications").select("id, status, received_date, decision_date, is_commercial").in("id", appIds),
+    supabase.from("planning_applications").select("id, status, received_date, decision_date, is_commercial, latitude, longitude").in("id", appIds),
   ]);
 
   const tradeById = new Map((trades ?? []).map((t) => [t.id, t]));
@@ -305,6 +390,11 @@ async function getLegacyCompanyOpportunities(
     items.push({
       leadMatchId: m.lead_match_id,
       opportunityId: opp.id,
+      planningApplicationId: opp.planning_application_id,
+      underlyingOpportunityIds: [opp.id],
+      matchedNeeds: trade?.name ? [trade.name] : [],
+      latitude: numberOrNull(app?.latitude),
+      longitude: numberOrNull(app?.longitude),
       score: opp.opportunity_score,
       bucket: opp.opportunity_bucket,
       projectType: cls?.project_type ?? null,
@@ -328,6 +418,7 @@ async function getLegacyCompanyOpportunities(
       decisionDate: app?.decision_date ?? null,
       currentAction: m.current_action,
       matchedAt: m.matched_at ?? "",
+      locationLabel: opp.postcode_district,
     });
   }
 
