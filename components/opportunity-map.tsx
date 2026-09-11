@@ -62,14 +62,16 @@ const MAP_TILES = [
   "https://tile.openstreetmap.org/5/14/9.png",
   "https://tile.openstreetmap.org/5/15/9.png",
   "https://tile.openstreetmap.org/5/16/9.png",
+  "https://tile.openstreetmap.org/5/17/9.png",
   "https://tile.openstreetmap.org/5/14/10.png",
   "https://tile.openstreetmap.org/5/15/10.png",
   "https://tile.openstreetmap.org/5/16/10.png",
+  "https://tile.openstreetmap.org/5/17/10.png",
 ];
 
-// The tile grid is three columns by two rows. These are the exact geographic
-// edges of z5/x14-16/y9-10, so markers and the basemap share one coordinate system.
-const UK_BOUNDS = { west: -22.5, east: 11.25, north: 61.606396, south: 48.922499 };
+// Four square tiles by two square tiles gives the basemap a stable 2:1
+// aspect ratio. These are the exact geographic edges of z5/x14-17/y9-10.
+const UK_BOUNDS = { west: -22.5, east: 22.5, north: 61.606396, south: 48.922499 };
 
 export function OpportunityMap({ points, signals }: { points: OpportunityMapPoint[]; signals: MarketSignalMapPoint[]; trades?: unknown[] }) {
   const [layer, setLayer] = useState<Layer>("all");
@@ -115,31 +117,31 @@ export function OpportunityMap({ points, signals }: { points: OpportunityMapPoin
 
       <div className="mt-5 grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(290px,0.45fr)]">
         <div className="relative min-h-[430px] min-w-0 overflow-hidden rounded-2xl border border-[#cbd9de] bg-[#e8f0f2] sm:min-h-[560px]">
-          <div className="absolute inset-0 overflow-hidden bg-[#dbe7e7]" aria-label="Approximate opportunity map of the United Kingdom" role="img">
-            <div className="absolute inset-y-0 overflow-hidden" style={{ left: "-25%", width: "150%" }}>
-              <div className="grid h-full w-full grid-cols-3 grid-rows-2">
-                {MAP_TILES.map((tile) => <div key={tile} className="bg-center bg-cover" style={{ backgroundImage: `url(${tile})` }} />)}
+          <div className="absolute inset-y-0 left-1/2 h-full w-auto" style={{ aspectRatio: "2 / 1", transform: `translateX(-50%) scale(${zoom})`, transformOrigin: "center" }} aria-label="Approximate opportunity map of the United Kingdom" role="img">
+            <div className="absolute inset-0 overflow-hidden bg-[#dbe7e7]">
+              <div className="grid h-full w-full grid-cols-4 grid-rows-2">
+                {MAP_TILES.map((tile) => <img key={tile} src={tile} alt="" draggable={false} className="block h-full w-full" />)}
               </div>
+              <div className="absolute inset-0 bg-white/10" />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,transparent_0,rgba(232,240,242,0.04)_55%,rgba(31,41,55,0.12)_100%)]" />
             </div>
-            <div className="absolute inset-0 bg-white/10" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,transparent_0,rgba(232,240,242,0.04)_55%,rgba(31,41,55,0.12)_100%)]" />
-          </div>
 
-          {districtClusters.map((point) => (
-            <button key={`district-${point.postcode_district}`} type="button" onClick={() => setSelection({ kind: "district", id: point.postcode_district })} className={`absolute z-20 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-signal-orange px-2.5 py-2 text-xs font-bold text-white shadow-lg transition hover:scale-110 ${selectedDistrict?.postcode_district === point.postcode_district ? "ring-4 ring-signal-orange/30" : ""}`} style={positionStyle(point.latitude, point.longitude, zoom)} aria-label={`${point.opportunity_count} opportunities in ${point.post_town || point.postcode_district}`}>
-              {point.opportunity_count}
-            </button>
-          ))}
+            {districtClusters.map((point) => (
+              <button key={`district-${point.postcode_district}`} type="button" onClick={() => setSelection({ kind: "district", id: point.postcode_district })} className={`absolute z-20 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-signal-orange px-2.5 py-2 text-xs font-bold text-white shadow-lg transition hover:scale-110 ${selectedDistrict?.postcode_district === point.postcode_district ? "ring-4 ring-signal-orange/30" : ""}`} style={positionStyle(point.latitude, point.longitude)} aria-label={`${point.opportunity_count} opportunities in ${point.post_town || point.postcode_district}`}>
+                {point.opportunity_count}
+              </button>
+            ))}
 
-          {signalClusters.map((cluster) => {
-            const isCluster = cluster.signals.length > 1;
-            const selected = selection?.kind === "signal-cluster" ? selection.id === cluster.id : selection?.kind === "signal" && cluster.signals.some((signal) => signal.market_signal_trade_match_id === selection.id);
-            return (
-              <button key={cluster.id} type="button" onClick={() => setSelection(isCluster ? { kind: "signal-cluster", id: cluster.id } : { kind: "signal", id: cluster.signals[0].market_signal_trade_match_id })} className={`absolute z-30 flex h-9 min-w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-xl border-2 border-white bg-charcoal px-2 text-[10px] font-black text-white shadow-lg transition hover:scale-110 ${selected ? "ring-4 ring-signal-orange/30" : ""}`} style={positionStyle(cluster.latitude, cluster.longitude, zoom)} aria-label={isCluster ? `${cluster.signals.length} public signals in this area` : `${cluster.signals[0].signal_type}: ${cluster.signals[0].title}`}>
+            {signalClusters.map((cluster) => {
+              const isCluster = cluster.signals.length > 1;
+              const selected = selection?.kind === "signal-cluster" ? selection.id === cluster.id : selection?.kind === "signal" && cluster.signals.some((signal) => signal.market_signal_trade_match_id === selection.id);
+              return (
+                <button key={cluster.id} type="button" onClick={() => setSelection(isCluster ? { kind: "signal-cluster", id: cluster.id } : { kind: "signal", id: cluster.signals[0].market_signal_trade_match_id })} className={`absolute z-30 flex h-9 min-w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-xl border-2 border-white bg-charcoal px-2 text-[10px] font-black text-white shadow-lg transition hover:scale-110 ${selected ? "ring-4 ring-signal-orange/30" : ""}`} style={positionStyle(cluster.latitude, cluster.longitude)} aria-label={isCluster ? `${cluster.signals.length} public signals in this area` : `${cluster.signals[0].signal_type}: ${cluster.signals[0].title}`}>
                 {isCluster ? cluster.signals.length : signalIcon(cluster.signals[0].signal_type)}
               </button>
             );
           })}
+          </div>
 
           <div className="absolute right-3 top-3 z-40 flex overflow-hidden rounded-xl border border-white/80 bg-white/95 shadow-lg">
             <button type="button" onClick={() => setZoom((value) => Math.min(1.65, value + 0.15))} className="h-9 w-9 text-lg font-semibold text-charcoal hover:bg-soft-surface" aria-label="Zoom in">+</button>
@@ -246,12 +248,10 @@ function clusterSignals(signals: MarketSignalMapPoint[]): SignalCluster[] {
   })).sort((a, b) => b.signals.length - a.signals.length);
 }
 
-function positionStyle(latitude: number, longitude: number, zoom: number): CSSProperties {
+function positionStyle(latitude: number, longitude: number): CSSProperties {
   const x = ((longitude - UK_BOUNDS.west) / (UK_BOUNDS.east - UK_BOUNDS.west)) * 100;
   const y = ((UK_BOUNDS.north - latitude) / (UK_BOUNDS.north - UK_BOUNDS.south)) * 100;
-  // The 3x2 tile mosaic is 150% wide and centred in the viewport.
-  const viewportX = -25 + x * 1.5;
-  return { left: `${50 + (viewportX - 50) * zoom}%`, top: `${50 + (y - 50) * zoom}%` };
+  return { left: `${x}%`, top: `${y}%` };
 }
 
 function countForLayer(layer: Layer, points: OpportunityMapPoint[], signals: MarketSignalMapPoint[]) {
