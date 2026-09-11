@@ -14,7 +14,7 @@ export function QuoteRequestsPanel({ requests }: { requests: OpportunityQuoteReq
             {newCount > 0 && <span className="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-semibold text-white">{newCount} new</span>}
           </div>
           <h2 className="mt-3 text-2xl font-bold tracking-tight">Quote request received</h2>
-          <p className="mt-2 text-sm leading-6 text-white/65">This person responded through MyTradeBox outreach for this exact opportunity. Their contact permission is recorded against the request.</p>
+          <p className="mt-2 text-sm leading-6 text-white/65">This person responded through TradeSignal outreach for this exact opportunity. Their contact permission is recorded against the request.</p>
         </div>
         <span className="shrink-0 text-xs font-semibold text-white/50">{formatDateTime(latest.submittedAt)}</span>
       </div>

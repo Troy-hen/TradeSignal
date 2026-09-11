@@ -5,8 +5,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export const LEAD_UNLOCK_AMOUNT_PENCE = 2000;
 
 export type LeadUnlockTarget =
-  | { opportunityId: string; marketSignalId?: never }
-  | { marketSignalId: string; opportunityId?: never };
+  | { opportunityId: string }
+  | { marketSignalId: string };
 
 export type LeadUnlockRow = {
   id: string;

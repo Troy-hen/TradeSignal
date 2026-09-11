@@ -59,7 +59,7 @@ function fallbackTeaser(opportunity: Opportunity): OpportunityTeaser {
     planning_status: "unknown",
     estimated_trade_value_low: opportunity.estimated_trade_value_low,
     estimated_trade_value_high: opportunity.estimated_trade_value_high,
-  } as OpportunityTeaser;
+  } as unknown as OpportunityTeaser;
 }
 
 function LockedBrief({ teaser }: { teaser: OpportunityTeaser }) {
@@ -152,7 +152,7 @@ async function PaidBrief({ opportunity, companyId }: { opportunity: Opportunity;
 function SectionKicker({ children }: { children: React.ReactNode }) { return <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">{children}</p>; }
 function UnlockPoint({ label }: { label: string }) { return <p className="flex items-start gap-2"><span className="mt-1 text-signal-orange">✓</span><span>{label}</span></p>; }
 function HeroMetric({ label, value }: { label: string; value: string }) { return <div className="bg-white/[0.04] p-5"><p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-white/45">{label}</p><p className="mt-2 break-words text-sm font-bold text-white">{value}</p></div>; }
-function Detail({ label, value }: { label: string; value: string }) { return <div><dt className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate">{label}</dt><dd className="mt-1 break-words text-sm font-medium leading-5 text-charcoal">{value}</dd></div>; }
+function Detail({ label, value }: { label: string; value: string | null | undefined }) { return <div><dt className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate">{label}</dt><dd className="mt-1 break-words text-sm font-medium leading-5 text-charcoal">{value ?? "Not available"}</dd></div>; }
 function uniqueList(values: string[]) { return [...new Set(values.map((value) => value.trim()).filter(Boolean))]; }
 function humanize(value: string | null | undefined) { return value ? value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()) : "Updated"; }
 function bucketLabel(value: string | null) { if (value === "hot") return "Hot opportunity"; if (value === "strong") return "Warm opportunity"; if (value === "possible" || value === "low") return "Early opportunity"; return value ? humanize(value) : "Qualified signal"; }

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentCompany } from "@/lib/auth/get-current-company";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -71,7 +72,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "unlock_intent_failed" }, { status: 500 });
   }
 
-  const admin = createAdminClient();
+  const admin = createAdminClient() as unknown as SupabaseClient;
   const configuredDemo = isConfiguredDemoUser(user);
   let databaseDemo = false;
   if (!configuredDemo) {
@@ -135,7 +136,9 @@ export async function POST(request: Request) {
       metadata: {
         lead_unlock_id: row.id,
         company_id: company.id,
-        ...(target.opportunityId ? { opportunity_id: target.opportunityId } : { market_signal_id: target.marketSignalId }),
+        ...( "opportunityId" in target
+          ? { opportunity_id: target.opportunityId }
+          : { market_signal_id: target.marketSignalId }),
       },
     });
 
