@@ -27,7 +27,6 @@ export default async function DashboardPage() {
   const paidMarketSignalIds = new Set(paidUnlocks.map((unlock) => unlock.market_signal_trade_match_id).filter((value): value is string => Boolean(value)));
   const visibleOpportunities = opportunities.filter((item) => !paidOpportunityIds.has(item.opportunityId));
   const visibleMarketSignals = marketSignals.filter((item) => !paidMarketSignalIds.has(item.market_signal_trade_match_id));
-  const allCount = visibleOpportunities.length + visibleMarketSignals.length;
   const openCount = [...visibleOpportunities.map((item) => item.currentAction), ...visibleMarketSignals.map((item) => item.current_action)].filter((value) => !["won", "lost"].includes(value ?? "")).length;
   const hotCount = visibleOpportunities.filter((item) => item.bucket === "hot").length + visibleMarketSignals.filter((item) => item.opportunity_bucket === "hot").length;
   const savedCount = visibleOpportunities.filter((item) => ["saved", "viewed"].includes(item.currentAction ?? "")).length + visibleMarketSignals.filter((item) => ["saved", "viewed"].includes(item.current_action)).length;
