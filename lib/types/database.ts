@@ -2102,7 +2102,7 @@ export type Database = {
           id: string
           postcode_district: string
           status: Database["public"]["Enums"]["coverage_plan_item_status"]
-          territory_claim_id: string
+          territory_claim_id: string | null
           unit_monthly_price_pence: number
           updated_at: string
         }
@@ -2114,7 +2114,7 @@ export type Database = {
           id?: string
           postcode_district: string
           status?: Database["public"]["Enums"]["coverage_plan_item_status"]
-          territory_claim_id: string
+          territory_claim_id?: string | null
           unit_monthly_price_pence: number
           updated_at?: string
         }
@@ -2126,7 +2126,7 @@ export type Database = {
           id?: string
           postcode_district?: string
           status?: Database["public"]["Enums"]["coverage_plan_item_status"]
-          territory_claim_id?: string
+          territory_claim_id?: string | null
           unit_monthly_price_pence?: number
           updated_at?: string
         }
@@ -2172,7 +2172,7 @@ export type Database = {
           status: Database["public"]["Enums"]["coverage_plan_status"]
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
-          trade_category_id: string
+          trade_category_id: string | null
           updated_at: string
         }
         Insert: {
@@ -2192,7 +2192,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["coverage_plan_status"]
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
-          trade_category_id: string
+          trade_category_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -2212,7 +2212,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["coverage_plan_status"]
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
-          trade_category_id?: string
+          trade_category_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2913,6 +2913,66 @@ export type Database = {
           },
         ]
       }
+      intelligence_need_rules: {
+        Row: {
+          created_at: string
+          event_type: string | null
+          id: string
+          is_active: boolean
+          market_id: string | null
+          match_terms: string[]
+          match_weight: number
+          need_category_id: string
+          rule_key: string
+          signal_family: string | null
+          signal_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          event_type?: string | null
+          id?: string
+          is_active?: boolean
+          market_id?: string | null
+          match_terms?: string[]
+          match_weight?: number
+          need_category_id: string
+          rule_key: string
+          signal_family?: string | null
+          signal_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string | null
+          id?: string
+          is_active?: boolean
+          market_id?: string | null
+          match_terms?: string[]
+          match_weight?: number
+          need_category_id?: string
+          rule_key?: string
+          signal_family?: string | null
+          signal_type?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intelligence_need_rules_market_id_fkey"
+            columns: ["market_id"]
+            isOneToOne: false
+            referencedRelation: "opportunity_markets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intelligence_need_rules_need_category_id_fkey"
+            columns: ["need_category_id"]
+            isOneToOne: false
+            referencedRelation: "need_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       intelligence_signal_rules: {
         Row: {
           can_qualify_existing_business: boolean
@@ -3541,6 +3601,7 @@ export type Database = {
       }
       need_categories: {
         Row: {
+          category_group: string
           created_at: string
           description: string | null
           id: string
@@ -3552,6 +3613,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          category_group?: string
           created_at?: string
           description?: string | null
           id?: string
@@ -3563,6 +3625,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          category_group?: string
           created_at?: string
           description?: string | null
           id?: string
@@ -3733,11 +3796,12 @@ export type Database = {
           likely_requirements: Json
           location_id: string | null
           market_id: string
+          market_signal_id: string | null
           qualification_method: string | null
           score: number | null
           source_attribution: Json
           status: string
-          supplier_category_id: string
+          supplier_category_id: string | null
           temperature: string | null
           title: string
           updated_at: string
@@ -3758,11 +3822,12 @@ export type Database = {
           likely_requirements?: Json
           location_id?: string | null
           market_id: string
+          market_signal_id?: string | null
           qualification_method?: string | null
           score?: number | null
           source_attribution?: Json
           status?: string
-          supplier_category_id: string
+          supplier_category_id?: string | null
           temperature?: string | null
           title: string
           updated_at?: string
@@ -3783,11 +3848,12 @@ export type Database = {
           likely_requirements?: Json
           location_id?: string | null
           market_id?: string
+          market_signal_id?: string | null
           qualification_method?: string | null
           score?: number | null
           source_attribution?: Json
           status?: string
-          supplier_category_id?: string
+          supplier_category_id?: string | null
           temperature?: string | null
           title?: string
           updated_at?: string
@@ -3820,6 +3886,13 @@ export type Database = {
             columns: ["market_id"]
             isOneToOne: false
             referencedRelation: "opportunity_markets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_market_signal_id_fkey"
+            columns: ["market_signal_id"]
+            isOneToOne: false
+            referencedRelation: "market_signals"
             referencedColumns: ["id"]
           },
           {
@@ -5831,6 +5904,7 @@ export type Database = {
       }
       supplier_categories: {
         Row: {
+          category_group: string
           created_at: string
           description: string | null
           id: string
@@ -5841,6 +5915,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          category_group?: string
           created_at?: string
           description?: string | null
           id?: string
@@ -5851,6 +5926,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          category_group?: string
           created_at?: string
           description?: string | null
           id?: string
@@ -7224,6 +7300,10 @@ export type Database = {
           timed_out: boolean
         }[]
       }
+      refresh_opportunity_customer_matches: {
+        Args: { p_opportunity_id: string }
+        Returns: number
+      }
       remove_company_member: {
         Args: { p_membership_id: string }
         Returns: undefined
@@ -7991,6 +8071,10 @@ export type Database = {
       sync_legacy_lead_match_to_graph: {
         Args: { p_lead_match_id: string }
         Returns: undefined
+      }
+      sync_market_signal_to_graph: {
+        Args: { p_market_signal_id: string }
+        Returns: string
       }
       sync_planning_application_to_graph: {
         Args: { p_planning_application_id: string }

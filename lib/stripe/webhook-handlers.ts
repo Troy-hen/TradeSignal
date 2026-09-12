@@ -29,6 +29,14 @@ function resolveRefId(ref: string | { id: string } | null | undefined): string |
   return typeof ref === "string" ? ref : ref.id;
 }
 
+function resolveTerritoryClaimIds(
+  items: Array<{ territory_claim_id: string | null }> | null,
+): string[] {
+  return (items ?? []).flatMap((item) =>
+    item.territory_claim_id ? [item.territory_claim_id] : [],
+  );
+}
+
 async function handleCheckoutCompleted(admin: AdminClient, session: Stripe.Checkout.Session) {
   const coveragePlanId = session.metadata?.coverage_plan_id;
   if (coveragePlanId) {
@@ -97,7 +105,7 @@ async function handleCoverageCheckoutCompleted(
     .eq("coverage_plan_id", coveragePlanId)
     .eq("status", "active");
 
-  const claimIds = (items ?? []).map((item: { territory_claim_id: string }) => item.territory_claim_id);
+  const claimIds = resolveTerritoryClaimIds(items);
   const firstClaimId = claimIds[0];
   if (!plan || !firstClaimId || claimIds.length === 0) return;
 
@@ -158,7 +166,7 @@ async function handleCheckoutExpired(admin: AdminClient, session: Stripe.Checkou
       .select("territory_claim_id")
       .eq("coverage_plan_id", coveragePlanId);
 
-    const claimIds = (items ?? []).map((item: { territory_claim_id: string }) => item.territory_claim_id);
+    const claimIds = resolveTerritoryClaimIds(items);
     await db.from("territory_claims").update({ status: "expired" }).in("id", claimIds).eq("status", "reserved");
     await db.from("coverage_plans").update({ status: "expired" }).eq("id", coveragePlanId).eq("status", "reserved");
     return;
@@ -284,7 +292,7 @@ async function handleCoverageSubscriptionUpdated(
     .eq("coverage_plan_id", coveragePlanId)
     .in("status", ["active", "pending_add"]);
 
-  const claimIds = (items ?? []).map((row: { territory_claim_id: string }) => row.territory_claim_id);
+  const claimIds = resolveTerritoryClaimIds(items);
   const now = new Date().toISOString();
 
   await db.from("subscriptions").upsert(
@@ -329,7 +337,7 @@ async function handleSubscriptionDeleted(admin: AdminClient, subscription: Strip
       .eq("coverage_plan_id", coveragePlanId)
       .in("status", ["active", "pending_add", "pending_remove"]);
 
-    const claimIds = (items ?? []).map((row: { territory_claim_id: string }) => row.territory_claim_id);
+    const claimIds = resolveTerritoryClaimIds(items);
     await db.from("subscriptions").update({ status: "canceled", canceled_at: new Date().toISOString() }).eq("stripe_subscription_id", subscription.id);
     await db.from("coverage_plans").update({ status: "cancelled", cancelled_at: new Date().toISOString() }).eq("id", coveragePlanId);
     await db.from("territory_claims").update({ status: "cancelled", cancelled_at: new Date().toISOString() }).in("id", claimIds).in("status", ["active", "suspended"]);
@@ -389,7 +397,7 @@ async function handleInvoicePaymentFailed(admin: AdminClient, invoice: Stripe.In
       .select("territory_claim_id")
       .eq("coverage_plan_id", coverageSubscription.coverage_plan_id)
       .in("status", ["active", "pending_add"]);
-    const claimIds = (items ?? []).map((row: { territory_claim_id: string }) => row.territory_claim_id);
+    const claimIds = resolveTerritoryClaimIds(items);
 
     await db.from("subscriptions").update({ status: "past_due" }).eq("stripe_subscription_id", subscriptionId);
     await db.from("coverage_plans").update({ status: "suspended" }).eq("id", coverageSubscription.coverage_plan_id);
@@ -448,7 +456,7 @@ async function handleInvoicePaymentSucceeded(admin: AdminClient, invoice: Stripe
       .select("territory_claim_id")
       .eq("coverage_plan_id", coverageSubscription.coverage_plan_id)
       .in("status", ["active", "pending_add"]);
-    const claimIds = (items ?? []).map((row: { territory_claim_id: string }) => row.territory_claim_id);
+    const claimIds = resolveTerritoryClaimIds(items);
 
     await db.from("subscriptions").update({ status: "active" }).eq("stripe_subscription_id", subscriptionId);
     await db.from("coverage_plans").update({ status: "active" }).eq("id", coverageSubscription.coverage_plan_id);
