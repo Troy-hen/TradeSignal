@@ -22,6 +22,7 @@ type LooseBuilder = {
   maybeSingle(): LooseBuilder;
   insert(values: Record<string, unknown>): LooseBuilder;
   update(values: Record<string, unknown>): LooseBuilder;
+  limit(value: number): LooseBuilder;
 };
 type LooseClient = { from(table: string): LooseBuilder };
 
@@ -168,14 +169,19 @@ async function buildLeadPayload(unlock: LeadUnlockRow, companyId: string, connec
     const { data: application } = await run<Record<string, unknown>>(
       admin.from("planning_applications").select("applicant_name, agent_company, address_text, local_planning_authority, source_url, proposal_description").eq("id", opportunity.planning_application_id).maybeSingle(),
     );
+    const { data: contact } = await run<Record<string, unknown>>(
+      admin.from("contact_intelligence_records").select("person_name, organisation_name, job_title, email, phone, website, source_url").eq("company_id", companyId).eq("opportunity_id", unlock.application_trade_opportunity_id).eq("suppression_status", "active").limit(1).maybeSingle(),
+    );
     const payload = {
       ...base,
       lead_type: "planning_opportunity",
       title: opportunity.proposal_description ?? "Everro opportunity",
       company_name: application?.applicant_name ?? null,
-      contact_name: application?.agent_company ?? null,
-      email: null,
-      phone: null,
+      contact_name: contact?.person_name ?? contact?.organisation_name ?? application?.agent_company ?? null,
+      job_title: contact?.job_title ?? null,
+      email: contact?.email ?? null,
+      phone: contact?.phone ?? null,
+      website: contact?.website ?? null,
       location: application?.address_text ?? opportunity.postcode_district,
       postcode_district: opportunity.postcode_district,
       score: opportunity.opportunity_score,
@@ -184,7 +190,7 @@ async function buildLeadPayload(unlock: LeadUnlockRow, companyId: string, connec
       value_high_gbp: opportunity.estimated_trade_value_high,
       summary: opportunity.recommended_action,
       likely_needs: opportunity.likely_scope,
-      source_url: application?.source_url ?? null,
+      source_url: contact?.source_url ?? application?.source_url ?? null,
     };
     return applyFieldMappings(payload, await listFieldMappings(sessionClient, connectionId));
   }
