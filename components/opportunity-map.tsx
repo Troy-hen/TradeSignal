@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import { formatGbpRange } from "@/components/opportunity-badge";
 import { LeadUnlockButton } from "@/components/marketplace/lead-unlock-button";
@@ -36,21 +37,35 @@ export type OpportunityMapPoint = {
   teaser_source?: string | null;
 };
 
-type Selection =
-  | { kind: "district"; id: string }
-  | { kind: "opportunity"; id: string }
-  | { kind: "signal"; id: string }
-  | { kind: "signal-cluster"; id: string }
-  | null;
+type MapItem = {
+  id: string;
+  kind: "planning" | "signal";
+  latitude: number;
+  longitude: number;
+  category: string;
+  typeLabel: string;
+  title: string;
+  location: string;
+  score: number | null;
+  valueLow: number | null;
+  valueHigh: number | null;
+  accessLevel: "full" | "teaser";
+  planning?: OpportunityMapPoint;
+  signal?: MarketSignalMapPoint;
+};
 
-type DistrictCluster = OpportunityMapPoint;
-
-type SignalCluster = {
+type OpportunityCluster = {
   id: string;
   latitude: number;
   longitude: number;
-  signals: MarketSignalMapPoint[];
+  items: MapItem[];
+  categories: Array<{ label: string; count: number }>;
 };
+
+type Selection =
+  | { kind: "cluster"; ids: string[]; latitude: number; longitude: number }
+  | { kind: "item"; id: string }
+  | null;
 
 const MAP_TILES = [
   "https://tile.openstreetmap.org/5/14/9.png",
@@ -63,20 +78,70 @@ const MAP_TILES = [
   "https://tile.openstreetmap.org/5/17/10.png",
 ];
 
-// Four square tiles by two square tiles gives the basemap a stable 2:1
-// aspect ratio. These are the exact geographic edges of z5/x14-17/y9-10.
 const UK_BOUNDS = { west: -22.5, east: 22.5, north: 61.606396, south: 48.922499 };
 
 export function OpportunityMap({ points, signals }: { points: OpportunityMapPoint[]; signals: MarketSignalMapPoint[]; trades?: unknown[] }) {
   const [selection, setSelection] = useState<Selection>(null);
-  const [zoom, setZoom] = useState(1);
+  const [scopeHistory, setScopeHistory] = useState<string[][]>([]);
+  const [zoom, setZoom] = useState(0.8);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef<{ pointerId: number; startX: number; startY: number; originX: number; originY: number } | null>(null);
   const mapViewportRef = useRef<HTMLDivElement>(null);
 
+  const allItems = useMemo(() => toMapItems(points, signals), [points, signals]);
+  const activeScopeIds = scopeHistory.at(-1) ?? null;
+  const scopedItems = activeScopeIds ? allItems.filter((item) => activeScopeIds.includes(item.id)) : allItems;
+  const visibleItems = activeScopeIds && scopedItems.length === 0 ? allItems : scopedItems;
+  const clusters = useMemo(() => clusterItems(visibleItems, zoom), [visibleItems, zoom]);
+  const selectedItem = selection?.kind === "item" ? allItems.find((item) => item.id === selection.id) ?? null : null;
+  const selectedClusterItems = selection?.kind === "cluster"
+    ? selection.ids.map((id) => allItems.find((item) => item.id === id)).filter((item): item is MapItem => Boolean(item))
+    : [];
+  const visibleCategories = useMemo(() => categoryCounts(visibleItems), [visibleItems]);
+
   function changeZoom(nextZoom: number) {
     setZoom(clamp(nextZoom, 0.55, 3.2));
+  }
+
+  function focusMap(latitude: number, longitude: number, nextZoom: number) {
+    const viewport = mapViewportRef.current;
+    if (viewport) {
+      const projected = positionPercent(latitude, longitude);
+      const mapHeight = viewport.clientHeight;
+      const mapWidth = mapHeight * 2;
+      setPan({
+        x: clamp(((50 - projected.x) / 100) * mapWidth * nextZoom, -1000, 1000),
+        y: clamp(((50 - projected.y) / 100) * mapHeight * nextZoom, -700, 700),
+      });
+    }
+    setZoom(nextZoom);
+  }
+
+  function handleClusterClick(cluster: OpportunityCluster) {
+    if (cluster.items.length === 1) {
+      setSelection({ kind: "item", id: cluster.items[0].id });
+      return;
+    }
+    const ids = cluster.items.map((item) => item.id);
+    setSelection({ kind: "cluster", ids, latitude: cluster.latitude, longitude: cluster.longitude });
+    if (cluster.items.length < visibleItems.length) {
+      setScopeHistory((history) => [...history, ids]);
+    }
+    focusMap(cluster.latitude, cluster.longitude, nextDrillZoom(zoom));
+  }
+
+  function stepBack() {
+    setScopeHistory((history) => history.slice(0, -1));
+    setSelection(null);
+    changeZoom(zoom - 0.45);
+  }
+
+  function resetMap() {
+    setZoom(0.8);
+    setPan({ x: 0, y: 0 });
+    setSelection(null);
+    setScopeHistory([]);
   }
 
   function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
@@ -97,17 +162,10 @@ export function OpportunityMap({ points, signals }: { points: OpportunityMapPoin
   }
 
   function endDrag(event: ReactPointerEvent<HTMLDivElement>) {
-    if (dragRef.current?.pointerId === event.pointerId) {
-      if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
-      dragRef.current = null;
-      setIsDragging(false);
-    }
-  }
-
-
-  function resetMap() {
-    setZoom(1);
-    setPan({ x: 0, y: 0 });
+    if (dragRef.current?.pointerId !== event.pointerId) return;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+    dragRef.current = null;
+    setIsDragging(false);
   }
 
   useEffect(() => {
@@ -122,30 +180,19 @@ export function OpportunityMap({ points, signals }: { points: OpportunityMapPoin
     return () => viewport.removeEventListener("wheel", handleNativeWheel);
   }, []);
 
-  const districtClusters = useMemo(() => clusterPlanningPoints(points), [points]);
-  const signalClusters = useMemo(() => clusterSignals(signals, zoom), [signals, zoom]);
-  const showIndividualOpportunities = zoom >= 1.85;
-  const selectedDistrict = selection?.kind === "district" ? districtClusters.find((point) => point.postcode_district === selection.id) ?? null : null;
-  const selectedOpportunity = selection?.kind === "opportunity" ? points.find((point) => point.teaser_opportunity_id === selection.id) ?? null : null;
-  const selectedSignal = selection?.kind === "signal" ? signals.find((signal) => signal.market_signal_trade_match_id === selection.id) ?? null : null;
-  const selectedSignalCluster = selection?.kind === "signal-cluster" ? signalClusters.find((cluster) => cluster.id === selection.id) ?? null : null;
-  const mappedCount = points.reduce((sum, point) => sum + Number(point.opportunity_count ?? 0), 0) + signals.length;
-
   return (
     <section className="min-w-0 overflow-hidden rounded-3xl border border-light-grey bg-white p-4 sm:p-7">
-      <div className="min-w-0">
-        <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Opportunity map</p>
-          <h2 className="mt-2 text-2xl font-bold tracking-tight text-charcoal">See where buying windows are building.</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate">Drag or scroll to explore the filtered Marketplace. Zoom in to separate individual opportunities, then select a marker to inspect its teaser on the right.</p>
-        </div>
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Opportunity map</p>
+        <h2 className="mt-2 text-2xl font-bold tracking-tight text-charcoal">Explore the same Marketplace, geographically.</h2>
+        <p className="mt-2 max-w-3xl text-sm leading-6 text-slate">Clusters contain the exact opportunities available in Cards. Select a cluster to focus and split it, then select an individual marker to inspect its teaser without leaving the map.</p>
       </div>
 
-      <div className="mt-5 grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(290px,0.45fr)]">
+      <div className="mt-5 grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.45fr)]">
         <div ref={mapViewportRef} className="relative min-h-[430px] min-w-0 overflow-hidden overscroll-contain rounded-2xl border border-[#cbd9de] bg-[#e8f0f2] sm:min-h-[560px]" role="region" aria-label="Interactive opportunity exploration map">
           <div
-            className={`absolute inset-y-0 left-1/2 h-full w-auto select-none touch-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
-            style={{ aspectRatio: "2 / 1", transform: `translate3d(calc(-50% + ${pan.x}px), ${pan.y}px, 0) scale(${zoom})`, transformOrigin: "center" }}
+            className={"absolute inset-y-0 left-1/2 h-full w-auto select-none touch-none " + (isDragging ? "cursor-grabbing" : "cursor-grab")}
+            style={{ aspectRatio: "2 / 1", transform: "translate3d(calc(-50% + " + pan.x + "px), " + pan.y + "px, 0) scale(" + zoom + ")", transformOrigin: "center" }}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={endDrag}
@@ -154,72 +201,87 @@ export function OpportunityMap({ points, signals }: { points: OpportunityMapPoin
           >
             <div className="absolute inset-0 overflow-hidden bg-[#dbe7e7]">
               <div className="grid h-full w-full grid-cols-4 grid-rows-2">
-                {MAP_TILES.map((tile) => <div key={tile} aria-hidden="true" className="h-full w-full bg-cover bg-center" style={{ backgroundImage: `url(${tile})` }} />)}
+                {MAP_TILES.map((tile) => <div key={tile} aria-hidden="true" className="h-full w-full bg-cover bg-center" style={{ backgroundImage: "url(" + tile + ")" }} />)}
               </div>
               <div className="absolute inset-0 bg-white/10" />
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,transparent_0,rgba(232,240,242,0.04)_55%,rgba(31,41,55,0.12)_100%)]" />
             </div>
 
-            {showIndividualOpportunities
-              ? points.map((point, index) => {
-                  const id = point.teaser_opportunity_id ?? `${point.postcode_district}-${index}`;
-                  const offset = markerOffset(id);
-                  return <button key={`opportunity-${id}`} type="button" onClick={() => point.teaser_opportunity_id && setSelection({ kind: "opportunity", id: point.teaser_opportunity_id })} className={`absolute z-20 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white bg-signal-orange text-[10px] font-black text-white shadow-lg transition hover:scale-110 ${selectedOpportunity?.teaser_opportunity_id === point.teaser_opportunity_id ? "ring-4 ring-signal-orange/30" : ""}`} style={positionStyle(point.latitude + offset.latitude, point.longitude + offset.longitude)} aria-label={`View ${point.teaser_project_type ?? "opportunity"} in ${point.post_town || point.postcode_district}`}>•</button>;
-                })
-              : districtClusters.map((point) => (
-                  <button key={`district-${point.postcode_district}`} type="button" onClick={() => setSelection({ kind: "district", id: point.postcode_district })} className={`absolute z-20 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-signal-orange px-2.5 py-2 text-xs font-bold text-white shadow-lg transition hover:scale-110 ${selectedDistrict?.postcode_district === point.postcode_district ? "ring-4 ring-signal-orange/30" : ""}`} style={positionStyle(point.latitude, point.longitude)} aria-label={`${point.opportunity_count} opportunities in ${point.post_town || point.postcode_district}`}>
-                    {point.opportunity_count}
-                  </button>
-                ))}
-
-            {signalClusters.map((cluster) => {
-              const isCluster = cluster.signals.length > 1;
-              const selected = selection?.kind === "signal-cluster" ? selection.id === cluster.id : selection?.kind === "signal" && cluster.signals.some((signal) => signal.market_signal_trade_match_id === selection.id);
+            {clusters.map((cluster) => {
+              const isIndividual = cluster.items.length === 1;
+              const topCategory = cluster.categories[0];
+              const extraCategories = Math.max(0, cluster.categories.length - 1);
+              const selected = selection?.kind === "item"
+                ? cluster.items.some((item) => item.id === selection.id)
+                : selection?.kind === "cluster" && cluster.items.some((item) => selection.ids.includes(item.id));
               return (
-                <button key={cluster.id} type="button" onClick={() => setSelection(isCluster ? { kind: "signal-cluster", id: cluster.id } : { kind: "signal", id: cluster.signals[0].market_signal_trade_match_id })} className={`absolute z-30 flex h-9 min-w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-xl border-2 border-white bg-charcoal px-2 text-[10px] font-black text-white shadow-lg transition hover:scale-110 ${selected ? "ring-4 ring-signal-orange/30" : ""}`} style={positionStyle(cluster.latitude, cluster.longitude)} aria-label={isCluster ? `${cluster.signals.length} public signals in this area` : `${cluster.signals[0].signal_type}: ${cluster.signals[0].title}`}>
-                {isCluster ? cluster.signals.length : signalIcon(cluster.signals[0].signal_type)}
-              </button>
-            );
-          })}
+                <button
+                  key={cluster.id}
+                  type="button"
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onClick={() => handleClusterClick(cluster)}
+                  className={"absolute z-20 -translate-x-1/2 -translate-y-1/2 border-2 border-white text-white shadow-lg transition hover:z-30 hover:scale-110 " + markerTone(cluster) + " " + (isIndividual ? "flex h-9 w-9 items-center justify-center rounded-full text-[10px] font-black " : "flex max-w-[150px] items-center gap-1.5 rounded-full px-2.5 py-2 text-[10px] font-bold ") + (selected ? "ring-4 ring-signal-orange/30" : "")}
+                  style={positionStyle(cluster.latitude, cluster.longitude)}
+                  aria-label={isIndividual ? "View " + cluster.items[0].title : cluster.items.length + " opportunities: " + cluster.categories.map((item) => item.label + " " + item.count).join(", ")}
+                  title={cluster.categories.map((item) => item.label + " · " + item.count).join("\n")}
+                >
+                  {isIndividual
+                    ? categoryCode(cluster.items[0])
+                    : <><span className="max-w-[82px] truncate">{compactCategory(topCategory.label)}</span>{extraCategories > 0 && <span className="text-white/65">+{extraCategories}</span>}<span className="rounded-full bg-white/20 px-1.5 py-0.5">{cluster.items.length}</span></>}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="absolute left-3 top-3 z-40 flex items-center gap-2">
+            <span className="rounded-xl border border-white/80 bg-white/95 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.1em] text-slate shadow-sm">Level {drillLevel(zoom)} · {visibleItems.length} opportunities</span>
+            {scopeHistory.length > 0 && <button type="button" onClick={stepBack} className="rounded-xl border border-white/80 bg-white/95 px-3 py-2 text-xs font-semibold text-charcoal shadow-sm hover:bg-white">← Back</button>}
           </div>
 
           <div className="absolute right-3 top-3 z-40 flex overflow-hidden rounded-xl border border-white/80 bg-white/95 shadow-lg">
-            <button type="button" onClick={() => changeZoom(zoom + 0.15)} className="h-9 w-9 text-lg font-semibold text-charcoal hover:bg-soft-surface" aria-label="Zoom in">+</button>
-            <button type="button" onClick={() => changeZoom(zoom - 0.15)} className="h-9 w-9 border-l border-light-grey text-lg font-semibold text-charcoal hover:bg-soft-surface" aria-label="Zoom out">−</button>
+            <button type="button" onClick={() => changeZoom(zoom + 0.18)} className="h-9 w-9 text-lg font-semibold text-charcoal hover:bg-soft-surface" aria-label="Zoom in">+</button>
+            <button type="button" onClick={() => changeZoom(zoom - 0.18)} className="h-9 w-9 border-l border-light-grey text-lg font-semibold text-charcoal hover:bg-soft-surface" aria-label="Zoom out">−</button>
             <button type="button" onClick={resetMap} className="h-9 w-9 border-l border-light-grey text-xs font-semibold text-charcoal hover:bg-soft-surface" aria-label="Reset map">↺</button>
           </div>
+
           <div className="absolute bottom-3 left-3 right-3 z-40 flex gap-3 overflow-x-auto rounded-xl border border-white/80 bg-white/95 px-3 py-2 text-[10px] font-semibold text-slate shadow-sm">
-            <span className="min-w-max"><span className="mr-1 inline-block h-2 w-2 rounded-full bg-signal-orange" />Business-change opportunity</span>
-            <span className="min-w-max"><span className="mr-1 inline-block h-2 w-2 rounded bg-charcoal" />Public/commercial opportunity</span>
-            <span className="min-w-max text-slate/70">Drag to explore · scroll to zoom</span><span className="min-w-max text-slate/70">Approximate markers · © OpenStreetMap contributors</span>
+            <span className="min-w-max"><span className="mr-1 inline-block h-2 w-2 rounded-full bg-signal-orange" />Business-change</span>
+            <span className="min-w-max"><span className="mr-1 inline-block h-2 w-2 rounded-full bg-charcoal" />Public/commercial</span>
+            <span className="min-w-max"><span className="mr-1 inline-block h-2 w-2 rounded-full bg-[#475569]" />Mixed cluster</span>
+            <span className="min-w-max text-slate/70">Select clusters to drill down · drag or scroll to explore · approximate markers</span>
           </div>
         </div>
 
-        <div className="min-w-0 rounded-2xl border border-light-grey bg-soft-surface p-5">
-          {selectedSignalCluster ? <SignalClusterPanel cluster={selectedSignalCluster} onSelect={(id) => setSelection({ kind: "signal", id })} /> : selectedSignal ? <SignalPanel signal={selectedSignal} /> : selectedOpportunity ? <OpportunityPanel point={selectedOpportunity} /> : selectedDistrict ? <DistrictPanel point={selectedDistrict} /> : <MapSummary count={mappedCount} areas={districtClusters.length} clusters={signalClusters.length} showIndividualOpportunities={showIndividualOpportunities} />}
-        </div>
+        <aside className="min-w-0 self-start rounded-2xl border border-light-grey bg-soft-surface p-5 lg:sticky lg:top-6">
+          {selectedItem
+            ? <MapItemPanel item={selectedItem} />
+            : selectedClusterItems.length > 1
+              ? <ClusterPanel items={selectedClusterItems} onSelect={(id) => setSelection({ kind: "item", id })} />
+              : <MapSummary total={allItems.length} visible={visibleItems.length} categories={visibleCategories} clusters={clusters.length} zoom={zoom} />}
+        </aside>
       </div>
     </section>
   );
 }
 
-function DistrictPanel({ point }: { point: DistrictCluster }) {
-  const count = Number(point.opportunity_count ?? 0);
-  const needs = point.teaser_needs?.filter(Boolean).slice(0, 5) ?? [];
+function ClusterPanel({ items, onSelect }: { items: MapItem[]; onSelect: (id: string) => void }) {
+  const categories = categoryCounts(items);
   return <>
-    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-signal-orange">Selected area</p>
-    <h3 className="mt-2 text-2xl font-bold text-charcoal">{point.post_town || point.postcode_district}</h3>
-    <p className="mt-1 text-sm text-slate">{point.postcode_district} · profile-matched opportunity density</p>
-    <dl className="mt-5 space-y-3 border-t border-light-grey pt-4"><Metric label="Opportunities" value={String(count)} /><Metric label="Indicative value" value={formatGbpRange(point.estimated_trade_value_low, point.estimated_trade_value_high)} /><Metric label="Source" value={humanize(point.teaser_source ?? "Business change")} /><Metric label="Map marker" value="Approximate" /></dl>
-    {point.teaser_project_type && <div className="mt-5 rounded-2xl border border-signal-orange/20 bg-white p-4">
-      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-signal-orange">Top opportunity teaser</p>
-      <h4 className="mt-2 text-base font-bold leading-6 text-charcoal">{point.teaser_project_type}</h4>
-      {point.teaser_summary && <p className="mt-2 text-xs leading-5 text-slate">{point.teaser_summary}</p>}
-      {needs.length > 0 && <div className="mt-3 flex flex-wrap gap-1.5">{needs.map((need) => <span key={need} className="rounded-full bg-soft-surface px-2 py-1 text-[10px] font-semibold text-slate">{need}</span>)}</div>}
-      {point.teaser_opportunity_id && <div className="mt-4"><LeadUnlockButton opportunityId={point.teaser_opportunity_id} compact /></div>}
-    </div>}
-    <p className="mt-5 rounded-xl border border-signal-orange/15 bg-white px-3 py-3 text-xs leading-5 text-slate">Zoom in to separate individual opportunities in this area, or use Cards to compare the filtered queue.</p>
+    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-signal-orange">Focused cluster</p>
+    <h3 className="mt-2 text-2xl font-bold text-charcoal">{items.length} opportunities in this group</h3>
+    <p className="mt-2 text-sm leading-6 text-slate">The map has focused on this group and split it into smaller spatial clusters. Continue selecting markers, or open an opportunity directly below.</p>
+    <div className="mt-4 flex flex-wrap gap-1.5">{categories.slice(0, 6).map((category) => <span key={category.label} className="rounded-full border border-light-grey bg-white px-2.5 py-1 text-[10px] font-semibold text-slate">{category.label} · {category.count}</span>)}</div>
+    <div className="mt-5 space-y-2 border-t border-light-grey pt-4">
+      {items.slice(0, 6).map((item) => <button type="button" onClick={() => onSelect(item.id)} key={item.id} className="block w-full rounded-xl border border-transparent bg-white p-3 text-left transition hover:border-signal-orange/30"><div className="flex items-start justify-between gap-3"><p className="text-xs font-semibold leading-5 text-charcoal">{item.title}</p><span className="shrink-0 rounded-full bg-soft-surface px-2 py-1 text-[9px] font-bold text-slate">{categoryCode(item)}</span></div><p className="mt-1 text-[11px] text-slate">{item.location} · {item.category}</p><span className="mt-2 inline-flex text-[11px] font-semibold text-signal-orange">View teaser →</span></button>)}
+      {items.length > 6 && <p className="px-2 pt-1 text-[11px] text-slate">Continue drilling down on the map to separate the remaining {items.length - 6} opportunities.</p>}
+    </div>
   </>;
+}
+
+function MapItemPanel({ item }: { item: MapItem }) {
+  if (item.kind === "planning" && item.planning) return <OpportunityPanel point={item.planning} />;
+  if (item.signal) return <SignalPanel signal={item.signal} />;
+  return null;
 }
 
 function OpportunityPanel({ point }: { point: OpportunityMapPoint }) {
@@ -229,7 +291,7 @@ function OpportunityPanel({ point }: { point: OpportunityMapPoint }) {
     <h3 className="mt-3 text-xl font-bold leading-tight text-charcoal">{point.teaser_project_type ?? "Buying-window opportunity"}</h3>
     <p className="mt-2 text-sm leading-6 text-slate">{point.post_town || point.postcode_district} · {point.postcode_district} · approximate area</p>
     {point.teaser_summary && <div className="mt-4 rounded-2xl border border-signal-orange/15 bg-white p-4"><p className="text-[10px] font-bold uppercase tracking-[0.12em] text-signal-orange">Why now</p><p className="mt-2 text-xs leading-5 text-slate">{point.teaser_summary}</p></div>}
-    <dl className="mt-5 space-y-3 border-t border-light-grey pt-4"><Metric label="Customer fit" value={point.teaser_score == null ? "Under review" : `${Math.round(point.teaser_score)}/100`} /><Metric label="Indicative value" value={formatGbpRange(point.teaser_estimated_trade_value_low ?? null, point.teaser_estimated_trade_value_high ?? null)} /><Metric label="Source" value={humanize(point.teaser_source ?? "Unified intelligence")} /></dl>
+    <dl className="mt-5 space-y-3 border-t border-light-grey pt-4"><Metric label="Customer fit" value={point.teaser_score == null ? "Under review" : Math.round(point.teaser_score) + "/100"} /><Metric label="Indicative value" value={formatGbpRange(point.teaser_estimated_trade_value_low ?? null, point.teaser_estimated_trade_value_high ?? null)} /><Metric label="Source" value={humanize(point.teaser_source ?? "Unified intelligence")} /></dl>
     {needs.length > 0 && <div className="mt-4 flex flex-wrap gap-1.5">{needs.map((need) => <span key={need} className="rounded-full bg-white px-2 py-1 text-[10px] font-semibold text-slate">{need}</span>)}</div>}
     {point.teaser_opportunity_id && <div className="mt-5"><LeadUnlockButton opportunityId={point.teaser_opportunity_id} /></div>}
   </>;
@@ -239,99 +301,179 @@ function SignalPanel({ signal }: { signal: MarketSignalMapPoint }) {
   return <>
     <div className="flex flex-wrap items-center gap-2"><span className="rounded-full bg-signal-orange/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-signal-orange">{humanize(signal.signal_type)}</span>{signal.location_scope === "regional" && <span className="rounded-full border border-dashed border-charcoal/30 px-2.5 py-1 text-[10px] font-semibold text-slate">Regional marker</span>}</div>
     <h3 className="mt-3 text-xl font-bold leading-tight text-charcoal">{signal.title}</h3>
-    <p className="mt-2 text-sm leading-6 text-slate">{signal.location_label}{signal.buyer_name ? ` · ${signal.buyer_name}` : ""}</p>
-    <dl className="mt-5 space-y-3 border-t border-light-grey pt-4"><Metric label="Customer fit" value={signal.fit_score == null ? "Under review" : `${Math.round(signal.fit_score)}/100`} /><Metric label="Indicative value" value={formatGbpRange(signal.estimated_trade_value_low, signal.estimated_trade_value_high)} /><Metric label="Access" value="Opportunity teaser" /></dl>
-    <div className="mt-5"><LeadUnlockButton marketSignalId={signal.market_signal_trade_match_id} /></div>
+    <p className="mt-2 text-sm leading-6 text-slate">{signal.location_label}{signal.buyer_name ? " · " + signal.buyer_name : ""}</p>
+    <dl className="mt-5 space-y-3 border-t border-light-grey pt-4"><Metric label="Customer fit" value={signal.fit_score == null ? "Under review" : Math.round(signal.fit_score) + "/100"} /><Metric label="Indicative value" value={formatGbpRange(signal.estimated_trade_value_low, signal.estimated_trade_value_high)} /><Metric label="Access" value={signal.access_level === "full" ? "Purchased lead" : "Opportunity teaser"} /></dl>
+    <div className="mt-5">{signal.access_level === "full" ? <Link href={"/opportunities/trade/" + encodeURIComponent(signal.market_signal_trade_match_id)} className="inline-flex w-full items-center justify-center rounded-xl bg-charcoal px-4 py-3 text-sm font-semibold text-white">Open full brief →</Link> : <LeadUnlockButton marketSignalId={signal.market_signal_trade_match_id} />}</div>
   </>;
 }
 
-function SignalClusterPanel({ cluster, onSelect }: { cluster: SignalCluster; onSelect: (id: string) => void }) {
-  const topSignals = cluster.signals.slice(0, 5);
-  return <>
-    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-signal-orange">Opportunity cluster</p>
-    <h3 className="mt-2 text-2xl font-bold text-charcoal">{cluster.signals.length} opportunities nearby</h3>
-    <p className="mt-1 text-sm leading-6 text-slate">Select an opportunity below to replace this panel with its teaser. Zoom in further to separate the markers.</p>
-    <div className="mt-5 space-y-3 border-t border-light-grey pt-4">{topSignals.map((signal) => <button type="button" onClick={() => onSelect(signal.market_signal_trade_match_id)} key={signal.market_signal_trade_match_id} className="block w-full rounded-xl border border-transparent bg-white p-3 text-left transition hover:border-signal-orange/30"><p className="text-xs font-semibold text-charcoal">{signal.title}</p><p className="mt-1 text-[11px] text-slate">{signal.location_label} · {humanize(signal.signal_type)}</p><span className="mt-2 inline-flex text-[11px] font-semibold text-signal-orange">View teaser →</span></button>)}</div>
-  </>;
-}
-
-function MapSummary({ count, areas, clusters, showIndividualOpportunities }: { count: number; areas: number; clusters: number; showIndividualOpportunities: boolean }) {
+function MapSummary({ total, visible, categories, clusters, zoom }: { total: number; visible: number; categories: Array<{ label: string; count: number }>; clusters: number; zoom: number }) {
   return <>
     <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-signal-orange/10 text-lg text-signal-orange">⌖</div>
-    <p className="mt-5 text-xs font-semibold uppercase tracking-[0.12em] text-signal-orange">Filtered Marketplace</p>
-    <h3 className="mt-2 text-2xl font-bold text-charcoal">{count.toLocaleString("en-GB")} mapped opportunities</h3>
-    <p className="mt-2 text-sm leading-6 text-slate">The map uses the same source, priority and stage filters as Cards. Select any marker to inspect the corresponding teaser here.</p>
-    <div className="mt-5 grid grid-cols-2 gap-3 border-t border-light-grey pt-4"><Metric label="Business areas" value={String(areas)} /><Metric label="Other clusters" value={String(clusters)} /></div>
-    <p className="mt-5 rounded-xl border border-light-grey bg-white px-3 py-3 text-xs leading-5 text-slate">{showIndividualOpportunities ? "Individual business-change opportunities are now separated. Select a marker to review its teaser." : "Zoom in to separate individual opportunities. Markers remain approximate discovery points."}</p>
+    <p className="mt-5 text-xs font-semibold uppercase tracking-[0.12em] text-signal-orange">Marketplace map</p>
+    <h3 className="mt-2 text-2xl font-bold text-charcoal">{visible.toLocaleString("en-GB")} opportunities visible</h3>
+    <p className="mt-2 text-sm leading-6 text-slate">{visible === total ? "This is the same filtered set shown in Cards." : "You are inside a focused geographic group from the filtered Marketplace."} Select a cluster to focus the map and break it into smaller groups.</p>
+    <dl className="mt-5 grid grid-cols-2 gap-3 border-t border-light-grey pt-4"><Metric label="Map groups" value={String(clusters)} /><Metric label="Drill level" value={String(drillLevel(zoom))} /></dl>
+    <div className="mt-5"><p className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate">Leading categories</p><div className="mt-2 flex flex-wrap gap-1.5">{categories.slice(0, 6).map((category) => <span key={category.label} className="rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold text-slate">{category.label} · {category.count}</span>)}</div></div>
+    <p className="mt-5 rounded-xl border border-light-grey bg-white px-3 py-3 text-xs leading-5 text-slate">Cluster → smaller cluster/category → individual opportunity → teaser. Purchased and unavailable opportunities follow the same visibility rules as Cards.</p>
   </>;
 }
 
-function Metric({ label, value }: { label: string; value: string }) { return <div><dt className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate">{label}</dt><dd className="mt-1 text-sm font-semibold text-charcoal">{value}</dd></div>; }
-
-function clusterPlanningPoints(points: OpportunityMapPoint[]): DistrictCluster[] {
-  const grouped = new Map<string, DistrictCluster>();
-  for (const point of points) {
-    const existing = grouped.get(point.postcode_district);
-    if (!existing) {
-      grouped.set(point.postcode_district, { ...point });
-      continue;
-    }
-    const shouldReplaceTeaser = Number(point.teaser_score ?? 0) > Number(existing.teaser_score ?? 0);
-    existing.opportunity_count += Number(point.opportunity_count ?? 0);
-    existing.estimated_trade_value_low += Number(point.estimated_trade_value_low ?? 0);
-    existing.estimated_trade_value_high += Number(point.estimated_trade_value_high ?? 0);
-    existing.commercial_opportunity_count = Number(existing.commercial_opportunity_count ?? 0) + Number(point.commercial_opportunity_count ?? 0);
-    existing.commercial_estimated_trade_value_low = Number(existing.commercial_estimated_trade_value_low ?? 0) + Number(point.commercial_estimated_trade_value_low ?? 0);
-    existing.commercial_estimated_trade_value_high = Number(existing.commercial_estimated_trade_value_high ?? 0) + Number(point.commercial_estimated_trade_value_high ?? 0);
-    existing.teaser_needs = uniqueStrings([...(existing.teaser_needs ?? []), ...(point.teaser_needs ?? [])]);
-    if (shouldReplaceTeaser) {
-      existing.post_town = point.post_town;
-      existing.latitude = point.latitude;
-      existing.longitude = point.longitude;
-      existing.teaser_opportunity_id = point.teaser_opportunity_id;
-      existing.teaser_project_type = point.teaser_project_type;
-      existing.teaser_summary = point.teaser_summary;
-      existing.teaser_score = point.teaser_score;
-      existing.teaser_needs = point.teaser_needs;
-      existing.teaser_source = point.teaser_source;
-    }
-  }
-  return [...grouped.values()].sort((a, b) => b.opportunity_count - a.opportunity_count);
+function Metric({ label, value }: { label: string; value: string }) {
+  return <div><dt className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate">{label}</dt><dd className="mt-1 text-sm font-semibold text-charcoal">{value}</dd></div>;
 }
 
-function clusterSignals(signals: MarketSignalMapPoint[], zoom: number): SignalCluster[] {
-  const grouped = new Map<string, MarketSignalMapPoint[]>();
-  const scale = Math.max(0.18, zoom * zoom);
-  const latitudeCell = 0.35 / scale;
-  const longitudeCell = 0.45 / scale;
-  for (const signal of signals) {
-    const lat = Math.round(signal.latitude / latitudeCell);
-    const lon = Math.round(signal.longitude / longitudeCell);
-    const key = `${lat}:${lon}`;
-    grouped.set(key, [...(grouped.get(key) ?? []), signal]);
+function toMapItems(points: OpportunityMapPoint[], signals: MarketSignalMapPoint[]): MapItem[] {
+  const planningItems: MapItem[] = points.flatMap((point, index) => {
+    if (!Number.isFinite(point.latitude) || !Number.isFinite(point.longitude)) return [];
+    const category = point.teaser_needs?.find(Boolean) ?? humanize(point.teaser_source ?? "Business change");
+    return [{
+      id: "planning:" + (point.teaser_opportunity_id ?? point.postcode_district + ":" + index),
+      kind: "planning",
+      latitude: point.latitude,
+      longitude: point.longitude,
+      category,
+      typeLabel: humanize(point.teaser_source ?? "Business change"),
+      title: point.teaser_project_type ?? "Buying-window opportunity",
+      location: point.post_town || point.postcode_district,
+      score: point.teaser_score ?? null,
+      valueLow: point.teaser_estimated_trade_value_low ?? null,
+      valueHigh: point.teaser_estimated_trade_value_high ?? null,
+      accessLevel: "teaser",
+      planning: point,
+    }];
+  });
+  const signalItems: MapItem[] = signals.flatMap((signal) => {
+    if (!Number.isFinite(signal.latitude) || !Number.isFinite(signal.longitude)) return [];
+    const tradeName = signal.trade_name && signal.trade_name !== "Trade" ? signal.trade_name : null;
+    return [{
+      id: "signal:" + signal.market_signal_trade_match_id,
+      kind: "signal",
+      latitude: signal.latitude,
+      longitude: signal.longitude,
+      category: tradeName ?? humanize(signal.signal_type),
+      typeLabel: humanize(signal.signal_type),
+      title: signal.title,
+      location: signal.location_label,
+      score: signal.fit_score,
+      valueLow: signal.estimated_trade_value_low,
+      valueHigh: signal.estimated_trade_value_high,
+      accessLevel: signal.access_level,
+      signal,
+    }];
+  });
+  return [...planningItems, ...signalItems];
+}
+
+function clusterItems(items: MapItem[], zoom: number): OpportunityCluster[] {
+  if (zoom >= 2.75) {
+    return items.map((item) => {
+      const offset = markerOffset(item.id);
+      return {
+        id: "item:" + item.id,
+        latitude: item.latitude + offset.latitude,
+        longitude: item.longitude + offset.longitude,
+        items: [item],
+        categories: [{ label: item.category, count: 1 }],
+      };
+    });
   }
-  return [...grouped.entries()].map(([key, items]) => ({
-    id: `signal-cluster-${key}`,
-    latitude: items.reduce((sum, item) => sum + item.latitude, 0) / items.length,
-    longitude: items.reduce((sum, item) => sum + item.longitude, 0) / items.length,
-    signals: [...items].sort((a, b) => Number(b.fit_score ?? 0) - Number(a.fit_score ?? 0)),
-  })).sort((a, b) => b.signals.length - a.signals.length);
+
+  const cell = clusterCell(zoom);
+  const grouped = new Map<string, MapItem[]>();
+  for (const item of items) {
+    const latitudeCell = Math.floor((item.latitude - UK_BOUNDS.south) / cell.latitude);
+    const longitudeCell = Math.floor((item.longitude - UK_BOUNDS.west) / cell.longitude);
+    const key = cell.tier + ":" + latitudeCell + ":" + longitudeCell;
+    grouped.set(key, [...(grouped.get(key) ?? []), item]);
+  }
+
+  return [...grouped.entries()].map(([key, groupedItems]) => ({
+    id: "cluster:" + key,
+    latitude: groupedItems.reduce((sum, item) => sum + item.latitude, 0) / groupedItems.length,
+    longitude: groupedItems.reduce((sum, item) => sum + item.longitude, 0) / groupedItems.length,
+    items: [...groupedItems].sort((a, b) => Number(b.score ?? 0) - Number(a.score ?? 0)),
+    categories: categoryCounts(groupedItems),
+  })).sort((a, b) => b.items.length - a.items.length);
+}
+
+function clusterCell(zoom: number) {
+  if (zoom < 0.9) return { latitude: 2.4, longitude: 3.0, tier: "country" };
+  if (zoom < 1.35) return { latitude: 1.15, longitude: 1.45, tier: "region" };
+  if (zoom < 1.8) return { latitude: 0.55, longitude: 0.7, tier: "area" };
+  if (zoom < 2.3) return { latitude: 0.24, longitude: 0.32, tier: "local" };
+  return { latitude: 0.1, longitude: 0.14, tier: "district" };
+}
+
+function categoryCounts(items: MapItem[]) {
+  const counts = new Map<string, number>();
+  for (const item of items) counts.set(item.category, (counts.get(item.category) ?? 0) + 1);
+  return [...counts.entries()].map(([label, count]) => ({ label, count })).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+}
+
+function nextDrillZoom(zoom: number) {
+  const levels = [0.95, 1.4, 1.85, 2.35, 2.8, 3.2];
+  return levels.find((level) => level > zoom + 0.04) ?? 3.2;
+}
+
+function drillLevel(zoom: number) {
+  if (zoom < 0.9) return 1;
+  if (zoom < 1.35) return 2;
+  if (zoom < 1.8) return 3;
+  if (zoom < 2.3) return 4;
+  if (zoom < 2.75) return 5;
+  return 6;
+}
+
+function markerTone(cluster: OpportunityCluster) {
+  const planning = cluster.items.every((item) => item.kind === "planning");
+  const signals = cluster.items.every((item) => item.kind === "signal");
+  if (planning) return "bg-signal-orange";
+  if (signals) return "bg-charcoal";
+  return "bg-[#475569]";
+}
+
+function categoryCode(item: MapItem) {
+  if (item.kind === "signal") {
+    if (item.signal?.signal_type === "tender") return "T";
+    if (item.signal?.signal_type === "contract_award") return "A";
+    if (item.signal?.signal_type === "public_pipeline") return "P";
+  }
+  const words = item.category.split(/\s+/).filter(Boolean);
+  return words.slice(0, 2).map((word) => word[0]?.toUpperCase()).join("") || "•";
+}
+
+function compactCategory(value: string) {
+  const clean = value.trim();
+  return clean.length > 15 ? clean.slice(0, 14) + "…" : clean;
+}
+
+function positionPercent(latitude: number, longitude: number) {
+  const x = ((longitude - UK_BOUNDS.west) / (UK_BOUNDS.east - UK_BOUNDS.west)) * 100;
+  const mercator = (value: number) => Math.log(Math.tan(Math.PI / 4 + (value * Math.PI / 180) / 2));
+  const northY = mercator(UK_BOUNDS.north);
+  const southY = mercator(UK_BOUNDS.south);
+  const y = ((northY - mercator(latitude)) / (northY - southY)) * 100;
+  return { x, y };
 }
 
 function positionStyle(latitude: number, longitude: number): CSSProperties {
-  const x = ((longitude - UK_BOUNDS.west) / (UK_BOUNDS.east - UK_BOUNDS.west)) * 100;
-  const y = ((UK_BOUNDS.north - latitude) / (UK_BOUNDS.north - UK_BOUNDS.south)) * 100;
-  return { left: `${x}%`, top: `${y}%` };
+  const point = positionPercent(latitude, longitude);
+  return { left: point.x + "%", top: point.y + "%" };
 }
 
-function uniqueStrings(values: string[]): string[] { return [...new Set(values.filter(Boolean))]; }
-function clamp(value: number, min: number, max: number): number { return Math.min(max, Math.max(min, value)); }
-function humanize(value: string) { return value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()); }
-function signalIcon(value: string) { if (value === "tender") return "T"; if (value === "contract_award") return "A"; if (value === "public_pipeline") return "P"; return "•"; }
 function markerOffset(id: string) {
   let hash = 0;
   for (let index = 0; index < id.length; index += 1) hash = (hash * 31 + id.charCodeAt(index)) | 0;
   const angle = (Math.abs(hash) % 360) * (Math.PI / 180);
-  const distance = 0.035 + (Math.abs(hash >> 8) % 4) * 0.012;
+  const distance = 0.025 + (Math.abs(hash >> 8) % 4) * 0.009;
   return { latitude: Math.sin(angle) * distance, longitude: Math.cos(angle) * distance * 1.5 };
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function humanize(value: string) {
+  return value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
