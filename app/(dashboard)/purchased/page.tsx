@@ -6,6 +6,7 @@ import { listPaidLeadUnlocks, type LeadUnlockRow } from "@/lib/data/lead-unlocks
 import { OpportunityRow } from "@/components/opportunity-row";
 import { MarketSignalRow } from "@/components/market-signal-row";
 import { AppPageHeader } from "@/components/app-page-header";
+import { AppSectionHeader } from "@/components/app-section-header";
 
 export default async function PurchasedLeadsPage() {
   const company = await requireCurrentCompany();
@@ -60,8 +61,8 @@ export default async function PurchasedLeadsPage() {
         </section>
       ) : (
         <div className="space-y-8">
-          {purchasedPlanning.length > 0 && <section><div className="mb-4 flex items-end justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.14em] text-signal-orange">Business opportunities</p><h2 className="mt-1 text-2xl font-bold tracking-tight text-charcoal">Ready to work.</h2></div><span className="text-xs text-slate">{purchasedPlanning.length}</span></div><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{purchasedPlanning.map((item) => <OpportunityRow key={item.leadMatchId} item={item} unlocked />)}</div></section>}
-          {purchasedMarketSignals.length > 0 && <section><div className="mb-4 flex items-end justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.14em] text-signal-orange">Public and commercial opportunities</p><h2 className="mt-1 text-2xl font-bold tracking-tight text-charcoal">Purchased opportunity briefs.</h2></div><span className="text-xs text-slate">{purchasedMarketSignals.length}</span></div><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{purchasedMarketSignals.map((item) => <MarketSignalRow key={item.market_signal_trade_match_id} item={item} unlocked />)}</div></section>}
+          {purchasedPlanning.length > 0 && <section><AppSectionHeader eyebrow="Business opportunities" title="Ready to work." meta={<span className="text-xs font-semibold text-slate">{purchasedPlanning.length}</span>} /><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{purchasedPlanning.map((item) => <OpportunityRow key={item.leadMatchId} item={item} unlocked />)}</div></section>}
+          {purchasedMarketSignals.length > 0 && <section><AppSectionHeader eyebrow="Public and commercial opportunities" title="Purchased opportunity briefs." meta={<span className="text-xs font-semibold text-slate">{purchasedMarketSignals.length}</span>} /><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{purchasedMarketSignals.map((item) => <MarketSignalRow key={item.market_signal_trade_match_id} item={item} unlocked />)}</div></section>}
           {purchasedPlanning.length + purchasedMarketSignals.length < unlocks.length && <section className="rounded-2xl border border-warning/20 bg-warning/[0.04] p-4 text-sm leading-6 text-slate">Some purchased records are still being assembled into the feed. Your unlock history is retained while the underlying brief is refreshed.</section>}
         </div>
       )}

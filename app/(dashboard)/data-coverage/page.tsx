@@ -3,6 +3,7 @@ import { requireCurrentCompany } from "@/lib/auth/get-current-company";
 import { createClient } from "@/lib/supabase/server";
 import { getVendorCapabilities } from "@/lib/vendors/readiness";
 import { PRODUCT_BRAND } from "@/lib/product/brand";
+import { AppPageHeader } from "@/components/app-page-header";
 
 const PAGE_SIZE = 20;
 
@@ -76,13 +77,11 @@ export default async function DataCoveragePage({ searchParams }: { searchParams:
 
   return (
     <div className="space-y-8">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Data coverage</p>
-        <h1 className="mt-3 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">Know what {PRODUCT_BRAND.shortName} can see.</h1>
-        <p className="mt-3 max-w-3xl text-sm leading-6 text-slate sm:text-base">
-          Coverage now includes planning applications, commercial planning, public-sector pipeline, live tenders and contract awards. Enrichment services are shown separately because they are queried on demand rather than pre-loaded as opportunity feeds.
-        </p>
-      </div>
+      <AppPageHeader
+        eyebrow="Data coverage"
+        title={"Know what " + PRODUCT_BRAND.shortName + " can see."}
+        description="Coverage includes planning applications, commercial planning, public-sector pipeline, live tenders and contract awards. On-demand enrichment is shown separately from continuously loaded feeds."
+      />
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryCard label="Source records" value={formatNumber(totalSourceRecords)} detail="Active records across the live opportunity feeds" />

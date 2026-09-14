@@ -11,6 +11,7 @@ import { OpportunityRow } from "@/components/opportunity-row";
 import { MarketSignalRow } from "@/components/market-signal-row";
 import { OpportunityMap, type OpportunityMapPoint } from "@/components/opportunity-map";
 import { AppPageHeader } from "@/components/app-page-header";
+import { AppSectionHeader } from "@/components/app-section-header";
 import type { Database } from "@/lib/types/database";
 
 type OpportunityBucket = Database["public"]["Enums"]["opportunity_bucket"];
@@ -153,8 +154,8 @@ export default async function OpportunitiesPage({
         : selectedView === "map"
           ? <OpportunityMap points={mapPlanningPoints} signals={mapSignals} />
           : <div className="space-y-8">
-              {visiblePlanning.length > 0 && <section><div className="mb-4 flex items-end justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.14em] text-signal-orange">{savedView ? "Saved business-change opportunities" : "Business-change opportunities"}</p><h2 className="mt-1 text-2xl font-bold tracking-tight text-charcoal">{savedView ? "Your shortlisted buying windows." : "Opportunities matched to your profile."}</h2></div><span className="text-xs text-slate">{visiblePlanning.length}</span></div><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{visiblePlanning.map((item) => <OpportunityRow key={item.canonicalOpportunityId ?? item.opportunityId} item={item} unlocked={false} />)}</div></section>}
-              {visibleMarketSignals.length > 0 && <section><div className="mb-4 flex items-end justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.14em] text-signal-orange">{savedView ? "Saved public and commercial opportunities" : "Public and commercial opportunities"}</p><h2 className="mt-1 text-2xl font-bold tracking-tight text-charcoal">{savedView ? "Opportunities you chose to keep close." : "Tenders, pipelines, awards and commercial change."}</h2></div><span className="text-xs text-slate">{visibleMarketSignals.length}</span></div><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{visibleMarketSignals.map((item) => <MarketSignalRow key={item.market_signal_trade_match_id} item={item} unlocked={false} />)}</div></section>}
+              {visiblePlanning.length > 0 && <section><AppSectionHeader eyebrow={savedView ? "Saved business-change opportunities" : "Business-change opportunities"} title={savedView ? "Your shortlisted buying windows." : "Opportunities matched to your profile."} meta={<span className="text-xs font-semibold text-slate">{visiblePlanning.length}</span>} /><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{visiblePlanning.map((item) => <OpportunityRow key={item.canonicalOpportunityId ?? item.opportunityId} item={item} unlocked={false} />)}</div></section>}
+              {visibleMarketSignals.length > 0 && <section><AppSectionHeader eyebrow={savedView ? "Saved public and commercial opportunities" : "Public and commercial opportunities"} title={savedView ? "Opportunities you chose to keep close." : "Tenders, pipelines, awards and commercial change."} meta={<span className="text-xs font-semibold text-slate">{visibleMarketSignals.length}</span>} /><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{visibleMarketSignals.map((item) => <MarketSignalRow key={item.market_signal_trade_match_id} item={item} unlocked={false} />)}</div></section>}
             </div>}
     </div>
   );
