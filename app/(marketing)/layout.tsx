@@ -1,4 +1,8 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Logo } from "@/components/logo";
 import { PublicThemeGuard } from "@/components/public-theme-guard";
 
@@ -7,6 +11,13 @@ function currentYear(): number {
 }
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
   return (
     <>
       <PublicThemeGuard />
@@ -42,36 +53,40 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
                 Create your account
               </Link>
 
-              <details className="group relative md:hidden">
-                <summary
-                  className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-xl border border-white/15 text-white transition hover:border-white/30 hover:bg-white/10 [&::-webkit-details-marker]:hidden"
-                  aria-label="Open navigation"
+              <div className="relative md:hidden">
+                <button
+                  type="button"
+                  onClick={() => setMobileOpen((open) => !open)}
+                  className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 text-white transition hover:border-white/30 hover:bg-white/10"
+                  aria-label={mobileOpen ? "Close navigation" : "Open navigation"}
+                  aria-expanded={mobileOpen}
                 >
-                  <svg viewBox="0 0 24 24" className="h-5 w-5 group-open:hidden" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" className={mobileOpen ? "hidden h-5 w-5" : "h-5 w-5"} fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
                     <path strokeLinecap="round" d="M4 7h16M4 12h16M4 17h16" />
                   </svg>
-                  <svg viewBox="0 0 24 24" className="hidden h-5 w-5 group-open:block" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" className={mobileOpen ? "h-5 w-5" : "hidden h-5 w-5"} fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
                     <path strokeLinecap="round" d="m6 6 12 12M18 6 6 18" />
                   </svg>
-                </summary>
-                <div className="absolute right-0 top-12 z-50 w-[min(18rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-white/10 bg-charcoal shadow-2xl shadow-black/30">
+                </button>
+                {mobileOpen && <div className="absolute right-0 top-12 z-50 w-[min(18rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-white/10 bg-charcoal shadow-2xl shadow-black/30">
                   <div className="grid p-2">
-                    <MobileNavLink href="/#how-it-works">How it works</MobileNavLink>
-                    <MobileNavLink href="/pricing">Pricing</MobileNavLink>
-                    <MobileNavLink href="/faq">FAQ</MobileNavLink>
-                    <MobileNavLink href="/contact">Contact</MobileNavLink>
-                    <MobileNavLink href="/login">Log in</MobileNavLink>
+                    <MobileNavLink href="/#how-it-works" onClick={() => setMobileOpen(false)}>How it works</MobileNavLink>
+                    <MobileNavLink href="/pricing" onClick={() => setMobileOpen(false)}>Pricing</MobileNavLink>
+                    <MobileNavLink href="/faq" onClick={() => setMobileOpen(false)}>FAQ</MobileNavLink>
+                    <MobileNavLink href="/contact" onClick={() => setMobileOpen(false)}>Contact</MobileNavLink>
+                    <MobileNavLink href="/login" onClick={() => setMobileOpen(false)}>Log in</MobileNavLink>
                   </div>
                   <div className="border-t border-white/10 p-3">
                     <Link
                       href="/signup"
+                      onClick={() => setMobileOpen(false)}
                       className="flex w-full items-center justify-center rounded-xl bg-signal-orange px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#e95f00]"
                     >
                       Create your account
                     </Link>
                   </div>
-                </div>
-              </details>
+                </div>}
+              </div>
             </nav>
           </div>
         </header>
@@ -107,10 +122,11 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
   );
 }
 
-function MobileNavLink({ href, children }: { href: string; children: React.ReactNode }) {
+function MobileNavLink({ href, children, onClick }: { href: string; children: React.ReactNode; onClick?: () => void }) {
   return (
     <Link
       href={href}
+      onClick={onClick}
       className="rounded-xl px-4 py-3 text-sm font-semibold text-white/75 transition hover:bg-white/10 hover:text-white"
     >
       {children}
