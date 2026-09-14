@@ -1,5 +1,5 @@
 /**
- * Branded, trade-audience email templates. The markup intentionally stays
+ * Branded transactional email templates. The markup intentionally stays
  * table-based with inline styles so it renders consistently in Outlook and
  * mobile inboxes. All user-supplied text is escaped before it enters HTML.
  */
@@ -29,7 +29,7 @@ function safeUrl(value: string): string {
 function shell(preheader: string, bodyHtml: string): string {
   const logo = LOGO_URL
     ? '<img src="' + escapeHtml(LOGO_URL) + '" alt="Everro" width="56" height="56" border="0" style="display:block;width:56px;height:56px;" />'
-    : '<span style="color:#ffffff;font-size:20px;line-height:26px;font-weight:700;">MyTrade<span style="color:' + ORANGE + ';">Box</span></span>';
+    : '<span style="color:#ffffff;font-size:20px;line-height:26px;font-weight:700;">Everro</span>';
 
   return [
     "<!doctype html>",
@@ -41,7 +41,7 @@ function shell(preheader: string, bodyHtml: string): string {
     '<table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:560px;background-color:#ffffff;border-radius:10px;overflow:hidden;">',
     '<tr><td bgcolor="' + CHARCOAL + '" style="background-color:' + CHARCOAL + ';padding:18px 32px;">' + logo + "</td></tr>",
     '<tr><td style="padding:32px;color:' + CHARCOAL + ';font-size:15px;line-height:23px;">' + bodyHtml + "</td></tr>",
-    '<tr><td style="padding:16px 32px;border-top:1px solid ' + LIGHT_GREY + ';color:' + SLATE + ';font-size:12px;line-height:18px;">Everro — UK planning opportunity intelligence for trade businesses.</td></tr>',
+    '<tr><td style="padding:16px 32px;border-top:1px solid ' + LIGHT_GREY + ';color:' + SLATE + ';font-size:12px;line-height:18px;">Everro — B2B buying intelligence for UK suppliers.</td></tr>',
     "</table></td></tr></table></body></html>",
   ].join("");
 }
