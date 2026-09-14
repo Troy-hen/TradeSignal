@@ -31,7 +31,7 @@ export async function getInAppNotifications(companyId: string): Promise<InAppNot
     getCustomerProfile(companyId),
     listAlertRules(companyId),
   ]);
-  const alertRule = alertRules.find((rule) => rule.enabled) ?? null;
+  const enabledAlertRules = alertRules.filter((rule) => rule.enabled);
 
   const paidOpportunityIds = new Set(
     paidUnlocks
@@ -48,7 +48,7 @@ export async function getInAppNotifications(companyId: string): Promise<InAppNot
     .filter((item) =>
       item.bucket === "hot" &&
       (item.currentAction === null || item.currentAction === "new") &&
-      matchesAlertRule(alertRule, Number(item.score ?? 0), [item.signalFamily, item.tradeName, ...(item.matchedNeeds ?? [])], [item.locationLabel, item.district], [item.likelyStartWindow, item.opportunityTiming]) &&
+      matchesAlertRules(enabledAlertRules, Number(item.score ?? 0), [item.signalFamily, item.tradeName, ...(item.matchedNeeds ?? [])], [item.locationLabel, item.district], [item.likelyStartWindow, item.opportunityTiming]) &&
       !(item.underlyingOpportunityIds ?? [item.opportunityId]).some((id) => paidOpportunityIds.has(id)),
     )
     .map((item) => {
@@ -71,7 +71,7 @@ export async function getInAppNotifications(companyId: string): Promise<InAppNot
     market.filter((item) =>
       item.opportunity_bucket === "hot" &&
       (item.current_action === null || item.current_action === "new") &&
-      matchesAlertRule(alertRule, Number(item.fit_score ?? 0), [item.signal_type, item.trade_name], [item.location_label, item.postcode_district], [item.procurement_stage]) &&
+      matchesAlertRules(enabledAlertRules, Number(item.fit_score ?? 0), [item.signal_type, item.trade_name], [item.location_label, item.postcode_district], [item.procurement_stage]) &&
       !paidMarketSignalIds.has(item.market_signal_trade_match_id),
     ),
     profile,
@@ -102,8 +102,12 @@ export async function getInAppNotifications(companyId: string): Promise<InAppNot
     });
 }
 
-function matchesAlertRule(rule: AlertRule | null, score: number, textValues: Array<string | null | undefined>, locationValues: Array<string | null | undefined>, windowValues: Array<string | null | undefined>) {
-  if (!rule) return true;
+function matchesAlertRules(rules: AlertRule[], score: number, textValues: Array<string | null | undefined>, locationValues: Array<string | null | undefined>, windowValues: Array<string | null | undefined>) {
+  if (rules.length === 0) return true;
+  return rules.some((rule) => matchesAlertRule(rule, score, textValues, locationValues, windowValues));
+}
+
+function matchesAlertRule(rule: AlertRule, score: number, textValues: Array<string | null | undefined>, locationValues: Array<string | null | undefined>, windowValues: Array<string | null | undefined>) {
   if (score < Number(rule.min_score)) return false;
   return matchesAny(rule.signal_families, textValues) && matchesAny(rule.postcode_districts, locationValues) && matchesAny(rule.buying_windows, windowValues);
 }
@@ -111,5 +115,5 @@ function matchesAlertRule(rule: AlertRule | null, score: number, textValues: Arr
 function matchesAny(filters: string[], values: Array<string | null | undefined>) {
   if (filters.length === 0) return true;
   const haystack = values.filter(Boolean).join(" ").toLowerCase();
-  return filters.some((filter) => haystack.includes(filter.toLowerCase()));
+  return filters.some((filter) => filter.trim() && haystack.includes(filter.trim().toLowerCase()));
 }
