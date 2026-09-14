@@ -83,7 +83,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           content_snapshot: body.data.content,
           audience_type: "homeowner",
           strategy_key: "planning-homeowner-introduction",
-          template_key: "mytradebox-quote-link-letter",
+          template_key: "everro-quote-link-letter",
           template_version: "1",
           created_by: user.id,
         });
@@ -111,7 +111,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         content_snapshot: finalContent,
         audience_type: "homeowner",
         strategy_key: "planning-homeowner-introduction",
-        template_key: "mytradebox-quote-link-letter",
+        template_key: "everro-quote-link-letter",
         template_version: "1",
         updated_at: new Date().toISOString(),
       })
@@ -165,7 +165,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           response_url: quoteLink.url,
           audience_type: "homeowner",
           strategy_key: "planning-homeowner-introduction",
-          template_key: "mytradebox-quote-link-letter",
+          template_key: "everro-quote-link-letter",
           template_version: "1",
         },
         created_by: user.id,

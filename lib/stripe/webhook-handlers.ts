@@ -406,7 +406,7 @@ async function handleInvoicePaymentFailed(admin: AdminClient, invoice: Stripe.In
       company_id: coverageSubscription.company_id,
       notification_type: "payment_failed",
       status: "queued",
-      subject: "Action needed: your TradeSignal payment failed",
+      subject: "Action needed: your Everro payment failed",
     });
     return;
   }
@@ -426,7 +426,7 @@ async function handleInvoicePaymentFailed(admin: AdminClient, invoice: Stripe.In
       company_id: claim.company_id,
       notification_type: "payment_failed",
       status: "queued",
-      subject: "Action needed: your TradeSignal payment failed",
+      subject: "Action needed: your Everro payment failed",
     });
 
     await admin.from("audit_logs").insert({

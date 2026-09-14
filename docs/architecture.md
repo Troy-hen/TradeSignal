@@ -1,6 +1,6 @@
-# TradeSignal architecture
+# Everro architecture
 
-TradeSignal is a B2B buying-intelligence marketplace. It is not a trade-only,
+Everro is a B2B buying-intelligence marketplace. It is not a trade-only,
 vertical-exclusive, or source-by-source subscription product.
 
 ## Product contract

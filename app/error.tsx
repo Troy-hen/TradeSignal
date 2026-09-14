@@ -6,7 +6,7 @@ export default function Error({ reset }: { error: Error & { digest?: string }; r
   useEffect(() => {
     // Keep the user-facing message safe while retaining a diagnostic in the
     // Worker logs for operational investigation.
-    console.error("TradeSignal route error");
+    console.error("Everro route error");
   }, []);
 
   return (

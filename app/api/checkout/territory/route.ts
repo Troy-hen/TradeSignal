@@ -196,7 +196,7 @@ export async function POST(request: Request) {
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
-      integration_identifier: "mytradebox_checkout_" + randomLetters(8),
+      integration_identifier: "everro_checkout_" + randomLetters(8),
       customer: stripeCustomerId,
       line_items: [
         {

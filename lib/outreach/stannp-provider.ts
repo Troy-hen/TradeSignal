@@ -85,7 +85,7 @@ export class StannpPostalOutreachProvider implements PostalOutreachProvider {
       test: test ? "1" : "0",
       pages: textToHtml(request.content),
       idempotency_key: request.deliveryId,
-      tags: `mytradebox,${request.reference}`,
+      tags: `everro,${request.reference}`,
       "recipient[company]": request.recipient.name ?? "Property Owner / Occupier",
       "recipient[address1]": request.recipient.addressLine1,
       "recipient[postcode]": request.recipient.postcode,

@@ -1,8 +1,8 @@
-# MyTradeBox
+# Everro
 
-MyTradeBox turns UK planning applications into qualified local opportunities for trade businesses, and sells exclusive local territories (postcode district × trade) on monthly subscription.
+Everro turns UK planning applications into qualified local opportunities for trade businesses, and sells exclusive local territories (postcode district × trade) on monthly subscription.
 
-The whole product exists to serve one loop: **Find → Score → Value → Alert → Action → Win.** A trade business claims exclusive rights to a postcode district for their trade; MyTradeBox continuously ingests planning applications, works out which ones represent real work for that trade, scores and values the opportunity, and alerts the territory holder before their competitors know it exists.
+The whole product exists to serve one loop: **Find → Score → Value → Alert → Action → Win.** A trade business claims exclusive rights to a postcode district for their trade; Everro continuously ingests planning applications, works out which ones represent real work for that trade, scores and values the opportunity, and alerts the territory holder before their competitors know it exists.
 
 ## Contents
 
@@ -100,9 +100,9 @@ The webhook handler reads the **raw** request body before any JSON parsing (Stri
 
 ## Resend (email) configuration
 
-Set `RESEND_API_KEY` and `RESEND_FROM_EMAIL` as Edge Function secrets (email sending happens in `notify-leads`, not the Next.js app). Set `RESEND_FROM_NAME=MyTradeBox` and optionally `RESEND_REPLY_TO` so every transactional message carries the correct brand and reply path. No SDK — a single `fetch` POST per email, since the surface is small.
+Set `RESEND_API_KEY` and `RESEND_FROM_EMAIL` as Edge Function secrets (email sending happens in `notify-leads`, not the Next.js app). Set `RESEND_FROM_NAME=Everro` and optionally `RESEND_REPLY_TO` so every transactional message carries the correct brand and reply path. No SDK — a single `fetch` POST per email, since the surface is small.
 
-The shared email templates are branded as MyTradeBox and support new-opportunity alerts, daily/weekly digests, approval alerts, outside-territory announcements, payment notices, territory availability, and welcome messages. The hosted Supabase Auth source templates live in `supabase/templates/` for confirmation, recovery, invitation, magic-link, password-changed, and email-changed flows. Copy them into Authentication → Emails → Templates after setting the project's Site URL to the live Worker URL. Resend dashboard templates are kept as drafts until a verified sending domain and sender are configured; no email is sent by the template setup itself.
+The shared email templates are branded as Everro and support new-opportunity alerts, daily/weekly digests, approval alerts, outside-territory announcements, payment notices, territory availability, and welcome messages. The hosted Supabase Auth source templates live in `supabase/templates/` for confirmation, recovery, invitation, magic-link, password-changed, and email-changed flows. Copy them into Authentication → Emails → Templates after setting the project's Site URL to the live Worker URL. Resend dashboard templates are kept as drafts until a verified sending domain and sender are configured; no email is sent by the template setup itself.
 
 ## Planning data provider
 
@@ -111,7 +111,7 @@ The active planning-provider implementation lives in `supabase/functions/_shared
 - **`mock` (default)** — `MockPlanningProvider` generates ~250 seeded, deterministic, realistic UK-style applications across the districts in `postcode_districts`, marked `is_demo_data`. Zero external dependency; this is what local dev and a fresh deploy run against out of the box.
 - **`plota`** — uses Plota's bearer-auth REST API with the current application fields (`description`, `address`, `planning_route`, `date_decided`, `commercial`) mapped into the normalized planning schema. List requests explicitly use a ten-row page, cursor pagination is followed, and `include_contact` is never set to `true` by default. The Demo key is capped at **500 requests total, not monthly**; use the targeted manual sync below for smoke-testing, not an unrestricted historical backfill. Scheduled Plota reads default to one ten-row page per run; set `PLOTA_MAX_PAGES_PER_RUN` only when you deliberately want to spend more calls. A plan-tier environment variable is not required for Demo operation.
 
-For a bounded end-to-end smoke test, call the ingestion function once with the districts you want to inspect. One MyTradeBox sync request can fan out to up to 50 districts, follow Plota cursor pages, and read up to two ten-row pages per district by default. The hard manual budget is 100 Plota pages (up to 1,000 records). Each Plota page is a separate API request; the Demo key returns at most ten rows per request. Increase `max_pages_per_district` up to 20 only when you deliberately want to spend more of the Demo allowance:
+For a bounded end-to-end smoke test, call the ingestion function once with the districts you want to inspect. One Everro sync request can fan out to up to 50 districts, follow Plota cursor pages, and read up to two ten-row pages per district by default. The hard manual budget is 100 Plota pages (up to 1,000 records). Each Plota page is a separate API request; the Demo key returns at most ten rows per request. Increase `max_pages_per_district` up to 20 only when you deliberately want to spend more of the Demo allowance:
 
 ```bash
 curl -X POST "https://<project-ref>.supabase.co/functions/v1/ingest-planning-applications" \

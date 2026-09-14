@@ -4,7 +4,7 @@ import { PRODUCT_BRAND } from "@/lib/product/brand";
 
 export const metadata: Metadata = {
   title: "Privacy",
-  description: "How TradeSignal handles account, profile, intelligence, contact and billing data.",
+  description: "How Everro handles account, profile, intelligence, contact and billing data.",
 };
 
 const updated = "11 September 2026";
@@ -53,7 +53,7 @@ export default function PrivacyPage() {
           </LegalSection>
 
           <LegalSection title="5. Contact information and outreach">
-            <p>Contact information is shown only within an unlocked opportunity when the relevant record contains it. Customers are responsible for using contact data lawfully, respecting suppression requests and following applicable UK data-protection, electronic-marketing and sector requirements. TradeSignal may record unlocks, source provenance, retrieval dates and suppression information to support auditability and data quality.</p>
+            <p>Contact information is shown only within an unlocked opportunity when the relevant record contains it. Customers are responsible for using contact data lawfully, respecting suppression requests and following applicable UK data-protection, electronic-marketing and sector requirements. Everro may record unlocks, source provenance, retrieval dates and suppression information to support auditability and data quality.</p>
           </LegalSection>
 
           <LegalSection title="6. Retention and security">

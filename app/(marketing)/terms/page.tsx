@@ -4,7 +4,7 @@ import { PRODUCT_BRAND } from "@/lib/product/brand";
 
 export const metadata: Metadata = {
   title: "Terms",
-  description: "Terms for using TradeSignal opportunity intelligence and marketplace access.",
+  description: "Terms for using Everro opportunity intelligence and marketplace access.",
 };
 
 const updated = "11 September 2026";

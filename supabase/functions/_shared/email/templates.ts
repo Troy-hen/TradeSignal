@@ -11,7 +11,7 @@ const LIGHT_GREY = "#E5E7EB";
 const SOFT_SURFACE = "#F8FAFC";
 const rawAppUrl = Deno.env.get("NEXT_PUBLIC_APP_URL") ?? "";
 const APP_URL = rawAppUrl.endsWith("/") ? rawAppUrl.slice(0, -1) : rawAppUrl;
-const LOGO_URL = APP_URL ? APP_URL + "/brand/mytradebox-wordmark-light.png" : null;
+const LOGO_URL = APP_URL ? APP_URL + "/brand/everro-icon-light.png" : null;
 
 function escapeHtml(value: unknown): string {
   return String(value ?? "")
@@ -28,7 +28,7 @@ function safeUrl(value: string): string {
 
 function shell(preheader: string, bodyHtml: string): string {
   const logo = LOGO_URL
-    ? '<img src="' + escapeHtml(LOGO_URL) + '" alt="MyTradeBox" width="190" height="63" border="0" style="display:block;width:190px;height:auto;" />'
+    ? '<img src="' + escapeHtml(LOGO_URL) + '" alt="Everro" width="56" height="56" border="0" style="display:block;width:56px;height:56px;" />'
     : '<span style="color:#ffffff;font-size:20px;line-height:26px;font-weight:700;">MyTrade<span style="color:' + ORANGE + ';">Box</span></span>';
 
   return [
@@ -41,7 +41,7 @@ function shell(preheader: string, bodyHtml: string): string {
     '<table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:560px;background-color:#ffffff;border-radius:10px;overflow:hidden;">',
     '<tr><td bgcolor="' + CHARCOAL + '" style="background-color:' + CHARCOAL + ';padding:18px 32px;">' + logo + "</td></tr>",
     '<tr><td style="padding:32px;color:' + CHARCOAL + ';font-size:15px;line-height:23px;">' + bodyHtml + "</td></tr>",
-    '<tr><td style="padding:16px 32px;border-top:1px solid ' + LIGHT_GREY + ';color:' + SLATE + ';font-size:12px;line-height:18px;">MyTradeBox — UK planning opportunity intelligence for trade businesses.</td></tr>',
+    '<tr><td style="padding:16px 32px;border-top:1px solid ' + LIGHT_GREY + ';color:' + SLATE + ';font-size:12px;line-height:18px;">Everro — UK planning opportunity intelligence for trade businesses.</td></tr>',
     "</table></td></tr></table></body></html>",
   ].join("");
 }
@@ -98,13 +98,13 @@ export function welcomeEmail(params: {
   companyName: string;
   dashboardUrl: string;
 }): { subject: string; html: string } {
-  const subject = "Welcome to MyTradeBox — find the work worth chasing";
+  const subject = "Welcome to Everro — find the work worth chasing";
   const body = [
     "<p style=\"margin:0 0 16px;font-size:15px;line-height:23px;color:" + CHARCOAL + ';">Hi ' + escapeHtml(params.companyName) + ",</p>",
-    '<p style="margin:0 0 16px;font-size:15px;line-height:23px;color:' + CHARCOAL + ';">Welcome to MyTradeBox. We turn planning activity into practical local opportunities, so you can spend more time chasing the right work and less time searching.</p>',
+    '<p style="margin:0 0 16px;font-size:15px;line-height:23px;color:' + CHARCOAL + ';">Welcome to Everro. We turn planning activity into practical local opportunities, so you can spend more time chasing the right work and less time searching.</p>',
     '<p style="margin:0 0 4px;font-size:15px;line-height:23px;color:' + CHARCOAL + ';"><strong>Start with one postcode district.</strong></p>',
     '<p style="margin:0 0 16px;font-size:15px;line-height:23px;color:' + CHARCOAL + ';">Check the opportunity volume and estimated value in your area, then add coverage as your pipeline grows.</p>',
-    button("Open MyTradeBox", params.dashboardUrl),
+    button("Open Everro", params.dashboardUrl),
   ].join("");
   return { subject, html: shell(subject, body) };
 }
@@ -117,7 +117,7 @@ export function newLeadInstantEmail(params: { companyName: string; matches: Matc
 
   const body = [
     '<p style="margin:0 0 16px;font-size:15px;line-height:23px;color:' + CHARCOAL + ';">Hi ' + escapeHtml(params.companyName) + ",</p>",
-    '<p style="margin:0 0 16px;font-size:15px;line-height:23px;color:' + CHARCOAL + ';">MyTradeBox just detected ' + (params.matches.length === 1 ? "a high-priority opportunity" : params.matches.length + " high-priority opportunities") + " in your territory:</p>",
+    '<p style="margin:0 0 16px;font-size:15px;line-height:23px;color:' + CHARCOAL + ';">Everro just detected ' + (params.matches.length === 1 ? "a high-priority opportunity" : params.matches.length + " high-priority opportunities") + " in your territory:</p>",
     '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">' + params.matches.map(matchRow).join("") + "</table>",
     '<p style="margin:16px 0 0;color:' + SLATE + ';font-size:13px;line-height:19px;">All estimates are indicative — not a formal valuation.</p>',
   ].join("");
@@ -133,7 +133,7 @@ export function digestEmail(params: {
   const subject = params.matches.length + " new opportunit" + (params.matches.length === 1 ? "y" : "ies") + " " + params.periodLabel;
   const body = [
     '<p style="margin:0 0 16px;font-size:15px;line-height:23px;color:' + CHARCOAL + ';">Hi ' + escapeHtml(params.companyName) + ",</p>",
-    '<p style="margin:0 0 16px;font-size:15px;line-height:23px;color:' + CHARCOAL + ';">Here is your ' + (params.periodLabel === "today" ? "daily" : "weekly") + " MyTradeBox summary — " + params.matches.length + " new opportunit" + (params.matches.length === 1 ? "y" : "ies") + " matched to your territories " + params.periodLabel + ":</p>",
+    '<p style="margin:0 0 16px;font-size:15px;line-height:23px;color:' + CHARCOAL + ';">Here is your ' + (params.periodLabel === "today" ? "daily" : "weekly") + " Everro summary — " + params.matches.length + " new opportunit" + (params.matches.length === 1 ? "y" : "ies") + " matched to your territories " + params.periodLabel + ":</p>",
     '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">' + params.matches.map(matchRow).join("") + "</table>",
     button("Open your dashboard", params.dashboardUrl),
     '<p style="margin:16px 0 0;color:' + SLATE + ';font-size:13px;line-height:19px;">All estimates are indicative — not a formal valuation.</p>',
@@ -266,10 +266,10 @@ export function followUpReminderEmail(params: {
 }
 
 export function paymentFailedEmail(params: { companyName: string; billingPortalUrl: string }): { subject: string; html: string } {
-  const subject = "Action needed: your MyTradeBox payment failed";
+  const subject = "Action needed: your Everro payment failed";
   const body = [
     '<p style="margin:0 0 16px;font-size:15px;line-height:23px;color:' + CHARCOAL + ';">Hi ' + escapeHtml(params.companyName) + ",</p>",
-    '<p style="margin:0 0 16px;font-size:15px;line-height:23px;color:' + CHARCOAL + ';">We were not able to process your latest MyTradeBox subscription payment. Your territory access will be suspended until this is resolved.</p>',
+    '<p style="margin:0 0 16px;font-size:15px;line-height:23px;color:' + CHARCOAL + ';">We were not able to process your latest Everro subscription payment. Your territory access will be suspended until this is resolved.</p>',
     button("Update payment details", params.billingPortalUrl),
   ].join("");
   return { subject, html: shell(subject, body) };

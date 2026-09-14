@@ -2,8 +2,8 @@ import Link from "next/link";
 
 export const FAQ_ITEMS = [
   {
-    question: "What does TradeSignal do?",
-    answer: "TradeSignal combines public and licensed business signals, understands what your business sells and surfaces companies entering a buying window. You see the evidence, relevance, likely need and next move in one opportunity feed.",
+    question: "What does Everro do?",
+    answer: "Everro combines public and licensed business signals, understands what your business sells and surfaces companies entering a buying window. You see the evidence, relevance, likely need and next move in one opportunity feed.",
   },
   {
     question: "Do I have to choose a vertical or market?",

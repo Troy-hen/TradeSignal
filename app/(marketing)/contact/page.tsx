@@ -5,7 +5,7 @@ import { ContactRequestForm } from "@/components/contact-request-form";
 
 export const metadata: Metadata = {
   title: "Contact",
-  description: "Contact TradeSignal about plans, opportunity intelligence, accounts and data requests.",
+  description: "Contact Everro about plans, opportunity intelligence, accounts and data requests.",
 };
 
 const supportEmail = process.env.NEXT_PUBLIC_SUPPORT_EMAIL?.trim();
@@ -15,7 +15,7 @@ export default function ContactPage() {
     <div className="bg-soft-surface">
       <section className="bg-charcoal px-6 py-20 text-white sm:py-28">
         <div className="mx-auto max-w-7xl lg:px-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Contact TradeSignal</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Contact Everro</p>
           <h1 className="mt-5 max-w-4xl text-4xl font-bold tracking-tight sm:text-6xl">Let&apos;s make your next buying window easier to act on.</h1>
           <p className="mt-6 max-w-2xl text-base leading-7 text-white/70 sm:text-lg">
             Ask about Local, Regional or Nationwide reach, how your supplier profile is matched, individual lead unlocks, account access or data rights.

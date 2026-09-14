@@ -89,7 +89,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
   return new NextResponse(pdfBody, {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="mytradebox-${safeDistrict}-${id.slice(0, 8)}.pdf"`,
+      "Content-Disposition": `attachment; filename="everro-${safeDistrict}-${id.slice(0, 8)}.pdf"`,
       "Cache-Control": "private, no-store",
     },
   });

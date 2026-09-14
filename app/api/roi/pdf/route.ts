@@ -88,7 +88,7 @@ export async function GET() {
   return new NextResponse(pdfBody, {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": 'attachment; filename="mytradebox-roi-report.pdf"',
+      "Content-Disposition": 'attachment; filename="everro-roi-report.pdf"',
       "Cache-Control": "private, no-store",
     },
   });

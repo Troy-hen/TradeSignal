@@ -51,7 +51,7 @@ export function ContactRequestForm() {
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Send a request</p>
         <h2 className="mt-2 text-2xl font-bold tracking-tight text-charcoal">Tell us what you need.</h2>
         <p className="mt-2 text-sm leading-6 text-slate">
-          Tell us what you are trying to understand or resolve. We&apos;ll route the request to the right part of the TradeSignal team.
+          Tell us what you are trying to understand or resolve. We&apos;ll route the request to the right part of the Everro team.
         </p>
       </div>
 

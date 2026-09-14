@@ -55,7 +55,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     content_snapshot: body.data.content,
     audience_type: "homeowner",
     strategy_key: "planning-homeowner-introduction",
-    template_key: "mytradebox-quote-link-letter",
+    template_key: "everro-quote-link-letter",
     template_version: "1",
     created_by: user.id,
   });
@@ -118,9 +118,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return new NextResponse(pdfBody, {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="mytradebox-letter-${district}-${id.slice(0, 8)}.pdf"`,
+        "Content-Disposition": `attachment; filename="everro-letter-${district}-${id.slice(0, 8)}.pdf"`,
         "Cache-Control": "private, no-store",
-        "X-TradeSignal-Delivery-Id": deliveryId,
+        "X-Everro-Delivery-Id": deliveryId,
       },
     });
   } catch (error) {

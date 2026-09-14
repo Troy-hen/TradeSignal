@@ -93,7 +93,7 @@ export async function GET(request: Request) {
 
   const csv = [headers, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n");
   const suffix = [bucketParam, actionParam].filter(Boolean).join("-");
-  const filename = `mytradebox-opportunities${suffix ? "-" + suffix : ""}.csv`;
+  const filename = `everro-opportunities${suffix ? "-" + suffix : ""}.csv`;
 
   return new NextResponse("\uFEFF" + csv, {
     headers: {

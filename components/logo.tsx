@@ -10,16 +10,16 @@ export function LogoMark({
   className?: string;
   tone?: LogoTone;
 }) {
-  const fixedDarkTone = tone === "light";
+  const isDarkSurface = tone === "light";
 
   return (
     <span className={"inline-flex items-center justify-center overflow-hidden rounded-xl " + (className ?? "")}>
-      {fixedDarkTone ? (
-        <Image src={PRODUCT_BRAND.iconDarkSrc} alt="" width={128} height={128} className="h-full w-full scale-[1.31] object-contain" />
+      {isDarkSurface ? (
+        <Image src={PRODUCT_BRAND.iconLightSrc} alt="" width={128} height={128} className="h-full w-full object-contain" />
       ) : (
         <>
-          <Image src={PRODUCT_BRAND.iconLightSrc} alt="" width={128} height={128} className="h-full w-full object-contain dark:hidden" />
-          <Image src={PRODUCT_BRAND.iconDarkSrc} alt="" width={128} height={128} className="hidden h-full w-full scale-[1.31] object-contain dark:block" />
+          <Image src={PRODUCT_BRAND.iconDarkSrc} alt="" width={128} height={128} className="h-full w-full object-contain dark:hidden" />
+          <Image src={PRODUCT_BRAND.iconLightSrc} alt="" width={128} height={128} className="hidden h-full w-full object-contain dark:block" />
         </>
       )}
     </span>
