@@ -80,3 +80,72 @@ export async function updateNotificationPreferences(
   revalidatePath("/settings");
   return { success: true };
 }
+
+const leadAlertRuleSchema = z.object({
+  name: z.string().trim().min(2).max(80),
+  minScore: z.number().min(0).max(100),
+  cadence: z.enum(["instant", "daily", "weekly"]),
+  signalFamilies: z.string().max(500),
+  postcodeDistricts: z.string().max(500),
+  buyingWindows: z.string().max(500),
+  channelEmail: z.boolean(),
+});
+
+type LooseSettingsBuilder = {
+  upsert(values: Record<string, unknown>, options?: Record<string, unknown>): LooseSettingsBuilder;
+  select(columns: string): LooseSettingsBuilder;
+  maybeSingle(): LooseSettingsBuilder;
+};
+
+type LooseSettingsClient = { from(table: string): LooseSettingsBuilder };
+
+async function runLooseSettingsQuery<T>(query: LooseSettingsBuilder) {
+  return query as unknown as Promise<{ data: T | null; error: { message?: string } | null }>;
+}
+
+function csvValues(value: string) {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(0, 50);
+}
+
+export async function upsertLeadAlertRule(
+  _prevState: SettingsActionState,
+  formData: FormData,
+): Promise<SettingsActionState> {
+  const parsed = leadAlertRuleSchema.safeParse({
+    name: formData.get("name"),
+    minScore: Number(formData.get("minScore")),
+    cadence: formData.get("cadence"),
+    signalFamilies: String(formData.get("signalFamilies") ?? ""),
+    postcodeDistricts: String(formData.get("postcodeDistricts") ?? ""),
+    buyingWindows: String(formData.get("buyingWindows") ?? ""),
+    channelEmail: formData.get("channelEmail") === "on",
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid alert rule" };
+
+  const company = await requireCurrentCompany();
+  const supabase = (await createClient()) as unknown as LooseSettingsClient;
+  const { error } = await runLooseSettingsQuery(
+    supabase.from("alert_rules").upsert(
+      {
+        company_id: company.id,
+        name: parsed.data.name,
+        enabled: true,
+        min_score: parsed.data.minScore,
+        signal_families: csvValues(parsed.data.signalFamilies),
+        postcode_districts: csvValues(parsed.data.postcodeDistricts),
+        buying_windows: csvValues(parsed.data.buyingWindows),
+        channels: parsed.data.channelEmail ? ["banner", "email"] : ["banner"],
+        cadence: parsed.data.cadence,
+      },
+      { onConflict: "company_id,name" },
+    ).select("id").maybeSingle(),
+  );
+
+  if (error) return { error: "Could not save the alert rule. Only company owners/admins can edit these." };
+  revalidatePath("/settings");
+  return { success: true };
+}
