@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { Logo } from "@/components/logo";
 import { PublicThemeGuard } from "@/components/public-theme-guard";
 
@@ -12,12 +11,6 @@ function currentYear(): number {
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const pathname = usePathname();
-
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
-
   return (
     <>
       <PublicThemeGuard />
