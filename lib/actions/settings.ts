@@ -82,6 +82,7 @@ export async function updateNotificationPreferences(
 }
 
 const leadAlertRuleSchema = z.object({
+  id: z.string().uuid().optional(),
   name: z.string().trim().min(2).max(80),
   minScore: z.number().min(0).max(100),
   cadence: z.enum(["instant", "daily", "weekly"]),
@@ -92,9 +93,11 @@ const leadAlertRuleSchema = z.object({
 });
 
 type LooseSettingsBuilder = {
+  update(values: Record<string, unknown>): LooseSettingsBuilder;
   upsert(values: Record<string, unknown>, options?: Record<string, unknown>): LooseSettingsBuilder;
   select(columns: string): LooseSettingsBuilder;
   maybeSingle(): LooseSettingsBuilder;
+  eq(column: string, value: unknown): LooseSettingsBuilder;
 };
 
 type LooseSettingsClient = { from(table: string): LooseSettingsBuilder };
@@ -116,6 +119,7 @@ export async function upsertLeadAlertRule(
   formData: FormData,
 ): Promise<SettingsActionState> {
   const parsed = leadAlertRuleSchema.safeParse({
+    id: String(formData.get("id") ?? "") || undefined,
     name: formData.get("name"),
     minScore: Number(formData.get("minScore")),
     cadence: formData.get("cadence"),
@@ -128,22 +132,21 @@ export async function upsertLeadAlertRule(
 
   const company = await requireCurrentCompany();
   const supabase = (await createClient()) as unknown as LooseSettingsClient;
-  const { error } = await runLooseSettingsQuery(
-    supabase.from("alert_rules").upsert(
-      {
-        company_id: company.id,
-        name: parsed.data.name,
-        enabled: true,
-        min_score: parsed.data.minScore,
-        signal_families: csvValues(parsed.data.signalFamilies),
-        postcode_districts: csvValues(parsed.data.postcodeDistricts),
-        buying_windows: csvValues(parsed.data.buyingWindows),
-        channels: parsed.data.channelEmail ? ["banner", "email"] : ["banner"],
-        cadence: parsed.data.cadence,
-      },
-      { onConflict: "company_id,name" },
-    ).select("id").maybeSingle(),
-  );
+  const payload = {
+    company_id: company.id,
+    name: parsed.data.name,
+    enabled: true,
+    min_score: parsed.data.minScore,
+    signal_families: csvValues(parsed.data.signalFamilies),
+    postcode_districts: csvValues(parsed.data.postcodeDistricts),
+    buying_windows: csvValues(parsed.data.buyingWindows),
+    channels: parsed.data.channelEmail ? ["banner", "email"] : ["banner"],
+    cadence: parsed.data.cadence,
+  };
+  const query = parsed.data.id
+    ? supabase.from("alert_rules").update(payload).eq("id", parsed.data.id).eq("company_id", company.id).select("id").maybeSingle()
+    : supabase.from("alert_rules").upsert(payload, { onConflict: "company_id,name" }).select("id").maybeSingle();
+  const { error } = await runLooseSettingsQuery(query);
 
   if (error) return { error: "Could not save the alert rule. Only company owners/admins can edit these." };
   revalidatePath("/settings");

@@ -9,6 +9,7 @@ export function LeadAlertRuleForm({ rule }: { rule: AlertRule | null }) {
   const [state, formAction] = useActionState(upsertLeadAlertRule, undefined);
   return (
     <form action={formAction} className="space-y-4 rounded-2xl border border-signal-orange/20 bg-signal-orange/[0.04] p-4 sm:p-5">
+      {rule?.id && <input type="hidden" name="id" value={rule.id} />}
       <div>
         <p className="text-sm font-semibold text-charcoal">Hot lead alert rule</p>
         <p className="mt-1 text-xs leading-5 text-slate">The banner stays hot-only and unpurchased. Use this rule to control which hot opportunities are eligible for email delivery as your signal sources expand.</p>
