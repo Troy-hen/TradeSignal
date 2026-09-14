@@ -4,7 +4,7 @@ import { useSyncExternalStore } from "react";
 
 type Theme = "light" | "dark";
 
-const STORAGE_KEY = "mytradebox-theme";
+const STORAGE_KEY = "everro-theme";
 
 function applyTheme(theme: Theme) {
   document.documentElement.classList.toggle("dark", theme === "dark");
