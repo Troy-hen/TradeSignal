@@ -11,7 +11,7 @@ export default function SignupPage() {
   return (
     <>
       <h1 className="mb-1 text-xl font-semibold text-charcoal">Create your account</h1>
-      <p className="mb-6 text-sm text-slate">Free to join. Tell us what you sell, who you sell to and where you operate before choosing coverage.</p>
+      <p className="mb-6 text-sm text-slate">Create your account, choose your coverage and start a 14-day trial with three lead unlocks included. Your monthly coverage fee starts after the trial.</p>
       <form action={formAction} className="space-y-4">
         <div><label htmlFor="fullName" className="mb-1 block text-sm font-medium text-charcoal">Full name</label><input id="fullName" name="fullName" type="text" required autoComplete="name" className="w-full rounded-md border border-light-grey px-3 py-2 text-sm focus:border-signal-orange focus:outline-none" /></div>
         <div><label htmlFor="email" className="mb-1 block text-sm font-medium text-charcoal">Email</label><input id="email" name="email" type="email" required autoComplete="email" className="w-full rounded-md border border-light-grey px-3 py-2 text-sm focus:border-signal-orange focus:outline-none" /></div>

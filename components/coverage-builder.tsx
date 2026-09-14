@@ -11,7 +11,7 @@ export type CoverageTradeOption = {
 
 export type CoverageDistrictOption = {
   id: string;
-  town: string;
+  town?: string;
 };
 
 export type CoveragePlanView = {
@@ -29,6 +29,7 @@ type CoverageBuilderProps = {
   districts: CoverageDistrictOption[];
   existingTradeIds: string[];
   countyAreas: { id: string; name: string }[];
+  trialMode?: boolean;
 };
 
 type CoveragePlanEditorProps = {
@@ -43,7 +44,7 @@ const ERROR_COPY: Record<string, string> = {
   coverage_change_failed: "We could not save that coverage change. No partial change was applied.",
 };
 
-export function CoverageBuilder({ trades, districts, existingTradeIds, countyAreas }: CoverageBuilderProps) {
+export function CoverageBuilder({ trades, districts, existingTradeIds, countyAreas, trialMode = false }: CoverageBuilderProps) {
   const availableTrades = useMemo(
     () => trades.filter((trade) => !existingTradeIds.includes(trade.id)),
     [existingTradeIds, trades],
@@ -103,10 +104,10 @@ export function CoverageBuilder({ trades, districts, existingTradeIds, countyAre
     <section className="rounded-3xl border border-light-grey bg-white p-6 sm:p-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Add coverage</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">{trialMode ? "Start your Everro trial" : "Add coverage"}</p>
           <h2 className="mt-2 text-2xl font-bold tracking-tight text-charcoal">Build the service area you actually work.</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate">
-            Choose one trade and as many postcode districts as you need. The first is £29.99/month, then volume pricing applies automatically.
+            {trialMode ? "Choose the first trade and service area for your 14-day trial. The monthly coverage fee is not charged until the trial ends, and three lead unlocks are included." : "Choose one trade and as many postcode districts as you need. The first is £29.99/month, then volume pricing applies automatically."}
           </p>
         </div>
         <div className="rounded-2xl bg-signal-orange/10 px-4 py-3 text-right">
@@ -162,7 +163,9 @@ export function CoverageBuilder({ trades, districts, existingTradeIds, countyAre
               </p>
               <p className="mt-1 text-xs leading-5 text-slate">
                 {breakdown
-                  ? "Includes " + String(breakdown.postcodeCount) + " postcode " + (breakdown.postcodeCount === 1 ? "district." : "districts.")
+                  ? trialMode
+                    ? "No monthly coverage charge today · starts after your 14-day trial."
+                    : "Includes " + String(breakdown.postcodeCount) + " postcode " + (breakdown.postcodeCount === 1 ? "district." : "districts.")
                   : "Select districts to see your monthly total."}
               </p>
             </div>
@@ -172,7 +175,7 @@ export function CoverageBuilder({ trades, districts, existingTradeIds, countyAre
               disabled={isSubmitting || selected.length === 0}
               className="inline-flex items-center justify-center rounded-xl bg-signal-orange px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#e95f00] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {isSubmitting ? "Starting checkout…" : "Continue with coverage"}
+              {isSubmitting ? "Starting checkout…" : trialMode ? "Start 14-day trial" : "Continue with coverage"}
             </button>
           </div>
           {error && <p role="alert" className="mt-3 text-sm text-danger">{error}</p>}

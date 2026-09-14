@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useState } from "react";
 import { pushLeadToCrm, type CrmPushState } from "@/lib/actions/crm";
 import type { CrmConnection } from "@/lib/data/crm";
 
@@ -21,8 +21,7 @@ function CrmPushForm({ compact, leadUnlockId, connections }: { compact: boolean;
   const [state, formAction, pending] = useActionState<CrmPushState, FormData>(pushLeadToCrm, undefined);
   const [connectionId, setConnectionId] = useState(connections[0]?.id ?? "");
   const [open, setOpen] = useState(false);
-  useEffect(() => { if (state?.success) setOpen(false); }, [state?.success]);
-  if (!open) {
+  if (!open || state?.success) {
     return <button type="button" onClick={() => setOpen(true)} className={compact ? "inline-flex items-center justify-center rounded-xl border border-light-grey bg-white px-3 py-2 text-xs font-semibold text-charcoal transition hover:border-signal-orange/40 hover:text-signal-orange" : "inline-flex items-center justify-center rounded-xl border border-light-grey bg-white px-4 py-2.5 text-sm font-semibold text-charcoal transition hover:border-signal-orange/40 hover:text-signal-orange"}>{state?.status === "already_sent" ? "Sent to CRM" : "Push to CRM"} <span className="ml-2" aria-hidden="true">↗</span></button>;
   }
   return (

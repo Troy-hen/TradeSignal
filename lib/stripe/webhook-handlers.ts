@@ -11,6 +11,7 @@ export async function handleStripeEvent(admin: AdminClient, event: Stripe.Event)
       return handleCheckoutCompleted(admin, event.data.object);
     case "checkout.session.expired":
       return handleCheckoutExpired(admin, event.data.object);
+    case "customer.subscription.created":
     case "customer.subscription.updated":
       return handleSubscriptionUpdated(admin, event.data.object);
     case "customer.subscription.deleted":
@@ -295,6 +296,10 @@ async function handleCoverageSubscriptionUpdated(
   const claimIds = resolveTerritoryClaimIds(items);
   const now = new Date().toISOString();
 
+  if (status === "trialing") {
+    await startCompanyTrialIfNeeded(admin, plan.company_id, coveragePlanId, subscription, now);
+  }
+
   await db.from("subscriptions").upsert(
     {
       company_id: plan.company_id,
@@ -319,6 +324,58 @@ async function handleCoverageSubscriptionUpdated(
     await db.from("coverage_plans").update({ status: "active" }).eq("id", coveragePlanId);
     await db.from("territory_claims").update({ status: "active" }).in("id", claimIds).eq("status", "suspended");
   }
+}
+
+/**
+ * Stripe is the source of truth for when a trial actually begins. This runs
+ * from the subscription webhook (after Checkout creates the subscription), so
+ * an abandoned Checkout session cannot consume the account trial.
+ */
+async function startCompanyTrialIfNeeded(
+  admin: AdminClient,
+  companyId: string,
+  coveragePlanId: string,
+  subscription: Stripe.Subscription,
+  fallbackStartedAt: string,
+) {
+  const trialStartedAt = subscription.trial_start
+    ? new Date(subscription.trial_start * 1000).toISOString()
+    : fallbackStartedAt;
+  const trialEndsAt = subscription.trial_end
+    ? new Date(subscription.trial_end * 1000).toISOString()
+    : new Date(new Date(trialStartedAt).getTime() + 14 * 24 * 60 * 60 * 1000).toISOString();
+  const loose = admin as unknown as {
+    from: (table: string) => {
+      update: (values: Record<string, unknown>) => {
+        eq: (column: string, value: unknown) => {
+          is: (column: string, value: null) => Promise<unknown>;
+        };
+      };
+    };
+  };
+
+  await loose
+    .from("companies")
+    .update({
+      trial_started_at: trialStartedAt,
+      trial_ends_at: trialEndsAt,
+      trial_lead_unlock_limit: 3,
+      trial_lead_unlocks_used: 0,
+    })
+    .eq("id", companyId)
+    .is("trial_started_at", null);
+
+  // Keep the legacy plan-scoped columns populated for older workspaces and
+  // reporting consumers while the company row is the canonical entitlement.
+  await loose
+    .from("coverage_plans")
+    .update({
+      trial_started_at: trialStartedAt,
+      trial_lead_unlock_limit: 3,
+      trial_lead_unlocks_used: 0,
+    })
+    .eq("id", coveragePlanId)
+    .is("trial_started_at", null);
 }
 
 async function handleSubscriptionDeleted(admin: AdminClient, subscription: Stripe.Subscription) {

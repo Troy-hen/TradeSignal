@@ -194,13 +194,15 @@ export async function POST(request: Request) {
       company_id: company.id,
     };
 
-    const { data: previousCoveragePlans } = await adminDb
-      .from("coverage_plans")
-      .select("id")
-      .eq("company_id", company.id)
-      .neq("id", reservation.coverage_plan_id)
-      .limit(1);
-    const trialEligible = process.env.EVERRO_TRIAL_ENABLED !== "false" && (previousCoveragePlans ?? []).length === 0;
+    // Trial eligibility belongs to the account, not to a postcode/trade
+    // selection. A reserved or abandoned checkout must not consume it.
+    const { data: trialAccount } = await adminDb
+      .from("companies")
+      .select("trial_started_at, trial_ends_at")
+      .eq("id", company.id)
+      .maybeSingle();
+    const trialEligible = process.env.EVERRO_TRIAL_ENABLED !== "false" && !trialAccount?.trial_started_at;
+    const checkoutMetadata = { ...metadata, trial_eligible: trialEligible ? "true" : "false" };
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
@@ -231,14 +233,12 @@ export async function POST(request: Request) {
         "&claim=" +
         encodeURIComponent(reservation.first_territory_claim_id),
       cancel_url: appUrl + "/territories/" + firstDistrict + "/" + trade.slug,
-      metadata,
-      subscription_data: { metadata, ...(trialEligible ? { trial_period_days: 14 } : {}) },
+      metadata: checkoutMetadata,
+      // Collect a payment method now, but Stripe does not charge the monthly
+      // coverage fee until the 14-day trial ends.
+      payment_method_collection: "always",
+      subscription_data: { metadata: checkoutMetadata, ...(trialEligible ? { trial_period_days: 14 } : {}) },
     });
-
-    const trialAdmin = adminDb as unknown as { from: (table: string) => { update: (values: Record<string, unknown>) => { eq: (column: string, value: unknown) => { eq: (column: string, value: unknown) => Promise<unknown> } } } };
-    if (trialEligible) {
-      await trialAdmin.from("coverage_plans").update({ trial_started_at: new Date().toISOString(), trial_lead_unlock_limit: 3, trial_lead_unlocks_used: 0 }).eq("id", reservation.coverage_plan_id).eq("status", "reserved");
-    }
 
     await adminDb.from("territory_claims")
       .update({ stripe_checkout_session_id: session.id })

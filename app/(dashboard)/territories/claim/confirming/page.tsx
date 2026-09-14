@@ -86,7 +86,7 @@ function ConfirmingClaimContent() {
         <p className="mt-4 text-sm text-slate">
           {isDemo
             ? "Demo activation is taking a little longer than expected. You can keep this page open."
-            : "Still waiting on confirmation from Stripe — this can take a little longer for some payment methods."}
+            : "Still waiting on confirmation from Stripe — your trial starts once the coverage subscription is confirmed."}
         </p>
       )}
     </div>
@@ -97,10 +97,10 @@ function ConfirmingMessage({ isDemo }: { isDemo: boolean }) {
   return (
     <>
       <h1 className="text-xl font-semibold text-charcoal">
-        {isDemo ? "Activating your coverage…" : "Confirming your payment…"}
+        {isDemo ? "Activating your coverage…" : "Starting your Everro trial…"}
       </h1>
       <p className="mt-2 text-sm text-slate">
-        {isDemo ? "Your coverage is being activated. Don’t close this page." : "This usually takes a few seconds. Don’t close this page."}
+        {isDemo ? "Your coverage is being activated. Don’t close this page." : "Your 14-day trial is being confirmed. No monthly coverage fee is charged today."}
       </p>
     </>
   );
