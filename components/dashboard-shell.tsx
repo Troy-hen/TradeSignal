@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { AskTradeSignal } from "@/components/ask-tradesignal";
+import { AskEverro } from "@/components/ask-everro";
 import { DashboardNav } from "@/components/dashboard-nav";
 import { InAppNotificationFeed } from "@/components/in-app-notification-feed";
 import { Logo, LogoMark } from "@/components/logo";
@@ -74,7 +74,7 @@ export function DashboardShell({ company, notifications, children }: { company: 
         </main>
       </div>
 
-      <AskTradeSignal notificationBarVisible={notificationCount > 0} />
+      <AskEverro notificationBarVisible={notificationCount > 0} />
       <InAppNotificationFeed items={notifications} sidebarCollapsed={collapsed} onCountChange={handleNotificationCount} />
     </div>
   );
