@@ -11,18 +11,15 @@ export function LogoMark({
   tone?: LogoTone;
 }) {
   const fixedDarkTone = tone === "light";
-  const tileClass = fixedDarkTone
-    ? "border border-white/15 bg-[#1f2937]"
-    : "border border-[#e5e7eb] bg-[#f8fafc] dark:border-white/15 dark:bg-[#1f2937]";
 
   return (
-    <span className={"inline-flex items-center justify-center overflow-hidden rounded-xl " + tileClass + " " + (className ?? "")}>
+    <span className={"inline-flex items-center justify-center overflow-hidden rounded-xl " + (className ?? "")}>
       {fixedDarkTone ? (
-        <Image src={PRODUCT_BRAND.iconDarkSrc} alt="" width={1254} height={1254} className="h-full w-full object-contain" />
+        <Image src={PRODUCT_BRAND.iconDarkSrc} alt="" width={128} height={128} className="h-full w-full object-contain" />
       ) : (
         <>
-          <Image src={PRODUCT_BRAND.iconLightSrc} alt="" width={1254} height={1254} className="h-full w-full object-contain dark:hidden" />
-          <Image src={PRODUCT_BRAND.iconDarkSrc} alt="" width={1254} height={1254} className="hidden h-full w-full object-contain dark:block" />
+          <Image src={PRODUCT_BRAND.iconLightSrc} alt="" width={128} height={128} className="h-full w-full scale-[1.39] object-contain dark:hidden" />
+          <Image src={PRODUCT_BRAND.iconDarkSrc} alt="" width={128} height={128} className="hidden h-full w-full object-contain dark:block" />
         </>
       )}
     </span>
@@ -53,4 +50,3 @@ export function Logo({
     </span>
   );
 }
-
