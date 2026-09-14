@@ -66,7 +66,7 @@ export async function getInAppNotifications(companyId: string): Promise<InAppNot
   const rankedMarket = rankByCustomerProfile(
     market.filter((item) =>
       item.opportunity_bucket === "hot" &&
-      item.current_action === "new" &&
+      (item.current_action === null || item.current_action === "new") &&
       !paidMarketSignalIds.has(item.market_signal_trade_match_id),
     ),
     profile,
@@ -79,9 +79,9 @@ export async function getInAppNotifications(companyId: string): Promise<InAppNot
       id: "hot:market:" + item.market_signal_trade_match_id,
       score,
       tone: "signal" as const,
-      eyebrow: "Hot opportunity · " + String(score) + "/100",
+      eyebrow: "Hot lead · " + String(score) + "/100",
       title: item.title,
-      detail: [item.location_label, item.trade_name, "Not yet unlocked · £20 one-time"].filter(Boolean).join(" · "),
+      detail: [item.location_label, item.trade_name, "Unpurchased lead · £20 one-time unlock"].filter(Boolean).join(" · "),
       href: "/opportunities/trade/" + encodeURIComponent(item.market_signal_trade_match_id),
       ctaLabel: "View brief",
       createdAt: item.published_at || item.deadline_at || new Date(0).toISOString(),
