@@ -97,7 +97,7 @@ export function InAppNotificationFeed({
           <button type="button" onClick={dismissCurrent} className="rounded-xl px-3 py-2 text-xs font-semibold text-slate transition hover:bg-soft-surface hover:text-charcoal">Dismiss</button>
           <Link
             href={current.href}
-            onClick={() => trackProductEvent("hot_opportunity_bar_clicked", {
+            onClick={() => trackProductEvent("notification_cta_clicked", {
               source: "hot_opportunity_bar",
               metadata: { opportunity_id: current.id, opportunity_score: current.eyebrow, destination: current.href },
             })}
