@@ -18,7 +18,7 @@ export function LogoMark({
         <Image src={PRODUCT_BRAND.iconDarkSrc} alt="" width={128} height={128} className="h-full w-full object-contain" />
       ) : (
         <>
-          <Image src={PRODUCT_BRAND.iconLightSrc} alt="" width={128} height={128} className="h-full w-full scale-[1.39] object-contain dark:hidden" />
+          <Image src={PRODUCT_BRAND.iconLightSrc} alt="" width={128} height={128} className="h-full w-full object-contain dark:hidden" />
           <Image src={PRODUCT_BRAND.iconDarkSrc} alt="" width={128} height={128} className="hidden h-full w-full object-contain dark:block" />
         </>
       )}
