@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { InAppNotificationItem } from "@/lib/data/in-app-notifications";
 import { trackProductEvent } from "@/lib/analytics/client";
 
-const STORAGE_KEY = "tradesignal-dismissed-in-app-notifications";
+const STORAGE_KEY = "tradesignal-dismissed-hot-opportunities-v2";
 
 export function InAppNotificationFeed({
   items,
@@ -69,7 +69,7 @@ export function InAppNotificationFeed({
   return (
     <div
       className={[
-        "fixed bottom-0 right-0 z-40 border-t border-light-grey bg-white/98 shadow-[0_-12px_35px_rgba(31,41,55,0.12)] backdrop-blur",
+        "fixed bottom-0 right-0 z-40 border-t border-signal-orange/25 bg-white/98 shadow-[0_-12px_35px_rgba(31,41,55,0.12)] backdrop-blur",
         sidebarCollapsed ? "left-0 lg:left-[76px]" : "left-0 lg:left-[272px]",
       ].join(" ")}
       aria-live="polite"
@@ -90,16 +90,16 @@ export function InAppNotificationFeed({
         <div className="flex shrink-0 flex-wrap items-center gap-2 pl-5 md:pl-0">
           {activeItems.length > 1 && (
             <div className="flex items-center overflow-hidden rounded-xl border border-light-grey bg-white">
-              <FeedIconButton label="Previous notification" onClick={previous} direction="left" />
-              <FeedIconButton label="Next notification" onClick={next} direction="right" />
+              <FeedIconButton label="Previous hot opportunity" onClick={previous} direction="left" />
+              <FeedIconButton label="Next hot opportunity" onClick={next} direction="right" />
             </div>
           )}
           <button type="button" onClick={dismissCurrent} className="rounded-xl px-3 py-2 text-xs font-semibold text-slate transition hover:bg-soft-surface hover:text-charcoal">Dismiss</button>
           <Link
             href={current.href}
-            onClick={() => trackProductEvent("notification_cta_clicked", {
-              source: "in_app_feed",
-              metadata: { notification_id: current.id, notification_type: current.eyebrow, destination: current.href },
+            onClick={() => trackProductEvent("hot_opportunity_bar_clicked", {
+              source: "hot_opportunity_bar",
+              metadata: { opportunity_id: current.id, opportunity_score: current.eyebrow, destination: current.href },
             })}
             className="inline-flex items-center justify-center rounded-xl bg-charcoal px-4 py-2 text-xs font-semibold text-white transition hover:bg-signal-orange"
           >

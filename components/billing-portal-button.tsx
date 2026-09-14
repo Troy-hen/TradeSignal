@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export function BillingPortalButton() {
+export function BillingPortalButton({ label = "Manage billing" }: { label?: string }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,7 +38,7 @@ export function BillingPortalButton() {
         disabled={isLoading}
         className="rounded-xl bg-signal-orange px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#e95f00] disabled:opacity-60"
       >
-        {isLoading ? "Opening…" : "Manage billing"}
+        {isLoading ? "Opening…" : label}
       </button>
       {error && <p className="mt-2 text-sm text-danger">{error}</p>}
     </div>

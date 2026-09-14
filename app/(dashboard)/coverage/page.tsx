@@ -41,7 +41,7 @@ export default async function CoveragePage() {
         </div>
       </section>
 
-      <CoveragePlanSelector initialPlan={initialPlan} />
+      <CoveragePlanSelector initialPlan={initialPlan} hasCurrentPlan={Boolean(activeTier)} canEdit={canEdit} />
 
       {planViews.length > 0 && (
         <section>

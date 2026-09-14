@@ -1,5 +1,8 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/server";
+import { getCompanyOpportunities } from "@/lib/data/opportunities";
+import { getOwnedMarketSignals } from "@/lib/data/trade-intelligence";
+import { listPaidLeadUnlocks } from "@/lib/data/lead-unlocks";
+import { getCustomerProfile } from "@/lib/data/customer-profile";
+import { rankByCustomerProfile } from "@/lib/profile/relevance";
 
 export type InAppNotificationItem = {
   id: string;
@@ -12,137 +15,84 @@ export type InAppNotificationItem = {
   createdAt: string;
 };
 
-type NotificationLogRow = {
-  id: string;
-  notification_type: string;
-  subject: string | null;
-  created_at: string;
-  metadata: unknown;
-  lead_match_id: string | null;
-};
-type NearbyRow = {
-  postcode_district: string;
-  post_town: string;
-  trade_category_name: string;
-  trade_category_slug: string;
-  opportunity_count: number;
-  teaser_project_type: string | null;
-  teaser_status: string | null;
-};
-type TerritoryMarketEvent = {
-  event_id: string;
-  event_type: "claimed" | "released";
-  postcode_district: string;
-  trade_name: string;
-  trade_slug: string;
-  occurred_at: string;
-};
-type LeadMatchRow = { id: string; application_trade_opportunity_id: string | null };
-type RankedNotification = InAppNotificationItem & { priority: number };
+type RankedItem = InAppNotificationItem & { score: number };
 
+/**
+ * The bottom bar is a live Marketplace upsell surface, not a second inbox.
+ * It deliberately shares the Marketplace queries, profile ranking and paid
+ * unlock exclusions so it cannot advertise a lead that is absent or owned.
+ */
 export async function getInAppNotifications(companyId: string): Promise<InAppNotificationItem[]> {
-  const supabase = await createClient();
-  const db = supabase as unknown as SupabaseClient;
-  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-
-  const [{ data: logData }, { data: nearbyData }, { data: marketEventData }] = await Promise.all([
-    supabase.from("notification_log").select("id, notification_type, subject, created_at, metadata, lead_match_id").eq("company_id", companyId).eq("status", "sent").gte("created_at", since).order("created_at", { ascending: false }).limit(25),
-    supabase.rpc("browse_nearby_opportunities", { p_limit: 3 }),
-    db.rpc("browse_recent_territory_market_events", { p_limit: 5 }),
+  const [planning, market, paidUnlocks, profile] = await Promise.all([
+    getCompanyOpportunities(companyId, { bucket: "hot", action: "new", limit: 100 }),
+    getOwnedMarketSignals(200),
+    listPaidLeadUnlocks(companyId),
+    getCustomerProfile(companyId),
   ]);
 
-  const logs = (logData ?? []) as NotificationLogRow[];
-  const leadMatchIds = [...new Set(logs.map((row) => row.lead_match_id).filter((id): id is string => Boolean(id)))];
-  const { data: matchData } = leadMatchIds.length > 0
-    ? await supabase.from("lead_matches").select("id, application_trade_opportunity_id").in("id", leadMatchIds)
-    : { data: [] as LeadMatchRow[] };
-  const opportunityByMatch = new Map(((matchData ?? []) as LeadMatchRow[]).map((row) => [row.id, row.application_trade_opportunity_id]));
+  const paidOpportunityIds = new Set(
+    paidUnlocks
+      .map((unlock) => unlock.application_trade_opportunity_id)
+      .filter((value): value is string => Boolean(value)),
+  );
+  const paidMarketSignalIds = new Set(
+    paidUnlocks
+      .map((unlock) => unlock.market_signal_trade_match_id)
+      .filter((value): value is string => Boolean(value)),
+  );
 
-  const logged = logs.map((row) => {
-    const metadata = isRecord(row.metadata) ? row.metadata : {};
-    const metadataOpportunityId = typeof metadata.opportunity_id === "string" ? metadata.opportunity_id : null;
-    const opportunityId = row.lead_match_id ? opportunityByMatch.get(row.lead_match_id) ?? metadataOpportunityId : metadataOpportunityId;
-    return notificationFromLog(row, opportunityId);
+  const planningItems: RankedItem[] = planning
+    .filter((item) =>
+      item.bucket === "hot" &&
+      (item.currentAction === null || item.currentAction === "new") &&
+      !(item.underlyingOpportunityIds ?? [item.opportunityId]).some((id) => paidOpportunityIds.has(id)),
+    )
+    .map((item) => {
+      const score = Math.round(Number(item.score ?? 0));
+      const need = item.matchedNeeds?.[0] ?? item.tradeName;
+      return {
+        id: "hot:planning:" + (item.canonicalOpportunityId ?? item.opportunityId),
+        score,
+        tone: "signal" as const,
+        eyebrow: "Hot opportunity · " + String(score) + "/100",
+        title: item.projectType ?? item.entityName ?? "New buying-window opportunity",
+        detail: [item.locationLabel ?? item.district, need, "Not yet unlocked · £20 one-time"].filter(Boolean).join(" · "),
+        href: "/opportunities/" + encodeURIComponent(item.opportunityId),
+        ctaLabel: "View brief",
+        createdAt: item.matchedAt || item.receivedDate || new Date(0).toISOString(),
+      };
+    });
+
+  const rankedMarket = rankByCustomerProfile(
+    market.filter((item) =>
+      item.opportunity_bucket === "hot" &&
+      item.current_action === "new" &&
+      !paidMarketSignalIds.has(item.market_signal_trade_match_id),
+    ),
+    profile,
+    (item) => [item.title, item.trade_name, item.recommended_action, item.location_label, item.buyer_name].filter(Boolean).join(" "),
+  );
+
+  const marketItems: RankedItem[] = rankedMarket.map((item) => {
+    const score = Math.round(Number(item.fit_score ?? 0));
+    return {
+      id: "hot:market:" + item.market_signal_trade_match_id,
+      score,
+      tone: "signal" as const,
+      eyebrow: "Hot opportunity · " + String(score) + "/100",
+      title: item.title,
+      detail: [item.location_label, item.trade_name, "Not yet unlocked · £20 one-time"].filter(Boolean).join(" · "),
+      href: "/opportunities/trade/" + encodeURIComponent(item.market_signal_trade_match_id),
+      ctaLabel: "View brief",
+      createdAt: item.published_at || item.deadline_at || new Date(0).toISOString(),
+    };
   });
-  const nearby = ((Array.isArray(nearbyData) ? nearbyData : []) as NearbyRow[]).map(notificationFromNearby);
-  const territoryEvents = ((Array.isArray(marketEventData) ? marketEventData : []) as unknown as TerritoryMarketEvent[]).map(notificationFromTerritoryEvent);
 
-  const seenTitles = new Set<string>();
-  return [...logged, ...territoryEvents, ...nearby]
-    .sort((a, b) => b.priority - a.priority || Date.parse(b.createdAt) - Date.parse(a.createdAt))
-    .filter((item) => {
-      if (item.eyebrow === "Quote request") return true;
-      const key = item.title.trim().toLowerCase();
-      if (seenTitles.has(key)) return false;
-      seenTitles.add(key);
-      return true;
-    })
-    .slice(0, 10)
-    .map(({ priority, ...item }) => { void priority; return item; });
+  return [...planningItems, ...marketItems]
+    .sort((left, right) => right.score - left.score || Date.parse(right.createdAt) - Date.parse(left.createdAt))
+    .slice(0, 5)
+    .map(({ score, ...item }) => {
+      void score;
+      return item;
+    });
 }
-
-function notificationFromLog(row: NotificationLogRow, opportunityId: string | null): RankedNotification {
-  const metadata = isRecord(row.metadata) ? row.metadata : {};
-  const type = row.notification_type;
-  const fallbackTitle = notificationLabel(type);
-  const opportunityHref = opportunityId ? "/opportunities/" + encodeURIComponent(opportunityId) : "/opportunities";
-
-  if (type === "quote_request") {
-    const responder = typeof metadata.responder_name === "string" ? metadata.responder_name : null;
-    const audience = typeof metadata.audience_type === "string" ? metadata.audience_type : null;
-    const preferred = typeof metadata.preferred_contact_method === "string" ? notificationLabel(metadata.preferred_contact_method) : null;
-    const detail = [responder ? `${responder} requested contact` : "A recipient requested contact", audience ? `via ${notificationLabel(audience)} outreach` : null, preferred ? `prefers ${preferred.toLowerCase()}` : null].filter(Boolean).join(" · ");
-    return ranked(110, row, "success", "Quote request", row.subject ?? "New quote request", detail, opportunityHref, opportunityId ? "Open request" : "View requests");
-  }
-  if (type === "payment_failed") return ranked(100, row, "warning", "Billing", row.subject ?? "Action needed on your subscription", "Review your billing details to keep Marketplace coverage active.", "/billing", "Review billing");
-  if (type === "approval_alert") return ranked(90, row, "signal", "Planning approved", row.subject ?? fallbackTitle, "A matched application has moved into an important contact window.", opportunityHref, opportunityId ? "Open opportunity" : "View opportunities");
-  if (type === "new_lead_instant") return ranked(80, row, "signal", "New opportunity", row.subject ?? fallbackTitle, "A high-priority opportunity has been matched to your coverage.", opportunityHref, opportunityId ? "Open opportunity" : "Open opportunities");
-  if (type === "follow_up_reminder") return ranked(70, row, "warning", "Follow-up due", row.subject ?? fallbackTitle, "A lead follow-up is due now.", opportunityHref, opportunityId ? "Open opportunity" : "View follow-ups");
-  if (type === "territory_available") return ranked(60, row, "success", "Coverage update", row.subject ?? fallbackTitle, "An area you were watching is available to add to your reach.", "/coverage", "Manage coverage");
-  if (type === "nearby_opportunity_digest" || type === "outside_territory") return ranked(50, row, "signal", "Nearby opportunity", row.subject ?? fallbackTitle, "An opportunity outside your current reach may be worth reviewing.", "/opportunities?view=map", "View on map");
-  if (type === "announcement") return ranked(40, row, "info", "Product update", row.subject ?? fallbackTitle, typeof metadata.message === "string" ? metadata.message : null, safeInternalHref(metadata.cta_url) ?? "/notifications", typeof metadata.cta_label === "string" ? metadata.cta_label : "View update");
-  if (type.includes("digest")) return ranked(20, row, "info", "Opportunity digest", row.subject ?? fallbackTitle, null, "/notifications", "View digest");
-  return ranked(30, row, "info", "Notification", row.subject ?? fallbackTitle, null, "/notifications", "View notifications");
-}
-
-function notificationFromTerritoryEvent(row: TerritoryMarketEvent): RankedNotification {
-  const claimed = row.event_type === "claimed";
-  return {
-    id: `territory-market:${row.event_id}`,
-    priority: claimed ? 48 : 58,
-    tone: claimed ? "warning" : "success",
-    eyebrow: "Coverage update",
-    title: claimed
-      ? `${row.postcode_district} coverage changed for ${row.trade_name}`
-      : `${row.postcode_district} is available for ${row.trade_name}`,
-    detail: claimed
-      ? "This legacy coverage event does not affect which verticals are visible in your Marketplace. Review your current reach if needed."
-      : "This area can now be included in your geographic reach.",
-    href: claimed ? "/opportunities?view=map" : "/coverage",
-    ctaLabel: claimed ? "View Marketplace map" : "Manage coverage",
-    createdAt: row.occurred_at,
-  };
-}
-
-function notificationFromNearby(row: NearbyRow): RankedNotification {
-  const count = Number(row.opportunity_count ?? 0);
-  const project = row.teaser_project_type?.trim() || "Live planning opportunity";
-  return {
-    id: "nearby:" + row.postcode_district + ":" + row.trade_category_slug + ":" + String(count),
-    priority: 45,
-    tone: "signal",
-    eyebrow: "Nearby opportunity",
-    title: row.postcode_district + " · " + row.post_town + " has relevant activity for " + row.trade_category_name,
-    detail: project + " · " + String(count) + " live " + (count === 1 ? "opportunity" : "opportunities"),
-    href: "/opportunities?view=map",
-    ctaLabel: "View on map",
-    createdAt: new Date().toISOString(),
-  };
-}
-
-function ranked(priority: number, row: NotificationLogRow, tone: InAppNotificationItem["tone"], eyebrow: string, title: string, detail: string | null, href: string, ctaLabel: string): RankedNotification {
-  return { id: "log:" + row.id, priority, tone, eyebrow, title, detail, href, ctaLabel, createdAt: row.created_at };
-}
-function notificationLabel(value: string): string { return value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()); }
-function safeInternalHref(value: unknown): string | null { if (typeof value !== "string") return null; return value.startsWith("/") && !value.startsWith("//") ? value : null; }
-function isRecord(value: unknown): value is Record<string, unknown> { return typeof value === "object" && value !== null && !Array.isArray(value); }
