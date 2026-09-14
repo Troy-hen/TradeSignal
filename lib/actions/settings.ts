@@ -152,3 +152,68 @@ export async function upsertLeadAlertRule(
   revalidatePath("/settings");
   return { success: true };
 }
+
+const crmConnectionSchema = z.object({
+  label: z.string().trim().min(2).max(80),
+  webhookUrl: z.string().trim().url("Enter a valid HTTPS webhook URL").refine((value) => value.startsWith("https://"), "Webhook URL must use HTTPS"),
+  secretRef: z.string().trim().regex(/^[A-Z][A-Z0-9_]*$/, "Use an environment variable name, for example CRM_WEBHOOK_SECRET").optional().or(z.literal("")),
+});
+
+export async function createGenericWebhookConnection(
+  _prevState: SettingsActionState,
+  formData: FormData,
+): Promise<SettingsActionState> {
+  const parsed = crmConnectionSchema.safeParse({
+    label: formData.get("label"),
+    webhookUrl: formData.get("webhookUrl"),
+    secretRef: String(formData.get("secretRef") ?? "").trim(),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Invalid CRM connection" };
+
+  const company = await requireCurrentCompany();
+  const supabase = (await createClient()) as unknown as LooseSettingsClient;
+  const { data: savedConnection, error } = await runLooseSettingsQuery<{ id: string }>(
+    supabase.from("crm_connections").upsert({
+      company_id: company.id,
+      provider: "generic_webhook",
+      label: parsed.data.label,
+      status: "connected",
+      config: { webhook_url: parsed.data.webhookUrl },
+      secret_ref: parsed.data.secretRef || null,
+      last_connected_at: new Date().toISOString(),
+      last_error: null,
+    }, { onConflict: "company_id,provider,label" }).select("id").maybeSingle(),
+  );
+  if (error) return { error: "Could not save this CRM connection. Check your permissions and try again." };
+  if (savedConnection?.id) {
+    const defaultFields = ["title", "company_name", "contact_name", "email", "phone", "location", "postcode_district", "score", "stage", "value_low_gbp", "value_high_gbp", "summary", "source_url"];
+    for (const field of defaultFields) {
+      await runLooseSettingsQuery(supabase.from("crm_field_mappings").upsert({ connection_id: savedConnection.id, everro_field: field, remote_field: field, required: ["title", "company_name"].includes(field) }, { onConflict: "connection_id,everro_field" }).select("id").maybeSingle());
+    }
+  }
+  revalidatePath("/settings");
+  revalidatePath("/purchased");
+  return { success: true };
+}
+
+export async function saveCrmFieldMappings(
+  _prevState: SettingsActionState,
+  formData: FormData,
+): Promise<SettingsActionState> {
+  const connectionId = String(formData.get("connectionId") ?? "");
+  if (!z.string().uuid().safeParse(connectionId).success) return { error: "Invalid CRM connection." };
+  let mappings: unknown;
+  try { mappings = JSON.parse(String(formData.get("mappings") ?? "[]")); } catch { return { error: "Invalid field mapping payload." }; }
+  const parsed = z.array(z.object({ everroField: z.string().trim().min(1).max(80), remoteField: z.string().trim().min(1).max(120) })).max(50).safeParse(mappings);
+  if (!parsed.success) return { error: "Each mapping needs an Everro field and a CRM field." };
+  const company = await requireCurrentCompany();
+  const supabase = (await createClient()) as unknown as LooseSettingsClient;
+  const connectionCheck = await runLooseSettingsQuery<{ id: string }>(supabase.from("crm_connections").select("id").eq("id", connectionId).eq("company_id", company.id).maybeSingle());
+  if (!connectionCheck.data) return { error: "CRM connection not found." };
+  for (const mapping of parsed.data) {
+    const result = await runLooseSettingsQuery(supabase.from("crm_field_mappings").upsert({ connection_id: connectionId, everro_field: mapping.everroField, remote_field: mapping.remoteField }, { onConflict: "connection_id,everro_field" }).select("id").maybeSingle());
+    if (result.error) return { error: "Could not save all field mappings." };
+  }
+  revalidatePath("/settings");
+  return { success: true };
+}

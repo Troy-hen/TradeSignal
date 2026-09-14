@@ -17,6 +17,7 @@ export function LeadActionPanel({ leadMatchId, currentAction }: { leadMatchId: s
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [contractValue, setContractValue] = useState("");
+  const [note, setNote] = useState("");
   const [showWonInput, setShowWonInput] = useState(false);
 
   function handleAction(actionType: ActionType) {
@@ -30,6 +31,7 @@ export function LeadActionPanel({ leadMatchId, currentAction }: { leadMatchId: s
         leadMatchId,
         actionType,
         contractValueGbp: actionType === "won" && contractValue ? Number(contractValue) : undefined,
+        note: note || undefined,
       });
       if (result.error) setError(result.error);
       else setShowWonInput(false);
@@ -79,6 +81,9 @@ export function LeadActionPanel({ leadMatchId, currentAction }: { leadMatchId: s
           </button>
         </div>
       )}
+      <label className="mt-4 block text-xs font-semibold text-white/70">Internal note
+        <textarea value={note} onChange={(event) => setNote(event.target.value)} rows={2} placeholder="What happened, who owns the next step, or what to remember…" className="mt-2 w-full rounded-xl border border-white/15 bg-white/10 px-3 py-2 text-sm font-normal text-white placeholder:text-white/35 focus:border-signal-orange focus:outline-none" />
+      </label>
       {error && <p className="mt-3 text-sm text-danger">{error}</p>}
     </div>
   );

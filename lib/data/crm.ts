@@ -36,10 +36,13 @@ export type AlertRule = {
   updated_at: string;
 };
 
+export type CrmFieldMapping = { id: string; connection_id: string; everro_field: string; remote_field: string; required: boolean };
+
 type LooseResult = { data: unknown; error: { code?: string; message?: string } | null };
 type LooseBuilder = {
   select(columns: string): LooseBuilder;
   eq(column: string, value: unknown): LooseBuilder;
+  in(column: string, values: unknown[]): LooseBuilder;
   order(column: string, options?: { ascending?: boolean }): LooseBuilder;
 };
 type LooseClient = { from(table: string): LooseBuilder };
@@ -83,6 +86,30 @@ export async function listAlertRules(companyId: string): Promise<AlertRule[]> {
 
   if (error) {
     console.error("Alert rule lookup failed", error);
+    return [];
+  }
+  return data ?? [];
+}
+
+export async function listCrmDeliveryStatuses(companyId: string): Promise<Array<{ lead_unlock_id: string; status: string; created_at: string }>> {
+  const client = (await createClient()) as unknown as LooseClient;
+  const { data, error } = await run<Array<{ lead_unlock_id: string; status: string; created_at: string }>>(
+    client.from("crm_delivery_log").select("lead_unlock_id, status, created_at").eq("company_id", companyId).order("created_at", { ascending: false }),
+  );
+  if (error) {
+    console.error("CRM delivery status lookup failed", error);
+    return [];
+  }
+  return data ?? [];
+}
+
+export async function listCrmFieldMappings(connectionId: string): Promise<CrmFieldMapping[]> {
+  const client = (await createClient()) as unknown as LooseClient;
+  const { data, error } = await run<CrmFieldMapping[]>(
+    client.from("crm_field_mappings").select("id, connection_id, everro_field, remote_field, required").eq("connection_id", connectionId).order("everro_field", { ascending: true }),
+  );
+  if (error) {
+    console.error("CRM field mapping lookup failed", error);
     return [];
   }
   return data ?? [];

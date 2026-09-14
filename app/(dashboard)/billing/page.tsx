@@ -45,6 +45,9 @@ export default async function BillingPage({
     ? currentCoverage.coverage_tier as CoveragePlanId
     : null;
   const currentPlan = currentTier ? getCoveragePlan(currentTier) : null;
+  const trialInfo = currentCoverage as unknown as { trial_started_at?: string | null; trial_lead_unlock_limit?: number; trial_lead_unlocks_used?: number } | null;
+  const trialActive = Boolean(trialInfo?.trial_started_at && new Date(trialInfo.trial_started_at).getTime() > Date.now() - 14 * 24 * 60 * 60 * 1000);
+  const trialRemaining = Math.max(0, Number(trialInfo?.trial_lead_unlock_limit ?? 3) - Number(trialInfo?.trial_lead_unlocks_used ?? 0));
   const hasSubscriptions = Boolean(subscriptions?.length);
   const hasBillingAccount = Boolean(companyBilling?.stripe_customer_id || currentCoverage?.stripe_customer_id);
   const requestedIsCurrent = Boolean(requestedPlanId && currentTier === requestedPlanId);
@@ -58,11 +61,13 @@ export default async function BillingPage({
         description="Review your current Marketplace plan here. Stripe handles payment methods, invoices and the final confirmation of paid subscription changes."
         actions={<Link href="/coverage#coverage-shape" className="inline-flex items-center justify-center rounded-xl border border-light-grey px-4 py-2.5 text-sm font-semibold text-charcoal transition hover:border-charcoal/25 hover:bg-soft-surface">Plan & profile <span className="ml-2">→</span></Link>}
         stats={[
-          { label: "Current plan", value: currentPlan?.name ?? "Not active", detail: currentCoverage ? humanize(currentCoverage.status) : "Choose a geographic reach" },
+          { label: "Current plan", value: currentPlan?.name ?? "Not active", detail: trialActive ? `Trial · ${trialRemaining} lead credit${trialRemaining === 1 ? "" : "s"} left` : currentCoverage ? humanize(currentCoverage.status) : "Choose a geographic reach" },
           { label: "Platform fee", value: currentCoverage ? formatMonthlyGbp(Number(currentCoverage.monthly_price_pence)) : "From £29.99", detail: "Monthly geographic access" },
           { label: "Lead unlock", value: "£20 each", detail: "Only when you choose" },
         ]}
       />
+
+      {trialActive && <section className="rounded-3xl border border-signal-orange/25 bg-signal-orange/[0.045] p-5 sm:p-7"><div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Everro trial</p><h2 className="mt-2 text-xl font-bold tracking-tight text-charcoal">Try the intelligence before the monthly fee begins.</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-slate">Your first plan includes 14 days and {trialInfo?.trial_lead_unlock_limit ?? 3} lead unlock credits. You only pay for additional unlocks after the credits are used.</p></div><div className="shrink-0 rounded-2xl bg-white px-4 py-3 text-center shadow-sm"><p className="text-2xl font-bold text-charcoal">{trialRemaining}</p><p className="text-[10px] font-bold uppercase tracking-[0.1em] text-slate">Credits left</p></div></div></section>}
 
       {requestedPlan && (
         <section className="rounded-3xl border border-signal-orange/25 bg-signal-orange/[0.045] p-5 sm:p-7">

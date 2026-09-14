@@ -120,7 +120,12 @@ export function OpportunityMap({ points, signals }: { points: OpportunityMapPoin
 
   function handleClusterClick(cluster: OpportunityCluster) {
     if (cluster.items.length === 1) {
-      setSelection({ kind: "item", id: cluster.items[0].id });
+      const item = cluster.items[0];
+      setSelection({ kind: "item", id: item.id });
+      // Individual markers still receive a camera move. This makes the final
+      // drill-down predictable and prevents a selected marker being hidden
+      // under a neighbouring point at the edge of a cluster.
+      focusMap(item.latitude, item.longitude, Math.max(zoom, 2.8));
       return;
     }
     const ids = cluster.items.map((item) => item.id);

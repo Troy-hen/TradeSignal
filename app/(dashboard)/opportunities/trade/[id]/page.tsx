@@ -9,6 +9,7 @@ import { QuoteRequestsPanel } from "@/components/quote-requests-panel";
 import { MarketSignalActionPanel } from "@/components/market-signal-action-panel";
 import { formatGbpRange } from "@/components/opportunity-badge";
 import { CrmPushAction } from "@/components/crm-push-action";
+import { listCrmConnections } from "@/lib/data/crm";
 
 const LABELS: Record<string, string> = {
   tender: "Tender",
@@ -26,8 +27,8 @@ export default async function TradeOpportunityPage({ params }: { params: Promise
   const unlock = await findLeadUnlock(company.id, { marketSignalId: id });
   if (!isPaidUnlock(unlock)) return <LockedMarketSignal item={item} />;
 
-  const quoteRequests = await getMarketSignalQuoteRequests(company.id, id);
-  return <PaidMarketSignal item={item} quoteRequests={quoteRequests} />;
+  const [quoteRequests, connections] = await Promise.all([getMarketSignalQuoteRequests(company.id, id), listCrmConnections(company.id)]);
+  return <PaidMarketSignal item={item} quoteRequests={quoteRequests} unlockId={unlock!.id} connections={connections} />;
 }
 
 function LockedMarketSignal({ item }: { item: MarketSignalDetail }) {
@@ -67,7 +68,7 @@ function LockedMarketSignal({ item }: { item: MarketSignalDetail }) {
   );
 }
 
-async function PaidMarketSignal({ item, quoteRequests }: { item: MarketSignalDetail; quoteRequests: Awaited<ReturnType<typeof getMarketSignalQuoteRequests>> }) {
+async function PaidMarketSignal({ item, quoteRequests, unlockId, connections }: { item: MarketSignalDetail; quoteRequests: Awaited<ReturnType<typeof getMarketSignalQuoteRequests>>; unlockId: string; connections: Awaited<ReturnType<typeof listCrmConnections>> }) {
   const signalLabel = LABELS[item.signal_type] ?? "Opportunity";
   const locationLabel = item.postcode_district ?? item.location_text ?? "Regional delivery";
   const isRegional = !item.postcode_district;
@@ -78,7 +79,7 @@ async function PaidMarketSignal({ item, quoteRequests }: { item: MarketSignalDet
 
   return (
     <div className="min-w-0 space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><Link href="/purchased" className="inline-flex text-sm font-semibold text-slate hover:text-charcoal">← Purchased leads</Link><CrmPushAction /></div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><Link href="/purchased" className="inline-flex text-sm font-semibold text-slate hover:text-charcoal">← Lead workspace</Link><CrmPushAction leadUnlockId={unlockId} connections={connections} /></div>
       <QuoteRequestsPanel requests={quoteRequests} />
 
       <section className="overflow-hidden rounded-3xl border border-light-grey bg-white">

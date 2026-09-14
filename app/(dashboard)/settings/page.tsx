@@ -4,8 +4,10 @@ import { createClient } from "@/lib/supabase/server";
 import { CompanyDetailsForm } from "@/components/company-details-form";
 import { NotificationPreferencesForm } from "@/components/notification-preferences-form";
 import { LeadAlertRuleForm } from "@/components/lead-alert-rule-form";
+import { CrmConnectionForm } from "@/components/crm-connection-form";
+import { CrmFieldMappingForm } from "@/components/crm-field-mapping-form";
 import { AppPageHeader } from "@/components/app-page-header";
-import { listAlertRules, listCrmConnections, type CrmConnection } from "@/lib/data/crm";
+import { listAlertRules, listCrmConnections, listCrmFieldMappings, type CrmConnection, type CrmFieldMapping } from "@/lib/data/crm";
 
 export default async function SettingsPage() {
   const company = await requireCurrentCompany();
@@ -17,12 +19,14 @@ export default async function SettingsPage() {
     listCrmConnections(company.id),
     listAlertRules(company.id),
   ]);
+  const mappings = await Promise.all(connections.map(async (connection) => [connection.id, await listCrmFieldMappings(connection.id)] as const));
+  const mappingsByConnection = new Map(mappings);
 
   return (
     <div className="min-w-0 space-y-8">
       <AppPageHeader eyebrow="Account" title="Account settings." description="Manage company details, CRM connections and opportunity alert preferences in one place." actions={<Link href="/coverage#profile" className="inline-flex items-center justify-center rounded-xl border border-light-grey px-4 py-2.5 text-sm font-semibold text-charcoal transition hover:border-charcoal/25 hover:bg-soft-surface">Plan & profile <span className="ml-2">→</span></Link>} />
       <section className="min-w-0 rounded-3xl border border-light-grey bg-white p-5 sm:p-8"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Company details</p><h2 className="mt-2 text-xl font-semibold tracking-tight text-charcoal">Business details</h2><p className="mt-2 text-sm leading-6 text-slate">Used for billing and account communications.</p>{canEdit ? <div className="mt-6 min-w-0"><CompanyDetailsForm tradingName={companyRow?.trading_name ?? ""} billingEmail={companyRow?.billing_email ?? ""} /></div> : <p className="mt-5 rounded-xl bg-soft-surface p-4 text-sm text-slate">Only company owners and admins can edit these details.</p>}</section>
-      <CrmConnections canEdit={canEdit} connections={connections} />
+      <CrmConnections canEdit={canEdit} connections={connections} mappingsByConnection={mappingsByConnection} />
       <section className="min-w-0 rounded-3xl border border-light-grey bg-white p-5 sm:p-8">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate">Opportunity alerts</p>
         <h2 className="mt-2 text-xl font-semibold tracking-tight text-charcoal">Notification preferences</h2>
@@ -43,7 +47,7 @@ export default async function SettingsPage() {
   );
 }
 
-function CrmConnections({ canEdit, connections }: { canEdit: boolean; connections: CrmConnection[] }) {
+function CrmConnections({ canEdit, connections, mappingsByConnection }: { canEdit: boolean; connections: CrmConnection[]; mappingsByConnection: Map<string, CrmFieldMapping[]> }) {
   const connectors = [
     { name: "HubSpot", detail: "Company, contact and deal handoff with evidence attached." },
     { name: "Pipedrive", detail: "Organisation, person and deal creation for purchased leads." },
@@ -74,11 +78,13 @@ function CrmConnections({ canEdit, connections }: { canEdit: boolean; connection
               </div>
               <p className="mt-2 text-xs leading-5 text-slate">{connection.label}{connection.external_account_name ? ` · ${connection.external_account_name}` : ""}</p>
               {connection.last_error && <p className="mt-3 rounded-xl bg-danger/5 px-3 py-2 text-xs leading-5 text-danger">{connection.last_error}</p>}
+              {canEdit && <CrmFieldMappingForm connectionId={connection.id} mappings={mappingsByConnection.get(connection.id) ?? []} />}
               <p className="mt-4 rounded-xl border border-light-grey bg-soft-surface px-3 py-2 text-center text-xs font-semibold text-slate/70">{canEdit ? "Manage connection" : "Admin access required"}</p>
             </article>
           ))}
         </div>
       )}
+      {canEdit && <CrmConnectionForm />}
       <div className="mt-6 grid gap-3 lg:grid-cols-3">
         {connectors.map((connector) => (
           <article key={connector.name} className="rounded-2xl border border-light-grey bg-white p-4">
@@ -88,7 +94,7 @@ function CrmConnections({ canEdit, connections }: { canEdit: boolean; connection
           </article>
         ))}
       </div>
-      <div className="mt-5 rounded-2xl border border-white bg-white/80 p-4"><p className="text-sm font-semibold text-charcoal">Connection controls stay out of the lead workflow.</p><p className="mt-1 text-xs leading-5 text-slate">Connection metadata and delivery history are now modelled centrally. Provider OAuth and secret storage will be enabled as the vendor APIs are configured. CSV export remains available separately from the opportunity list.</p></div>
+      <div className="mt-5 rounded-2xl border border-white bg-white/80 p-4"><p className="text-sm font-semibold text-charcoal">Connection controls stay out of the lead workflow.</p><p className="mt-1 text-xs leading-5 text-slate">Everro sends a normalized lead payload with stable field names and an idempotency key. Field mappings are stored per connection; provider OAuth adapters can be added without changing the Purchased workspace.</p></div>
     </section>
   );
 }

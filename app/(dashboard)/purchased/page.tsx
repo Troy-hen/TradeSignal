@@ -3,16 +3,17 @@ import { requireCurrentCompany } from "@/lib/auth/get-current-company";
 import { getCompanyOpportunities } from "@/lib/data/opportunities";
 import { getMarketSignalForLeadUnlock, type OwnedMarketSignal } from "@/lib/data/trade-intelligence";
 import { listPaidLeadUnlocks, type LeadUnlockRow } from "@/lib/data/lead-unlocks";
-import { OpportunityRow } from "@/components/opportunity-row";
-import { MarketSignalRow } from "@/components/market-signal-row";
 import { AppPageHeader } from "@/components/app-page-header";
-import { AppSectionHeader } from "@/components/app-section-header";
+import { PurchasedLeadTable, type PurchasedLeadTableRow } from "@/components/purchased-lead-table";
+import { listCrmConnections, listCrmDeliveryStatuses } from "@/lib/data/crm";
 
 export default async function PurchasedLeadsPage() {
   const company = await requireCurrentCompany();
-  const [allPlanning, unlocks] = await Promise.all([
+  const [allPlanning, unlocks, connections, deliveryStatuses] = await Promise.all([
     getCompanyOpportunities(company.id, { limit: 500 }),
     listPaidLeadUnlocks(company.id),
+    listCrmConnections(company.id),
+    listCrmDeliveryStatuses(company.id),
   ]);
   const allMarketSignals = await getMarketSignalForLeadUnlocks(unlocks);
 
@@ -21,14 +22,28 @@ export default async function PurchasedLeadsPage() {
   const purchasedPlanning = allPlanning.filter((item) => purchasedOpportunityIds.has(item.opportunityId));
   const purchasedMarketSignals = allMarketSignals.filter((item) => purchasedMarketSignalIds.has(item.market_signal_trade_match_id));
   const categoryUsage = buildCategoryUsage(unlocks);
+  const deliveryByUnlock = new Map<string, string>();
+  for (const delivery of deliveryStatuses) if (!deliveryByUnlock.has(delivery.lead_unlock_id)) deliveryByUnlock.set(delivery.lead_unlock_id, delivery.status);
+  const unlockByOpportunity = new Map(unlocks.filter((unlock) => unlock.application_trade_opportunity_id).map((unlock) => [unlock.application_trade_opportunity_id!, unlock]));
+  const unlockByMarketSignal = new Map(unlocks.filter((unlock) => unlock.market_signal_trade_match_id).map((unlock) => [unlock.market_signal_trade_match_id!, unlock]));
+  const tableRows: PurchasedLeadTableRow[] = [
+    ...purchasedPlanning.map((item) => {
+      const unlock = unlockByOpportunity.get(item.opportunityId)!;
+      return { unlockId: unlock.id, href: `/opportunities/${encodeURIComponent(item.opportunityId)}`, title: item.projectType ?? item.summary ?? "Planning opportunity", source: item.sourceKind ? humanize(item.sourceKind) : "Planning signal", location: item.locationLabel ?? item.district, stage: item.currentAction ?? "new", score: item.score ?? item.fitScore, valueLow: item.valueLow, valueHigh: item.valueHigh, updatedAt: unlock.unlocked_at, crmStatus: deliveryByUnlock.get(unlock.id) };
+    }),
+    ...purchasedMarketSignals.map((item) => {
+      const unlock = unlockByMarketSignal.get(item.market_signal_trade_match_id)!;
+      return { unlockId: unlock.id, href: `/opportunities/trade/${encodeURIComponent(item.market_signal_trade_match_id)}`, title: item.title, source: item.trade_name || humanize(item.signal_type), location: item.location_label, stage: item.current_action ?? "new", score: item.fit_score, valueLow: item.estimated_trade_value_low, valueHigh: item.estimated_trade_value_high, updatedAt: unlock.unlocked_at, crmStatus: deliveryByUnlock.get(unlock.id) };
+    }),
+  ];
 
   return (
     <div className="min-w-0 space-y-8">
       <AppPageHeader
         eyebrow="Purchased leads"
         title="Your unlocked opportunities."
-        description="Every lead you unlock stays here as a working record. Open the full brief for the contact route, evidence, recommended next move and optional CRM handoff."
-        actions={<Link href="/settings#crm-connections" className="inline-flex items-center justify-center rounded-xl border border-light-grey px-4 py-2.5 text-sm font-semibold text-charcoal transition hover:border-signal-orange/40 hover:bg-soft-surface">CRM connections <span className="ml-2">→</span></Link>}
+        description="Every lead you unlock stays here as a working record. Open the full brief, update the stage, then send the normalized record to your CRM."
+        actions={<Link href="/roi" className="inline-flex items-center justify-center rounded-xl border border-light-grey px-4 py-2.5 text-sm font-semibold text-charcoal transition hover:border-signal-orange/40 hover:bg-soft-surface">View insights <span className="ml-2">→</span></Link>}
         stats={[
           { label: "Purchased", value: String(unlocks.length), detail: "Individual leads unlocked" },
           { label: "Contact-ready", value: String(purchasedPlanning.length + purchasedMarketSignals.length), detail: "Full briefs available" },
@@ -61,14 +76,15 @@ export default async function PurchasedLeadsPage() {
         </section>
       ) : (
         <div className="space-y-8">
-          {purchasedPlanning.length > 0 && <section><AppSectionHeader eyebrow="Business opportunities" title="Ready to work." meta={<span className="text-xs font-semibold text-slate">{purchasedPlanning.length}</span>} /><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{purchasedPlanning.map((item) => <OpportunityRow key={item.leadMatchId} item={item} unlocked />)}</div></section>}
-          {purchasedMarketSignals.length > 0 && <section><AppSectionHeader eyebrow="Public and commercial opportunities" title="Purchased opportunity briefs." meta={<span className="text-xs font-semibold text-slate">{purchasedMarketSignals.length}</span>} /><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{purchasedMarketSignals.map((item) => <MarketSignalRow key={item.market_signal_trade_match_id} item={item} unlocked />)}</div></section>}
+          <PurchasedLeadTable rows={tableRows} connections={connections} />
           {purchasedPlanning.length + purchasedMarketSignals.length < unlocks.length && <section className="rounded-2xl border border-warning/20 bg-warning/[0.04] p-4 text-sm leading-6 text-slate">Some purchased records are still being assembled into the feed. Your unlock history is retained while the underlying brief is refreshed.</section>}
         </div>
       )}
     </div>
   );
 }
+
+function humanize(value: string) { return value.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()); }
 
 async function getMarketSignalForLeadUnlocks(unlocks: LeadUnlockRow[]): Promise<OwnedMarketSignal[]> {
   const ids = unlocks.map((unlock) => unlock.market_signal_trade_match_id).filter((value): value is string => Boolean(value));

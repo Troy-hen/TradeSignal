@@ -194,6 +194,14 @@ export async function POST(request: Request) {
       company_id: company.id,
     };
 
+    const { data: previousCoveragePlans } = await adminDb
+      .from("coverage_plans")
+      .select("id")
+      .eq("company_id", company.id)
+      .neq("id", reservation.coverage_plan_id)
+      .limit(1);
+    const trialEligible = process.env.EVERRO_TRIAL_ENABLED !== "false" && (previousCoveragePlans ?? []).length === 0;
+
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       integration_identifier: "everro_checkout_" + randomLetters(8),
@@ -224,11 +232,15 @@ export async function POST(request: Request) {
         encodeURIComponent(reservation.first_territory_claim_id),
       cancel_url: appUrl + "/territories/" + firstDistrict + "/" + trade.slug,
       metadata,
-      subscription_data: { metadata },
+      subscription_data: { metadata, ...(trialEligible ? { trial_period_days: 14 } : {}) },
     });
 
-    await adminDb
-      .from("territory_claims")
+    const trialAdmin = adminDb as unknown as { from: (table: string) => { update: (values: Record<string, unknown>) => { eq: (column: string, value: unknown) => { eq: (column: string, value: unknown) => Promise<unknown> } } } };
+    if (trialEligible) {
+      await trialAdmin.from("coverage_plans").update({ trial_started_at: new Date().toISOString(), trial_lead_unlock_limit: 3, trial_lead_unlocks_used: 0 }).eq("id", reservation.coverage_plan_id).eq("status", "reserved");
+    }
+
+    await adminDb.from("territory_claims")
       .update({ stripe_checkout_session_id: session.id })
       .in("id", claimIds)
       .eq("company_id", company.id)
