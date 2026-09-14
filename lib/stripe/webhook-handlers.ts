@@ -111,6 +111,10 @@ async function handleCoverageCheckoutCompleted(
   if (!plan || !firstClaimId || claimIds.length === 0) return;
 
   const now = new Date().toISOString();
+  if (session.metadata?.trial_eligible === "true") {
+    const trialEndsAt = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+    await persistCompanyTrial(admin, plan.company_id, coveragePlanId, now, trialEndsAt);
+  }
   await db
     .from("coverage_plans")
     .update({
@@ -344,6 +348,16 @@ async function startCompanyTrialIfNeeded(
   const trialEndsAt = subscription.trial_end
     ? new Date(subscription.trial_end * 1000).toISOString()
     : new Date(new Date(trialStartedAt).getTime() + 14 * 24 * 60 * 60 * 1000).toISOString();
+  await persistCompanyTrial(admin, companyId, coveragePlanId, trialStartedAt, trialEndsAt);
+}
+
+async function persistCompanyTrial(
+  admin: AdminClient,
+  companyId: string,
+  coveragePlanId: string,
+  trialStartedAt: string,
+  trialEndsAt: string,
+) {
   const loose = admin as unknown as {
     from: (table: string) => {
       update: (values: Record<string, unknown>) => {
