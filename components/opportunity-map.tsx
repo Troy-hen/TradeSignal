@@ -109,7 +109,7 @@ export function OpportunityMap({ points, signals }: { points: OpportunityMapPoin
     if (viewport) {
       const projected = positionPercent(latitude, longitude);
       const mapHeight = viewport.clientHeight;
-      const mapWidth = mapHeight * 2;
+      const mapWidth = Math.max(viewport.clientWidth, mapHeight * 2);
       setPan({
         x: clamp(((50 - projected.x) / 100) * mapWidth * nextZoom, -1000, 1000),
         y: clamp(((50 - projected.y) / 100) * mapHeight * nextZoom, -700, 700),
@@ -191,7 +191,7 @@ export function OpportunityMap({ points, signals }: { points: OpportunityMapPoin
       <div className="mt-5 grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.45fr)]">
         <div ref={mapViewportRef} className="relative min-h-[430px] min-w-0 overflow-hidden overscroll-contain rounded-2xl border border-[#cbd9de] bg-[#e8f0f2] sm:min-h-[560px]" role="region" aria-label="Interactive opportunity exploration map">
           <div
-            className={"absolute inset-y-0 left-1/2 h-full w-auto select-none touch-none " + (isDragging ? "cursor-grabbing" : "cursor-grab")}
+            className={"absolute inset-y-0 left-1/2 h-full w-auto select-none touch-none " + (isDragging ? "cursor-grabbing" : "cursor-grab transition-transform duration-500 ease-out")}
             style={{ aspectRatio: "2 / 1", transform: "translate3d(calc(-50% + " + pan.x + "px), " + pan.y + "px, 0) scale(" + zoom + ")", transformOrigin: "center" }}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
@@ -367,8 +367,8 @@ function toMapItems(points: OpportunityMapPoint[], signals: MarketSignalMapPoint
 
 function clusterItems(items: MapItem[], zoom: number): OpportunityCluster[] {
   if (zoom >= 2.75) {
-    return items.map((item) => {
-      const offset = markerOffset(item.id);
+    return items.map((item, index) => {
+      const offset = markerOffset(index, items.length);
       return {
         id: "item:" + item.id,
         latitude: item.latitude + offset.latitude,
@@ -462,12 +462,11 @@ function positionStyle(latitude: number, longitude: number): CSSProperties {
   return { left: point.x + "%", top: point.y + "%" };
 }
 
-function markerOffset(id: string) {
-  let hash = 0;
-  for (let index = 0; index < id.length; index += 1) hash = (hash * 31 + id.charCodeAt(index)) | 0;
-  const angle = (Math.abs(hash) % 360) * (Math.PI / 180);
-  const distance = 0.025 + (Math.abs(hash >> 8) % 4) * 0.009;
-  return { latitude: Math.sin(angle) * distance, longitude: Math.cos(angle) * distance * 1.5 };
+function markerOffset(index: number, total: number) {
+  if (total <= 1) return { latitude: 0, longitude: 0 };
+  const angle = (index / total) * Math.PI * 2 - Math.PI / 2;
+  const distance = Math.min(0.58, 0.34 + total * 0.035);
+  return { latitude: Math.sin(angle) * distance, longitude: Math.cos(angle) * distance * 1.4 };
 }
 
 function clamp(value: number, min: number, max: number) {
