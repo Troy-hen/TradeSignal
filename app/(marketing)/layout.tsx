@@ -10,10 +10,10 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
   return (
     <>
       <PublicThemeGuard />
-      <div className="flex min-h-screen flex-col overflow-x-hidden">
+      <div className="flex min-h-screen flex-col overflow-x-clip">
         <header className="sticky top-0 z-50 border-b border-white/10 bg-charcoal">
           <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-5 lg:px-8">
-            <Link href="/" aria-label="TradeSignal home" className="min-w-0 shrink">
+            <Link href="/" aria-label="Everro home" className="min-w-0 shrink">
               <Logo tone="light" />
             </Link>
 
@@ -98,7 +98,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
             </div>
             <div className="mt-10 border-t border-white/10 pt-5 text-sm text-white/50 sm:flex sm:items-center sm:justify-between">
               <p>Built for UK B2B suppliers.</p>
-              <p className="mt-2 sm:mt-0">© {currentYear()} TradeSignal. All rights reserved.</p>
+              <p className="mt-2 sm:mt-0">© {currentYear()} Everro. All rights reserved.</p>
             </div>
           </div>
         </footer>
