@@ -11,7 +11,7 @@ const LIGHT_GREY = "#E5E7EB";
 const SOFT_SURFACE = "#F8FAFC";
 const rawAppUrl = Deno.env.get("NEXT_PUBLIC_APP_URL") ?? "";
 const APP_URL = rawAppUrl.endsWith("/") ? rawAppUrl.slice(0, -1) : rawAppUrl;
-const LOGO_URL = APP_URL ? APP_URL + "/brand/everro-icon-light.png" : null;
+const LOGO_URL = APP_URL ? APP_URL + "/brand/everro-icon-light-v2.png" : null;
 
 function escapeHtml(value: unknown): string {
   return String(value ?? "")
