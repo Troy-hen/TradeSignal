@@ -96,6 +96,7 @@ export async function pushLeadToCrm(
       admin.from("crm_delivery_log").select("id, status").eq("connection_id", connection.id).eq("idempotency_key", idempotencyKey).maybeSingle(),
     );
     if (retryExisting?.status === "sent") return { success: true, status: "already_sent" };
+    if (retryExisting?.status === "sending") return { error: "This lead is already being sent to the CRM." };
   }
 
   if (connection.provider !== "generic_webhook") {
