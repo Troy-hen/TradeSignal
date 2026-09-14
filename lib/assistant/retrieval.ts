@@ -54,7 +54,7 @@ export async function retrieveKnowledge(query: string, limit = 6): Promise<Knowl
       const embedding = await openai.embeddings.create({ model: EMBEDDING_MODEL, input: query, dimensions: 1536 });
       queryEmbedding = embedding.data[0]?.embedding ?? null;
     } catch (error) {
-      console.warn("Ask MyTradeBox semantic retrieval unavailable; falling back to full-text retrieval", error);
+      console.warn("Ask TradeSignal semantic retrieval unavailable; falling back to full-text retrieval", error);
     }
   }
 
@@ -64,7 +64,7 @@ export async function retrieveKnowledge(query: string, limit = 6): Promise<Knowl
     p_match_count: limit,
   });
   if (error) {
-    console.error("Ask MyTradeBox knowledge retrieval failed", error);
+    console.error("Ask TradeSignal knowledge retrieval failed", error);
     return [];
   }
   return (data ?? []) as KnowledgeHit[];
@@ -90,7 +90,7 @@ export async function searchOpportunityTeasers({
     p_limit: limit,
   });
   if (error) {
-    console.error("Ask MyTradeBox opportunity retrieval failed", error);
+    console.error("Ask TradeSignal opportunity retrieval failed", error);
     return [];
   }
   return (data ?? []) as OpportunityTeaser[];

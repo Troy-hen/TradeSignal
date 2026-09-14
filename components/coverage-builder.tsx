@@ -38,7 +38,7 @@ type CoveragePlanEditorProps = {
 
 const ERROR_COPY: Record<string, string> = {
   billing_update_required: "This plan has paid billing attached. Coverage changes will be available from Billing once Stripe plan updates are enabled.",
-  territory_unavailable: "One of those districts was just claimed by another business. Remove it and try again.",
+  territory_unavailable: "One of those districts could not be added to this plan. Remove it and try again.",
   unknown_territory: "We could not recognise one of the selected postcode districts.",
   coverage_change_failed: "We could not save that coverage change. No partial change was applied.",
 };
@@ -248,7 +248,7 @@ export function CoveragePlanEditor({ plan, districts }: CoveragePlanEditorProps)
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-success">Active coverage</p>
           <h2 className="mt-2 text-2xl font-bold tracking-tight text-charcoal">{plan.tradeName}</h2>
           <p className="mt-2 text-sm leading-6 text-slate">
-            {plan.status === "active" ? "Your exclusive feed is active." : "This coverage plan is being reserved."} Choose the districts that fit your budget.
+            {plan.status === "active" ? "Your Marketplace reach is active." : "This coverage plan is being prepared."} Choose the districts that fit your budget.
           </p>
         </div>
         <div className="text-left sm:text-right">

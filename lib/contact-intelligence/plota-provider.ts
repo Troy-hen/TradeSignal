@@ -76,7 +76,7 @@ export class PlotaContactIntelligenceProvider implements ContactIntelligenceProv
     }
 
     // Plota also exposes council case-officer contact details where published.
-    // MyTradeBox intentionally excludes those from the sales contact provider:
+    // The platform intentionally excludes those from the sales contact provider:
     // case officers are for planning administration, not prospecting.
     return results;
   }

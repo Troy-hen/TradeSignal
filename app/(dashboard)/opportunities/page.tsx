@@ -94,7 +94,10 @@ export default async function OpportunitiesPage({
   const paidMarketSignalIds = new Set(
     paidUnlocks.map((unlock) => unlock.market_signal_trade_match_id).filter((value): value is string => Boolean(value)),
   );
-  const visiblePlanning = planningRaw.filter((item) => !(item.underlyingOpportunityIds ?? [item.opportunityId]).some((id) => paidOpportunityIds.has(id)));
+  const unpurchasedPlanning = planningRaw.filter((item) => !(item.underlyingOpportunityIds ?? [item.opportunityId]).some((id) => paidOpportunityIds.has(id)));
+  const visiblePlanning = selectedSource === "commercial_development"
+    ? unpurchasedPlanning.filter((item) => item.isCommercial)
+    : unpurchasedPlanning;
   const visibleMarketSignals = rankedMarketSignals.filter((item) => !paidMarketSignalIds.has(item.market_signal_trade_match_id));
   const hasCoverage = (activeClaims?.length ?? 0) > 0 || (activePlans?.length ?? 0) > 0;
   const totalCount = visiblePlanning.length + visibleMarketSignals.length;
@@ -136,52 +139,67 @@ export default async function OpportunitiesPage({
           : [{ label: "Open opportunities", value: String(openCount), detail: "Ready to qualify" }, { label: "Hot now", value: String(hotCount), detail: "Strongest current fit" }, { label: "Purchased leads", value: String(paidUnlocks.length), detail: "Permanent access" }, { label: "Visible matches", value: String(totalCount), detail: "Across your reach" }]}
       />
 
-      <section className="flex flex-col gap-4 rounded-3xl border border-light-grey bg-white p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-signal-orange">Marketplace view</p>
-          <p className="mt-1 text-sm text-slate">Cards and map use the same profile-filtered opportunity set.</p>
-        </div>
-        <div className="flex rounded-xl border border-light-grey bg-soft-surface p-1">
-          <Link href={hrefFor({ view: "list" })} className={"rounded-lg px-4 py-2 text-sm font-semibold " + (selectedView === "list" ? "bg-white text-charcoal shadow-sm" : "text-slate")}>Cards</Link>
-          <Link href={hrefFor({ view: "map" })} className={"rounded-lg px-4 py-2 text-sm font-semibold " + (selectedView === "map" ? "bg-charcoal text-white shadow-sm" : "text-slate")}>Map</Link>
-        </div>
-      </section>
-
-      {savedView
-        ? <section className="rounded-3xl border border-light-grey bg-white p-5 sm:p-6"><div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold text-charcoal">Your shortlist</p><p className="mt-1 text-xs leading-5 text-slate">Saved items stay separate from the live feed. Purchased leads leave this queue and stay available in Purchased leads.</p></div><div className="flex shrink-0 flex-wrap gap-3"><Link href="/purchased" className="text-sm font-semibold text-signal-orange">View purchased →</Link><Link href="/opportunities" className="text-sm font-semibold text-charcoal">Find more →</Link></div></div><div className="mt-5 flex flex-wrap gap-2 border-t border-light-grey pt-4">{BUCKETS.map(([value, label, helper]) => <Link key={value} href={hrefFor({ bucket: value })} className={"flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition " + (selectedBucket === value ? "border-charcoal bg-charcoal text-white" : "border-light-grey bg-white text-charcoal hover:border-charcoal/30")}><span>{label}</span><span className={selectedBucket === value ? "text-white/60" : "text-slate"}>{helper}</span></Link>)}</div></section>
-        : <FeedControls selectedSource={selectedSource} selectedBucket={selectedBucket} selectedAction={selectedAction} hrefFor={hrefFor} />}
+      <MarketplaceToolbar
+        selectedSource={selectedSource}
+        selectedBucket={selectedBucket}
+        selectedAction={selectedAction}
+        selectedView={selectedView}
+        filtered={Boolean(selectedBucket || selectedSource || selectedAction)}
+        hrefFor={hrefFor}
+      />
 
       {totalCount === 0
         ? <EmptyState hasCoverage={hasCoverage} filtered={filtered} savedView={savedView} />
         : selectedView === "map"
           ? <OpportunityMap points={mapPlanningPoints} signals={mapSignals} />
           : <div className="space-y-8">
-              {visiblePlanning.length > 0 && <section><div className="mb-4 flex items-end justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.14em] text-signal-orange">{savedView ? "Saved business opportunities" : "Business opportunities"}</p><h2 className="mt-1 text-2xl font-bold tracking-tight text-charcoal">{savedView ? "Your shortlisted buying windows." : "Signals matched to your profile."}</h2></div><span className="text-xs text-slate">{visiblePlanning.length}</span></div><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{visiblePlanning.map((item) => <OpportunityRow key={item.canonicalOpportunityId ?? item.opportunityId} item={item} unlocked={false} />)}</div></section>}
-              {visibleMarketSignals.length > 0 && <section><div className="mb-4 flex items-end justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.14em] text-signal-orange">{savedView ? "Saved public signals" : "Additional intelligence"}</p><h2 className="mt-1 text-2xl font-bold tracking-tight text-charcoal">{savedView ? "Signals you chose to keep close." : "Public, commercial and procurement signals."}</h2></div><span className="text-xs text-slate">{visibleMarketSignals.length}</span></div><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{visibleMarketSignals.map((item) => <MarketSignalRow key={item.market_signal_trade_match_id} item={item} unlocked={false} />)}</div></section>}
+              {visiblePlanning.length > 0 && <section><div className="mb-4 flex items-end justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.14em] text-signal-orange">{savedView ? "Saved business-change opportunities" : "Business-change opportunities"}</p><h2 className="mt-1 text-2xl font-bold tracking-tight text-charcoal">{savedView ? "Your shortlisted buying windows." : "Opportunities matched to your profile."}</h2></div><span className="text-xs text-slate">{visiblePlanning.length}</span></div><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{visiblePlanning.map((item) => <OpportunityRow key={item.canonicalOpportunityId ?? item.opportunityId} item={item} unlocked={false} />)}</div></section>}
+              {visibleMarketSignals.length > 0 && <section><div className="mb-4 flex items-end justify-between"><div><p className="text-xs font-bold uppercase tracking-[0.14em] text-signal-orange">{savedView ? "Saved public and commercial opportunities" : "Public and commercial opportunities"}</p><h2 className="mt-1 text-2xl font-bold tracking-tight text-charcoal">{savedView ? "Opportunities you chose to keep close." : "Tenders, pipelines, awards and commercial change."}</h2></div><span className="text-xs text-slate">{visibleMarketSignals.length}</span></div><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{visibleMarketSignals.map((item) => <MarketSignalRow key={item.market_signal_trade_match_id} item={item} unlocked={false} />)}</div></section>}
             </div>}
     </div>
   );
 }
 
-function FeedControls({
+function MarketplaceToolbar({
   selectedSource,
   selectedBucket,
   selectedAction,
+  selectedView,
+  filtered,
   hrefFor,
 }: {
   selectedSource: SourceFilter;
   selectedBucket: string;
   selectedAction: ActionFilter;
+  selectedView: MarketplaceView;
+  filtered: boolean;
   hrefFor: (overrides: { bucket?: string; action?: string; source?: string; view?: MarketplaceView }) => string;
 }) {
   return (
-    <section className="rounded-3xl border border-light-grey bg-white p-4 sm:p-5">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold text-charcoal">Shape the feed</p><p className="mt-1 text-xs text-slate">Your profile chooses relevance. These filters help you work the queue.</p></div><Link href="/coverage#profile" className="text-xs font-semibold text-signal-orange">Update profile →</Link></div>
-      <div className="mt-4 flex gap-2 overflow-x-auto pb-1">{SOURCES.map(([value, label]) => <Link key={value} href={hrefFor({ source: value })} className={"min-w-max rounded-xl border px-3 py-2 text-sm font-semibold transition " + (selectedSource === value ? "border-signal-orange bg-signal-orange text-white" : "border-light-grey bg-white text-charcoal hover:border-signal-orange/40")}>{label}</Link>)}</div>
-      <div className="mt-4 flex gap-2 overflow-x-auto border-t border-light-grey pt-4">{BUCKETS.map(([value, label, helper]) => <Link key={value} href={hrefFor({ bucket: value })} className={"min-w-max rounded-xl border px-3 py-2 text-sm font-semibold transition " + (selectedBucket === value ? "border-charcoal bg-charcoal text-white" : "border-light-grey bg-white text-charcoal hover:border-charcoal/30")}>{label} <span className={selectedBucket === value ? "text-white/60" : "text-slate"}>{helper}</span></Link>)}</div>
-      <div className="mt-4 flex gap-2 overflow-x-auto border-t border-light-grey pt-4">{ACTIONS.map(([value, label]) => <Link key={value} href={hrefFor({ action: value })} className={"min-w-max rounded-xl border px-3 py-2 text-sm font-semibold transition " + (selectedAction === value ? "border-signal-orange bg-signal-orange text-white" : "border-light-grey bg-white text-charcoal hover:border-signal-orange/40")}>{label}</Link>)}</div>
+    <section className="rounded-2xl border border-light-grey bg-white p-3 shadow-[0_8px_30px_rgba(31,41,55,0.035)]">
+      <div className="flex min-w-0 flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+        <form action="/opportunities" className="flex min-w-0 flex-1 flex-wrap items-end gap-2">
+          {selectedView === "map" && <input type="hidden" name="view" value="map" />}
+          <FilterSelect label="Source" name="source" value={selectedSource} options={SOURCES.map(([value, label]) => ({ value, label }))} />
+          <FilterSelect label="Priority" name="bucket" value={selectedBucket} options={BUCKETS.map(([value, label]) => ({ value, label }))} />
+          <FilterSelect label="Stage" name="action" value={selectedAction} options={ACTIONS.map(([value, label]) => ({ value, label }))} />
+          <button type="submit" className="h-10 rounded-xl bg-charcoal px-4 text-sm font-semibold text-white transition hover:bg-charcoal/90">Apply</button>
+          {filtered && <Link href={selectedView === "map" ? "/opportunities?view=map" : "/opportunities"} className="inline-flex h-10 items-center px-2 text-xs font-semibold text-slate hover:text-charcoal">Clear</Link>}
+        </form>
+        <div className="flex shrink-0 items-center justify-between gap-3 border-t border-light-grey pt-3 xl:border-l xl:border-t-0 xl:pl-3 xl:pt-0">
+          <span className="text-xs font-medium text-slate">View</span>
+          <div className="flex rounded-xl border border-light-grey bg-soft-surface p-1" aria-label="Marketplace view">
+            <Link href={hrefFor({ view: "list" })} className={"rounded-lg px-4 py-2 text-sm font-semibold transition " + (selectedView === "list" ? "bg-white text-charcoal shadow-sm" : "text-slate hover:text-charcoal")}>Cards</Link>
+            <Link href={hrefFor({ view: "map" })} className={"rounded-lg px-4 py-2 text-sm font-semibold transition " + (selectedView === "map" ? "bg-charcoal text-white shadow-sm" : "text-slate hover:text-charcoal")}>Map</Link>
+          </div>
+        </div>
+      </div>
     </section>
   );
+}
+
+function FilterSelect({ label, name, value, options }: { label: string; name: string; value: string; options: Array<{ value: string; label: string }> }) {
+  return <label className="min-w-[145px] flex-1 sm:max-w-[210px]"><span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.1em] text-slate">{label}</span><select name={name} defaultValue={value} className="h-10 w-full rounded-xl border border-light-grey bg-soft-surface px-3 text-sm font-semibold text-charcoal outline-none transition focus:border-signal-orange focus:ring-2 focus:ring-signal-orange/15">{options.map((option) => <option key={option.value || "all"} value={option.value}>{option.label}</option>)}</select></label>;
 }
 
 function EmptyState({ hasCoverage, filtered, savedView }: { hasCoverage: boolean; filtered: boolean; savedView: boolean }) {

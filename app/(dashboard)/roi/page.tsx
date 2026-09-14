@@ -1,6 +1,7 @@
 import { requireCurrentCompany } from "@/lib/auth/get-current-company";
 import { createClient } from "@/lib/supabase/server";
 import { formatGbp } from "@/components/opportunity-badge";
+import { PRODUCT_BRAND } from "@/lib/product/brand";
 
 export default async function RoiPage() {
   const company = await requireCurrentCompany();
@@ -51,7 +52,7 @@ export default async function RoiPage() {
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Business case</p>
           <h1 className="mt-3 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">Your return on signal.</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate sm:text-base">A simple view of what MyTradeBox is worth to {company.trading_name}.</p>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate sm:text-base">A simple view of what {PRODUCT_BRAND.shortName} is worth to {company.trading_name}.</p>
         </div>
         <a href="/api/roi/pdf" className="inline-flex self-start rounded-xl border border-light-grey bg-white px-4 py-2.5 text-sm font-semibold text-charcoal transition hover:border-signal-orange/40 hover:text-signal-orange sm:self-auto">
           Download ROI PDF ↓

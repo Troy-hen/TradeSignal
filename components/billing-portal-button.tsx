@@ -16,7 +16,7 @@ export function BillingPortalButton() {
       if (!res.ok || !body.url) {
         setError(
           body.error === "no_billing_account"
-            ? "No billing account yet — claim a territory first."
+            ? "No billing account yet — activate a coverage plan first."
             : "Could not open the billing portal. Please try again.",
         );
         setIsLoading(false);

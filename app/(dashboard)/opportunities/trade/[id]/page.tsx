@@ -8,6 +8,7 @@ import { MarketplaceCard } from "@/components/marketplace/marketplace-card";
 import { QuoteRequestsPanel } from "@/components/quote-requests-panel";
 import { MarketSignalActionPanel } from "@/components/market-signal-action-panel";
 import { formatGbpRange } from "@/components/opportunity-badge";
+import { CrmPushAction } from "@/components/crm-push-action";
 
 const LABELS: Record<string, string> = {
   tender: "Tender",
@@ -30,7 +31,7 @@ export default async function TradeOpportunityPage({ params }: { params: Promise
 }
 
 function LockedMarketSignal({ item }: { item: MarketSignalDetail }) {
-  const signalLabel = LABELS[item.signal_type] ?? "Market signal";
+  const signalLabel = LABELS[item.signal_type] ?? "Opportunity";
   const locationLabel = item.postcode_district ?? item.location_text ?? "Regional delivery";
 
   return (
@@ -53,7 +54,7 @@ function LockedMarketSignal({ item }: { item: MarketSignalDetail }) {
             status: item.procurement_stage,
             valueLow: item.estimated_trade_value_low,
             valueHigh: item.estimated_trade_value_high,
-            summary: "A market signal has been matched to your profile and coverage. Unlock to see the complete evidence, commercial context and contact route.",
+            summary: "An opportunity has been matched to your profile and coverage. Unlock to see the complete evidence, commercial context and contact route.",
             buyingWindow: item.deadline_at ? `Deadline ${new Date(item.deadline_at).toLocaleDateString("en-GB")}` : "Current signal",
             likelyNeeds: ["Relevant delivery capability", "Evidence-backed brief", "Contact detail after unlock"],
             signalCount: 1,
@@ -67,7 +68,7 @@ function LockedMarketSignal({ item }: { item: MarketSignalDetail }) {
 }
 
 async function PaidMarketSignal({ item, quoteRequests }: { item: MarketSignalDetail; quoteRequests: Awaited<ReturnType<typeof getMarketSignalQuoteRequests>> }) {
-  const signalLabel = LABELS[item.signal_type] ?? "Market signal";
+  const signalLabel = LABELS[item.signal_type] ?? "Opportunity";
   const locationLabel = item.postcode_district ?? item.location_text ?? "Regional delivery";
   const isRegional = !item.postcode_district;
   const contact = item.contact && typeof item.contact === "object" ? item.contact : {};
@@ -77,7 +78,7 @@ async function PaidMarketSignal({ item, quoteRequests }: { item: MarketSignalDet
 
   return (
     <div className="min-w-0 space-y-6">
-      <Link href="/opportunities" className="inline-flex text-sm font-semibold text-slate hover:text-charcoal">← Marketplace</Link>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><Link href="/purchased" className="inline-flex text-sm font-semibold text-slate hover:text-charcoal">← Purchased leads</Link><CrmPushAction /></div>
       <QuoteRequestsPanel requests={quoteRequests} />
 
       <section className="overflow-hidden rounded-3xl border border-light-grey bg-white">

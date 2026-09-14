@@ -8,7 +8,6 @@ const NAV_ITEMS = [
   { href: "/opportunities", label: "Marketplace", icon: "opportunities" },
   { href: "/purchased", label: "Purchased", icon: "purchased" },
   { href: "/coverage", label: "Plan & profile", icon: "claimed" },
-  { href: "/territories", label: "Map", icon: "territories" },
   { href: "/notifications", label: "Action centre", icon: "notifications" },
   { href: "/billing", label: "Billing", icon: "billing" },
   { href: "/settings", label: "Settings", icon: "settings" },

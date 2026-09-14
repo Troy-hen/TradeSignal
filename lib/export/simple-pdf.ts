@@ -93,7 +93,7 @@ export function renderSimplePdf(input: {
       "/F1 8 Tf",
       `0.45 0.45 0.45 rg`,
       `1 0 0 1 ${LEFT} 28 Tm`,
-      `(${escapePdf(input.footer ?? "MyTradeBox - indicative planning intelligence, not a formal valuation")}) Tj`,
+      `(${escapePdf(input.footer ?? "Opportunity intelligence - indicative data, not a formal valuation")}) Tj`,
       "ET",
     );
 

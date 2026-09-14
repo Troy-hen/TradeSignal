@@ -34,7 +34,7 @@ export default function TermsPage() {
 
           <LegalSection title="2. Plans, reach and unlocks">
             <p>Customers choose one geographic plan: Local at £29.99 per month, Regional at £59.99 per month or Nationwide at £99.99 per month. Local access covers one county, selected towns or cities, or a radius of up to 25 miles. Regional access covers up to three neighbouring counties, a larger group of towns or cities, or a radius of up to 75 miles. Nationwide access covers the United Kingdom.</p>
-            <p className="mt-3">Every plan uses the same intelligence engine and includes relevant opportunities identified within the selected geographic reach. Each individual opportunity unlock is charged at £20 unless the checkout page clearly shows a different price. The marketplace may apply a limit of three unlocks for the same supplier category; any applicable limit is shown before payment.</p>
+            <p className="mt-3">Every plan uses the same intelligence engine and includes relevant opportunities identified within the selected geographic reach. Each individual opportunity unlock is charged at £20 unless the checkout page clearly shows a different price.</p>
           </LegalSection>
 
           <LegalSection title="3. Accounts and acceptable use">

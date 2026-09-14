@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireCurrentCompany } from "@/lib/auth/get-current-company";
 import { createClient } from "@/lib/supabase/server";
 import { renderSimplePdf } from "@/lib/export/simple-pdf";
+import { PRODUCT_BRAND } from "@/lib/product/brand";
 
 export async function GET() {
   const company = await requireCurrentCompany();
@@ -52,7 +53,7 @@ export async function GET() {
   const roi = monthlySpend > 0 ? won / monthlySpend : null;
 
   const pdf = renderSimplePdf({
-    title: "MyTradeBox ROI Report",
+    title: `${PRODUCT_BRAND.shortName} ROI Report`,
     subtitle: `${company.trading_name} · generated ${new Date().toLocaleDateString("en-GB")}`,
     sections: [
       {
@@ -61,7 +62,7 @@ export async function GET() {
           `Estimated open pipeline: ${formatGbp(pipeline)}`,
           `Quoted value: ${formatGbp(quoted)} across ${quotedCount} quoted opportunit${quotedCount === 1 ? "y" : "ies"}`,
           `Won value: ${formatGbp(won)} across ${wonCount} won opportunit${wonCount === 1 ? "y" : "ies"}`,
-          `Monthly MyTradeBox spend: ${formatGbp(monthlySpend)}`,
+          `Monthly ${PRODUCT_BRAND.shortName} spend: ${formatGbp(monthlySpend)}`,
           `Estimated ROI: ${roi !== null ? roi.toFixed(1) + "x" : "Not available yet"}`,
         ],
       },
@@ -75,7 +76,7 @@ export async function GET() {
       {
         heading: "Method",
         lines: [
-          "Pipeline uses the high end of MyTradeBox's indicative trade-value estimate for open opportunities.",
+          `Pipeline uses the high end of ${PRODUCT_BRAND.shortName}'s indicative value estimate for open opportunities.`,
           "Quoted and won figures use the contract value recorded by the user when available, otherwise the indicative estimate.",
           "This report is a commercial performance summary, not an accounting statement or formal valuation.",
         ],

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PRODUCT_BRAND } from "@/lib/product/brand";
 
 export type NotificationInboxRow = {
   id: string;
@@ -113,7 +114,7 @@ export function NotificationInbox({ notifications }: { notifications: Notificati
               />
             ) : (
               <div className="m-4 rounded-2xl border border-dashed border-light-grey bg-soft-surface p-5 text-sm leading-6 text-slate sm:m-6">
-                This historical event was logged before MyTradeBox retained email content, so its message is not available to preview.
+                This historical event was logged before {PRODUCT_BRAND.shortName} retained email content, so its message is not available to preview.
               </div>
             )}
           </div>

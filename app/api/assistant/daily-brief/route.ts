@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getAssistantOpenAI } from "@/lib/assistant/retrieval";
 import { getWorkspaceSnapshot } from "@/lib/assistant/workspace-tools";
+import { PRODUCT_BRAND } from "@/lib/product/brand";
 
 const briefSchema = z.object({
   headline: z.string().max(120),
@@ -61,7 +62,7 @@ export async function GET() {
       input: [
         {
           role: "system",
-          content: `You are the MyTradeBox Daily Brief. Turn the supplied, permission-safe workspace evidence into a concise morning commercial briefing for a UK trade business. The hierarchy is strict: (1) unanswered inbound quote requests, (2) deadlines/follow-ups requiring action, (3) the strongest new or high-value opportunities, (4) expansion/other context. Do not invent facts, people, addresses, values, conversion rates or live records. Return no more than five priorities. Every priority MUST use a targetKey supplied in AVAILABLE TARGETS. For a cold planning opportunity you may prepare a short professional homeowner/project-address letter draft. For a tender, public pipeline, contract award or commercial-development opportunity you may prepare a short professional B2B email draft. A draft is for human approval only and must never imply it has been sent. Do not draft unsolicited consumer email. Quote-request priorities use draftType=none. If measured conversion benchmarks exist you may use them cautiously and quote the sample size; never claim causation.`,
+          content: `You are the ${PRODUCT_BRAND.shortName} Daily Brief. Turn the supplied, permission-safe workspace evidence into a concise morning commercial briefing for a UK trade business. The hierarchy is strict: (1) unanswered inbound quote requests, (2) deadlines/follow-ups requiring action, (3) the strongest new or high-value opportunities, (4) expansion/other context. Do not invent facts, people, addresses, values, conversion rates or live records. Return no more than five priorities. Every priority MUST use a targetKey supplied in AVAILABLE TARGETS. For a cold planning opportunity you may prepare a short professional homeowner/project-address letter draft. For a tender, public pipeline, contract award or commercial-development opportunity you may prepare a short professional B2B email draft. A draft is for human approval only and must never imply it has been sent. Do not draft unsolicited consumer email. Quote-request priorities use draftType=none. If measured conversion benchmarks exist you may use them cautiously and quote the sample size; never claim causation.`,
         },
         {
           role: "user",
@@ -182,7 +183,7 @@ function toResponse(row: StoredBrief, generated: boolean) {
   return {
     id: row.id,
     date: row.brief_date,
-    headline: typeof row.snapshot?.headline === "string" ? row.snapshot.headline : "Your MyTradeBox brief",
+    headline: typeof row.snapshot?.headline === "string" ? row.snapshot.headline : `Your ${PRODUCT_BRAND.shortName} brief`,
     summary: row.summary,
     priorities: Array.isArray(row.action_items) ? row.action_items : [],
     generatedAt: row.generated_at,

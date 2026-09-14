@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { StoredPropertyIntelligence } from "@/lib/data/property-intelligence";
+import { PRODUCT_BRAND } from "@/lib/product/brand";
 
 type StoredEpcIntelligence = {
   id: string;
@@ -191,7 +192,7 @@ export function PropertyIntelligencePanel({ opportunityId, configured, initialIn
             </>
           ) : (
             <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-              <div className="max-w-3xl"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Energy intelligence</p><h2 className="mt-2 text-xl font-bold tracking-tight text-charcoal">Check building energy & systems data</h2><p className="mt-2 text-sm leading-6 text-slate">Match the project address against official domestic and non-domestic Energy Performance data. MyTradeBox can surface EPC rating, recorded fuel mix, heat pumps, solar PV, air conditioning and building-fabric context when the certificate contains it.</p></div>
+              <div className="max-w-3xl"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Energy intelligence</p><h2 className="mt-2 text-xl font-bold tracking-tight text-charcoal">Check building energy & systems data</h2><p className="mt-2 text-sm leading-6 text-slate">Match the project address against official domestic and non-domestic Energy Performance data. {PRODUCT_BRAND.shortName} can surface EPC rating, recorded fuel mix, heat pumps, solar PV, air conditioning and building-fabric context when the certificate contains it.</p></div>
               <button type="button" disabled={epcLoading} onClick={() => enrichEpc(false)} className="inline-flex shrink-0 items-center justify-center rounded-xl bg-signal-orange px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-charcoal disabled:cursor-not-allowed disabled:opacity-50">{epcLoading ? "Checking energy data…" : "Check energy data"}</button>
             </div>
           )}

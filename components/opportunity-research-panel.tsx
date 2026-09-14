@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { PRODUCT_BRAND } from "@/lib/product/brand";
 
 type ResearchReport = {
   id: string;
@@ -51,7 +52,7 @@ export function OpportunityResearchPanel({ opportunityId, initialReport }: { opp
         <div className="max-w-3xl">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">Deep Research</p>
           <h2 className="mt-2 text-xl font-bold tracking-tight">Turn the planning record into a commercial brief.</h2>
-          <p className="mt-2 text-sm leading-6 text-white/60">Combines the unlocked opportunity, MyTradeBox relationship intelligence, product knowledge and useful public-web context. Reports are saved so they are not regenerated on every page load.</p>
+          <p className="mt-2 text-sm leading-6 text-white/60">Combines the unlocked opportunity, {PRODUCT_BRAND.shortName} relationship intelligence, product knowledge and useful public-web context. Reports are saved so they are not regenerated on every page load.</p>
         </div>
         <button type="button" onClick={() => void research()} disabled={pending} className="shrink-0 rounded-xl bg-signal-orange px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#e95f00] disabled:opacity-60">
           {pending ? "Researching…" : report ? "Refresh research" : "Research deeper"}

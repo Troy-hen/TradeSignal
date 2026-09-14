@@ -27,7 +27,7 @@ export default async function PurchasedLeadsPage() {
         eyebrow="Purchased leads"
         title="Your unlocked opportunities."
         description="Every lead you unlock stays here as a working record. Open the full brief for the contact route, evidence, recommended next move and optional CRM handoff."
-        actions={<><Link href="/opportunities" className="inline-flex items-center justify-center rounded-xl bg-signal-orange px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#e95f00]">Find more opportunities <span className="ml-2">→</span></Link><Link href="/crm" className="inline-flex items-center justify-center rounded-xl border border-light-grey px-4 py-2.5 text-sm font-semibold text-charcoal transition hover:border-charcoal/25 hover:bg-soft-surface">CRM connections</Link></>}
+        actions={<Link href="/settings#crm-connections" className="inline-flex items-center justify-center rounded-xl border border-light-grey px-4 py-2.5 text-sm font-semibold text-charcoal transition hover:border-signal-orange/40 hover:bg-soft-surface">CRM connections <span className="ml-2">→</span></Link>}
         stats={[
           { label: "Purchased", value: String(unlocks.length), detail: "Individual leads unlocked" },
           { label: "Contact-ready", value: String(purchasedPlanning.length + purchasedMarketSignals.length), detail: "Full briefs available" },
@@ -56,19 +56,15 @@ export default async function PurchasedLeadsPage() {
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-signal-orange/10 text-xl text-signal-orange">↗</div>
           <h2 className="mt-5 text-xl font-bold tracking-tight text-charcoal">Your purchased leads will live here.</h2>
           <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate">Review the marketplace teaser first. When you unlock an opportunity, its full contact and evidence brief becomes available in this workspace.</p>
-          <Link href="/opportunities" className="mt-6 inline-flex rounded-xl bg-signal-orange px-5 py-3 text-sm font-semibold text-white">Open marketplace →</Link>
+          <Link href="/opportunities" className="mt-6 inline-flex rounded-xl bg-signal-orange px-5 py-3 text-sm font-semibold text-white">Browse opportunities →</Link>
         </section>
       ) : (
         <div className="space-y-8">
           {purchasedPlanning.length > 0 && <section><div className="mb-4 flex items-end justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.14em] text-signal-orange">Business opportunities</p><h2 className="mt-1 text-2xl font-bold tracking-tight text-charcoal">Ready to work.</h2></div><span className="text-xs text-slate">{purchasedPlanning.length}</span></div><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{purchasedPlanning.map((item) => <OpportunityRow key={item.leadMatchId} item={item} unlocked />)}</div></section>}
-          {purchasedMarketSignals.length > 0 && <section><div className="mb-4 flex items-end justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.14em] text-signal-orange">Public and commercial signals</p><h2 className="mt-1 text-2xl font-bold tracking-tight text-charcoal">Purchased signal briefs.</h2></div><span className="text-xs text-slate">{purchasedMarketSignals.length}</span></div><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{purchasedMarketSignals.map((item) => <MarketSignalRow key={item.market_signal_trade_match_id} item={item} unlocked />)}</div></section>}
+          {purchasedMarketSignals.length > 0 && <section><div className="mb-4 flex items-end justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.14em] text-signal-orange">Public and commercial opportunities</p><h2 className="mt-1 text-2xl font-bold tracking-tight text-charcoal">Purchased opportunity briefs.</h2></div><span className="text-xs text-slate">{purchasedMarketSignals.length}</span></div><div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">{purchasedMarketSignals.map((item) => <MarketSignalRow key={item.market_signal_trade_match_id} item={item} unlocked />)}</div></section>}
           {purchasedPlanning.length + purchasedMarketSignals.length < unlocks.length && <section className="rounded-2xl border border-warning/20 bg-warning/[0.04] p-4 text-sm leading-6 text-slate">Some purchased records are still being assembled into the feed. Your unlock history is retained while the underlying brief is refreshed.</section>}
         </div>
       )}
-
-      <section className="rounded-3xl border border-light-grey bg-white p-6 sm:p-8">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-sm font-semibold text-charcoal">Optional CRM handoff</p><p className="mt-1 max-w-2xl text-sm leading-6 text-slate">Keep TradeSignal as the source of truth, then push a purchased lead to your CRM when you are ready. Connector setup can be added later without changing the marketplace workflow.</p></div><Link href="/crm" className="shrink-0 text-sm font-semibold text-signal-orange">View handoff options →</Link></div>
-      </section>
     </div>
   );
 }

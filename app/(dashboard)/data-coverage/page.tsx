@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireCurrentCompany } from "@/lib/auth/get-current-company";
 import { createClient } from "@/lib/supabase/server";
 import { getVendorCapabilities } from "@/lib/vendors/readiness";
+import { PRODUCT_BRAND } from "@/lib/product/brand";
 
 const PAGE_SIZE = 20;
 
@@ -77,7 +78,7 @@ export default async function DataCoveragePage({ searchParams }: { searchParams:
     <div className="space-y-8">
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Data coverage</p>
-        <h1 className="mt-3 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">Know what MyTradeBox can see.</h1>
+        <h1 className="mt-3 text-3xl font-bold tracking-tight text-charcoal sm:text-4xl">Know what {PRODUCT_BRAND.shortName} can see.</h1>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-slate sm:text-base">
           Coverage now includes planning applications, commercial planning, public-sector pipeline, live tenders and contract awards. Enrichment services are shown separately because they are queried on demand rather than pre-loaded as opportunity feeds.
         </p>
@@ -112,7 +113,7 @@ export default async function DataCoveragePage({ searchParams }: { searchParams:
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">On-demand enrichment</p>
           <h2 className="mt-2 text-2xl font-bold tracking-tight text-charcoal">Extra context when a project needs deeper qualification.</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate">These services do not behave like continuous feeds. MyTradeBox calls them against an individual opportunity, company or project when relevant.</p>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate">These services do not behave like continuous feeds. {PRODUCT_BRAND.shortName} calls them against an individual opportunity, company or project when relevant.</p>
         </div>
         <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <EnrichmentCard
@@ -157,7 +158,7 @@ export default async function DataCoveragePage({ searchParams }: { searchParams:
           <RunMetric label="Errors" value={formatNumber(snapshot.latest_errors)} />
         </div>
         <p className="mt-5 rounded-2xl bg-soft-surface px-4 py-3 text-xs leading-5 text-slate">
-          Planning dates reflect the records currently loaded into MyTradeBox. Councils can publish late or amend an application after its first appearance, so the source link in each opportunity remains the authoritative record.
+          Planning dates reflect the records currently loaded into {PRODUCT_BRAND.shortName}. Councils can publish late or amend an application after its first appearance, so the source link in each opportunity remains the authoritative record.
         </p>
       </section>
 

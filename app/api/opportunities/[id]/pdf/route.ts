@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireCurrentCompany } from "@/lib/auth/get-current-company";
 import { createClient } from "@/lib/supabase/server";
 import { renderSimplePdf } from "@/lib/export/simple-pdf";
+import { PRODUCT_BRAND } from "@/lib/product/brand";
 
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
   await requireCurrentCompany();
@@ -78,7 +79,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
   ];
 
   const pdf = renderSimplePdf({
-    title: "MyTradeBox Opportunity Brief",
+    title: `${PRODUCT_BRAND.shortName} Opportunity Brief`,
     subtitle: `${application.postcode_district ?? opportunity.postcode_district} · ${trade?.name ?? "Trade"} · generated ${new Date().toLocaleDateString("en-GB")}`,
     sections,
   });

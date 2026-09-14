@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isConfiguredDemoUser } from "@/lib/auth/demo";
 import { getStripeClient } from "@/lib/stripe/client";
+import { PRODUCT_BRAND } from "@/lib/product/brand";
 
 const bodySchema = z
   .object({
@@ -206,7 +207,7 @@ export async function POST(request: Request) {
             product_data: {
               name: String(reservation.postcode_count) + " postcode " + trade.name + " coverage",
               description:
-                "Exclusive MyTradeBox coverage across " +
+                PRODUCT_BRAND.shortName + " coverage across " +
                 String(reservation.postcode_count) +
                 " postcode district" +
                 (reservation.postcode_count === 1 ? "" : "s"),

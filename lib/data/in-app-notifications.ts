@@ -94,13 +94,13 @@ function notificationFromLog(row: NotificationLogRow, opportunityId: string | nu
     const detail = [responder ? `${responder} requested contact` : "A recipient requested contact", audience ? `via ${notificationLabel(audience)} outreach` : null, preferred ? `prefers ${preferred.toLowerCase()}` : null].filter(Boolean).join(" · ");
     return ranked(110, row, "success", "Quote request", row.subject ?? "New quote request", detail, opportunityHref, opportunityId ? "Open request" : "View requests");
   }
-  if (type === "payment_failed") return ranked(100, row, "warning", "Billing", row.subject ?? "Action needed on your subscription", "Review your billing details to keep territory access active.", "/billing", "Review billing");
+  if (type === "payment_failed") return ranked(100, row, "warning", "Billing", row.subject ?? "Action needed on your subscription", "Review your billing details to keep Marketplace coverage active.", "/billing", "Review billing");
   if (type === "approval_alert") return ranked(90, row, "signal", "Planning approved", row.subject ?? fallbackTitle, "A matched application has moved into an important contact window.", opportunityHref, opportunityId ? "Open opportunity" : "View opportunities");
   if (type === "new_lead_instant") return ranked(80, row, "signal", "New opportunity", row.subject ?? fallbackTitle, "A high-priority opportunity has been matched to your coverage.", opportunityHref, opportunityId ? "Open opportunity" : "Open opportunities");
   if (type === "follow_up_reminder") return ranked(70, row, "warning", "Follow-up due", row.subject ?? fallbackTitle, "A lead follow-up is due now.", opportunityHref, opportunityId ? "Open opportunity" : "View follow-ups");
-  if (type === "territory_available") return ranked(60, row, "success", "Territory available", row.subject ?? fallbackTitle, "An area you were watching is available to claim.", safeInternalHref(metadata.claim_url) ?? "/territories", "View territory");
-  if (type === "nearby_opportunity_digest" || type === "outside_territory") return ranked(50, row, "signal", "Coverage opportunity", row.subject ?? fallbackTitle, "There is signal outside your current coverage that may be worth a look.", safeInternalHref(metadata.preview_url) ?? "/territories", "Explore territory");
-  if (type === "announcement") return ranked(40, row, "info", "MyTradeBox update", row.subject ?? fallbackTitle, typeof metadata.message === "string" ? metadata.message : null, safeInternalHref(metadata.cta_url) ?? "/notifications", typeof metadata.cta_label === "string" ? metadata.cta_label : "View update");
+  if (type === "territory_available") return ranked(60, row, "success", "Coverage update", row.subject ?? fallbackTitle, "An area you were watching is available to add to your reach.", "/coverage", "Manage coverage");
+  if (type === "nearby_opportunity_digest" || type === "outside_territory") return ranked(50, row, "signal", "Nearby opportunity", row.subject ?? fallbackTitle, "An opportunity outside your current reach may be worth reviewing.", "/opportunities?view=map", "View on map");
+  if (type === "announcement") return ranked(40, row, "info", "Product update", row.subject ?? fallbackTitle, typeof metadata.message === "string" ? metadata.message : null, safeInternalHref(metadata.cta_url) ?? "/notifications", typeof metadata.cta_label === "string" ? metadata.cta_label : "View update");
   if (type.includes("digest")) return ranked(20, row, "info", "Opportunity digest", row.subject ?? fallbackTitle, null, "/notifications", "View digest");
   return ranked(30, row, "info", "Notification", row.subject ?? fallbackTitle, null, "/notifications", "View notifications");
 }
@@ -111,15 +111,15 @@ function notificationFromTerritoryEvent(row: TerritoryMarketEvent): RankedNotifi
     id: `territory-market:${row.event_id}`,
     priority: claimed ? 48 : 58,
     tone: claimed ? "warning" : "success",
-    eyebrow: claimed ? "Territory activity" : "Territory released",
+    eyebrow: "Coverage update",
     title: claimed
-      ? `${row.postcode_district} has just been claimed for ${row.trade_name}`
-      : `${row.postcode_district} is back in play for ${row.trade_name}`,
+      ? `${row.postcode_district} coverage changed for ${row.trade_name}`
+      : `${row.postcode_district} is available for ${row.trade_name}`,
     detail: claimed
-      ? "A nearby business has taken this exclusive trade territory. Check surrounding patches before they move too."
-      : "A relevant trade territory has been released and may now be available to claim.",
-    href: `/territories/${encodeURIComponent(row.postcode_district)}/${encodeURIComponent(row.trade_slug)}`,
-    ctaLabel: claimed ? "Explore nearby" : "Check availability",
+      ? "This legacy coverage event does not affect which verticals are visible in your Marketplace. Review your current reach if needed."
+      : "This area can now be included in your geographic reach.",
+    href: claimed ? "/opportunities?view=map" : "/coverage",
+    ctaLabel: claimed ? "View Marketplace map" : "Manage coverage",
     createdAt: row.occurred_at,
   };
 }
@@ -131,11 +131,11 @@ function notificationFromNearby(row: NearbyRow): RankedNotification {
     id: "nearby:" + row.postcode_district + ":" + row.trade_category_slug + ":" + String(count),
     priority: 45,
     tone: "signal",
-    eyebrow: "Nearby signal",
-    title: row.postcode_district + " · " + row.post_town + " is available for " + row.trade_category_name,
+    eyebrow: "Nearby opportunity",
+    title: row.postcode_district + " · " + row.post_town + " has relevant activity for " + row.trade_category_name,
     detail: project + " · " + String(count) + " live " + (count === 1 ? "opportunity" : "opportunities"),
-    href: "/territories/" + encodeURIComponent(row.postcode_district) + "/" + encodeURIComponent(row.trade_category_slug),
-    ctaLabel: "Preview territory",
+    href: "/opportunities?view=map",
+    ctaLabel: "View on map",
     createdAt: new Date().toISOString(),
   };
 }

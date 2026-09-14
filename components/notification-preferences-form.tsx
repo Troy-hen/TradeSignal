@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { updateNotificationPreferences } from "@/lib/actions/settings";
 import { SubmitButton } from "@/components/submit-button";
+import { PRODUCT_BRAND } from "@/lib/product/brand";
 
 export function NotificationPreferencesForm({
   channelEmail,
@@ -28,7 +29,7 @@ export function NotificationPreferencesForm({
           <input type="checkbox" name="channelEmail" defaultChecked={channelEmail} className="mt-0.5 h-4 w-4 shrink-0 accent-[#FF6A00]" />
           <span>
             <span className="block font-semibold">Email notifications</span>
-            <span className="mt-1 block text-xs leading-5 text-slate">Allow MyTradeBox to send opportunity alerts and scheduled digests to your billing email.</span>
+            <span className="mt-1 block text-xs leading-5 text-slate">Allow {PRODUCT_BRAND.shortName} to send opportunity alerts and scheduled digests to your billing email.</span>
           </span>
         </label>
 
@@ -99,7 +100,7 @@ export function NotificationPreferencesForm({
           <input type="checkbox" name="nearbyOpportunityAlertsEnabled" defaultChecked={nearbyOpportunityAlertsEnabled} className="mt-0.5 h-4 w-4 shrink-0 accent-[#FF6A00]" />
           <span>
             <span className="block font-semibold">Nearby opportunity alerts</span>
-            <span className="mt-1 block text-xs leading-5 text-slate">Show and email a weekly digest of available districts within roughly 20 miles of territory you already own. Off by default.</span>
+            <span className="mt-1 block text-xs leading-5 text-slate">Show and email a weekly digest of opportunities just outside your current geographic reach. Off by default.</span>
           </span>
         </label>
       </div>

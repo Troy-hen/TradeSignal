@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PRODUCT_BRAND } from "@/lib/product/brand";
 
 type Audience = "homeowner" | "professional" | "business" | "unknown";
 type EngagementEvent = "call_clicked" | "whatsapp_clicked" | "quote_started" | "not_interested";
@@ -108,7 +109,7 @@ export function QuoteLinkResponse({
     return (
       <div className="rounded-3xl border border-light-grey bg-soft-surface p-6 text-center sm:p-8">
         <h2 className="text-xl font-bold tracking-tight text-charcoal">Preference saved</h2>
-        <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate">{tradingName} will not send further MyTradeBox outreach for this opportunity.</p>
+        <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-slate">{tradingName} will not send further {PRODUCT_BRAND.shortName} outreach for this opportunity.</p>
       </div>
     );
   }
@@ -146,7 +147,7 @@ export function QuoteLinkResponse({
       </div>
 
       {whatsappUrl && !showForm && (
-        <p className="mt-3 text-center text-[11px] leading-5 text-slate">WhatsApp opens a pre-filled conversation on your device. MyTradeBox records the click, not whether a message was actually sent.</p>
+        <p className="mt-3 text-center text-[11px] leading-5 text-slate">WhatsApp opens a pre-filled conversation on your device. {PRODUCT_BRAND.shortName} records the click, not whether a message was actually sent.</p>
       )}
 
       {showForm && (

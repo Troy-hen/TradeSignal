@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { PRODUCT_BRAND } from "@/lib/product/brand";
 
 type Capabilities = { planningContactData?: boolean };
 
@@ -35,7 +36,7 @@ export function PlanningContactLookup({ opportunityId, hasContacts }: { opportun
           <span className="rounded-full bg-white px-2.5 py-1 text-[10px] font-semibold text-slate">Not enabled</span>
         </div>
         <p className="mt-2 text-xs leading-5 text-slate">
-          This planning record did not include a named professional contact in the core feed. Contact lookup is an on-demand enrichment service rather than a field MyTradeBox can safely invent or infer.
+          This planning record did not include a named professional contact in the core feed. Contact lookup is an on-demand enrichment service rather than a field {PRODUCT_BRAND.shortName} can safely invent or infer.
         </p>
       </div>
     );

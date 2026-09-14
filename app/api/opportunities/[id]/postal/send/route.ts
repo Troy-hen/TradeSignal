@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getPostalOpportunityContext } from "@/lib/outreach/postal-context";
 import { getPostalOutreachProvider } from "@/lib/outreach/postal-provider";
 import { createOrReuseDeliveryQuoteLink } from "@/lib/outreach/response-links";
+import { PRODUCT_BRAND } from "@/lib/product/brand";
 
 const bodySchema = z.object({
   content: z.string().trim().min(20).max(12000),
@@ -187,7 +188,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
 function appendQuoteLink(content: string, url: string) {
   if (content.includes(url)) return content;
-  return `${content.trim()}\n\n────────────────────────\nWant to discuss the project or request a quote?\n${url}\n\nYou can use this private MyTradeBox response link to call, WhatsApp or request a quote directly.`;
+  return `${content.trim()}\n\n────────────────────────\nWant to discuss the project or request a quote?\n${url}\n\nYou can use this private ${PRODUCT_BRAND.shortName} response link to call, WhatsApp or request a quote directly.`;
 }
 
 function contentIsCompatible(stored: string, requested: string, finalContent: string) {

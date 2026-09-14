@@ -1,8 +1,8 @@
-# MyTradeBox vendor activation checklist
+# TradeSignal vendor activation checklist
 
 Last reviewed: 2026-09-10
 
-MyTradeBox is designed so optional vendors can remain disabled without breaking the core product. The current launch path is planning + AI classification + public procurement + EPC + company intelligence. Stripe, postal delivery and richer property-market intelligence can be added later.
+TradeSignal is designed so optional vendors can remain disabled without breaking the core product. The current launch path is planning + AI classification + public procurement + EPC + company intelligence. Stripe, postal delivery and richer property-market intelligence can be added later.
 
 ## Current launch stack
 
@@ -19,7 +19,7 @@ Supabase Edge Functions receive their Supabase runtime credentials automatically
 
 `CRON_SECRET` is stored as a Supabase Edge Function secret and the same value is stored in Supabase Vault under the name `cron_secret` so scheduled pg_net calls can authenticate to Edge Functions.
 
-## 2. OpenAI — AI classification, Ask MyTradeBox, RAG and Deep Research
+## 2. OpenAI — AI classification, Ask TradeSignal, RAG and Deep Research
 
 Cloudflare / Next.js runtime:
 - `OPENAI_API_KEY`
@@ -45,7 +45,7 @@ Published planning-contact lookup is optional and separate from ingestion. To en
 - `PLOTA_API_KEY`
 - `CONTACT_INTELLIGENCE_PROVIDER=plota`
 
-Only enable contact lookup on a Plota plan that explicitly includes the required contact data. MyTradeBox does not use consumer email/mobile enrichment as a homeowner marketing strategy.
+Only enable contact lookup on a Plota plan that explicitly includes the required contact data. TradeSignal does not use consumer email/mobile enrichment as a homeowner marketing strategy.
 
 ## 4. UK public procurement — no paid API key required
 
@@ -83,12 +83,12 @@ Used for genuine company/developer/business opportunities. It adds public compan
 Supabase Edge Functions:
 - `RESEND_API_KEY`
 - `RESEND_FROM_EMAIL`
-- `RESEND_FROM_NAME=MyTradeBox`
+- `RESEND_FROM_NAME=TradeSignal`
 - `RESEND_REPLY_TO` optional
 
-Keep live email links disabled or test-only until `NEXT_PUBLIC_APP_URL` points to a real reachable deployment. Production sender/domain verification can wait until the MyTradeBox domain is ready.
+Keep live email links disabled or test-only until `NEXT_PUBLIC_APP_URL` points to a real reachable deployment. Production sender/domain verification can wait until the TradeSignal domain is ready.
 
-## 8. QuoteLink — MyTradeBox-owned response tracking
+## 8. QuoteLink — TradeSignal-owned response tracking
 
 Cloudflare / Next.js runtime:
 - `QUOTE_LINK_SIGNING_SECRET`
@@ -129,7 +129,7 @@ For Cloudflare Workers Builds, `NEXT_PUBLIC_` variables used by the browser bund
 
 1. Supabase connectivity and authentication
 2. Plota planning ingestion
-3. OpenAI classification / Ask MyTradeBox
+3. OpenAI classification / Ask TradeSignal
 4. Find a Tender + Contracts Finder market signals
 5. EPC domestic/non-domestic intelligence
 6. Companies House company intelligence
@@ -138,4 +138,4 @@ For Cloudflare Workers Builds, `NEXT_PUBLIC_` variables used by the browser bund
 9. Stannp postal outreach
 10. Optional richer property-market provider only if UAT proves the value
 
-The closed-loop QuoteLink and outcome-learning layer remains MyTradeBox-owned rather than delegated to any data vendor.
+The closed-loop QuoteLink and outcome-learning layer remains TradeSignal-owned rather than delegated to any data vendor.

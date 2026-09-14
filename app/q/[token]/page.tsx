@@ -4,11 +4,12 @@ import { notFound } from "next/navigation";
 import { Logo } from "@/components/logo";
 import { QuoteLinkResponse } from "@/components/quote-link-response";
 import { getPublicQuoteLinkContext } from "@/lib/outreach/quote-link-context";
+import { PRODUCT_BRAND } from "@/lib/product/brand";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Project quote request | MyTradeBox",
+  title: `Project quote request | ${PRODUCT_BRAND.shortName}`,
   robots: { index: false, follow: false, nocache: true },
 };
 
@@ -53,7 +54,7 @@ export default async function QuoteLinkPage({ params }: { params: Promise<{ toke
         </section>
 
         <div className="mt-auto pt-8 text-center text-xs leading-5 text-slate">
-          <p>Powered by MyTradeBox. This page does not display the project address, planning reference or applicant details.</p>
+          <p>Powered by {PRODUCT_BRAND.shortName}. This page does not display the project address, planning reference or applicant details.</p>
           <p className="mt-1"><Link href="/privacy" className="font-medium text-charcoal hover:text-signal-orange">Privacy information</Link></p>
         </div>
       </div>

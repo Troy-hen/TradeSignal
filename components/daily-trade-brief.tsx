@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { PRODUCT_BRAND } from "@/lib/product/brand";
 
 type Priority = {
   targetKey: string;
@@ -40,10 +41,10 @@ export function DailyTradeBrief() {
   }, []);
 
   if (loading) {
-    return <section className="rounded-3xl bg-charcoal p-6 text-white"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">✦ MyTradeBox Daily</p><p className="mt-4 animate-pulse text-sm text-white/60">Reviewing your opportunities, deadlines and responses…</p></section>;
+    return <section className="rounded-3xl bg-charcoal p-6 text-white"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">✦ {PRODUCT_BRAND.shortName} Daily</p><p className="mt-4 animate-pulse text-sm text-white/60">Reviewing your opportunities, deadlines and responses…</p></section>;
   }
   if (!brief) {
-    return <section className="rounded-3xl border border-light-grey bg-white p-6"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">✦ MyTradeBox Daily</p><h2 className="mt-3 text-xl font-bold text-charcoal">Your commercial briefing will appear here.</h2><p className="mt-2 text-sm leading-6 text-slate">{error ?? "MyTradeBox will rank the work that deserves attention and prepare draft outreach for your approval."}</p></section>;
+    return <section className="rounded-3xl border border-light-grey bg-white p-6"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">✦ {PRODUCT_BRAND.shortName} Daily</p><h2 className="mt-3 text-xl font-bold text-charcoal">Your commercial briefing will appear here.</h2><p className="mt-2 text-sm leading-6 text-slate">{error ?? `${PRODUCT_BRAND.shortName} will rank the work that deserves attention and prepare draft outreach for your approval.`}</p></section>;
   }
 
   const draftCount = brief.priorities.filter((item) => item.draftType !== "none" && item.draftBody).length;
@@ -51,7 +52,7 @@ export function DailyTradeBrief() {
     <section className="overflow-hidden rounded-3xl bg-charcoal text-white shadow-xl shadow-charcoal/10">
       <div className="p-6 sm:p-7">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="max-w-3xl"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">✦ MyTradeBox Daily</p><h2 className="mt-3 text-2xl font-bold tracking-tight">{brief.headline}</h2><p className="mt-3 text-sm leading-6 text-white/65">{brief.summary}</p></div>
+          <div className="max-w-3xl"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-signal-orange">✦ {PRODUCT_BRAND.shortName} Daily</p><h2 className="mt-3 text-2xl font-bold tracking-tight">{brief.headline}</h2><p className="mt-3 text-sm leading-6 text-white/65">{brief.summary}</p></div>
           {draftCount > 0 && <span className="rounded-full border border-signal-orange/30 bg-signal-orange/10 px-3 py-1.5 text-xs font-semibold text-signal-orange">{draftCount} draft{draftCount === 1 ? "" : "s"} prepared for approval</span>}
         </div>
       </div>
@@ -71,7 +72,7 @@ export function DailyTradeBrief() {
             );
           })}
         </ol>
-        <p className="mt-4 text-[10px] leading-4 text-white/35">Generated once per day from your live MyTradeBox workspace. Drafts are never sent without an explicit approval/send action.</p>
+        <p className="mt-4 text-[10px] leading-4 text-white/35">Generated once per day from your live {PRODUCT_BRAND.shortName} workspace. Drafts are never sent without an explicit approval/send action.</p>
       </div>
     </section>
   );
