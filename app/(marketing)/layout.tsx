@@ -85,9 +85,8 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
         </header>
 
         <div className="border-b border-signal-orange/20 bg-signal-orange px-4 py-2.5 text-white">
-          <div className="mx-auto flex max-w-7xl flex-col items-center justify-center gap-1.5 text-center sm:flex-row sm:gap-3 sm:text-left lg:px-2">
+          <div className="mx-auto flex max-w-7xl items-center justify-center text-center lg:px-2">
             <p className="text-xs font-semibold leading-5 sm:text-sm">Try Everro free for 14 days · 3 lead unlocks included · no monthly coverage charge until the trial ends.</p>
-            <Link href="/signup" className="shrink-0 text-xs font-bold underline decoration-white/50 underline-offset-4 transition hover:decoration-white sm:text-sm">Start your trial →</Link>
           </div>
         </div>
 
