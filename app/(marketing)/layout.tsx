@@ -43,7 +43,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
                 href="/signup"
                 className="hidden items-center rounded-xl bg-signal-orange px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#e95f00] sm:inline-flex"
               >
-                Create your account
+                Start free trial
               </Link>
 
               <div className="relative md:hidden">
@@ -75,7 +75,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
                       onClick={() => setMobileOpen(false)}
                       className="flex w-full items-center justify-center rounded-xl bg-signal-orange px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#e95f00]"
                     >
-                      Create your account
+                      Start free trial
                     </Link>
                   </div>
                 </div>}
@@ -83,6 +83,13 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
             </nav>
           </div>
         </header>
+
+        <div className="border-b border-signal-orange/20 bg-signal-orange px-4 py-2.5 text-white">
+          <div className="mx-auto flex max-w-7xl flex-col items-center justify-center gap-1.5 text-center sm:flex-row sm:gap-3 sm:text-left lg:px-2">
+            <p className="text-xs font-semibold leading-5 sm:text-sm">Try Everro free for 14 days · 3 lead unlocks included · no monthly coverage charge until the trial ends.</p>
+            <Link href="/signup" className="shrink-0 text-xs font-bold underline decoration-white/50 underline-offset-4 transition hover:decoration-white sm:text-sm">Start your trial →</Link>
+          </div>
+        </div>
 
         <main className="min-w-0 flex-1">{children}</main>
 
