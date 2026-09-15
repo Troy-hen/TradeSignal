@@ -1,0 +1,57 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"main": ".open-next/worker.js",
+	"name": "tradesignal",
+	"compatibility_date": "2026-09-07",
+	"keep_vars": true,
+	"compatibility_flags": [
+		"nodejs_compat",
+		"global_fetch_strictly_public"
+	],
+	"assets": {
+		"directory": ".open-next/assets",
+		"binding": "ASSETS"
+	},
+	"services": [
+		{
+			// Self-reference service binding, the service name must match the worker name
+			// see https://opennext.js.org/cloudflare/caching
+			"binding": "WORKER_SELF_REFERENCE",
+			"service": "tradesignal"
+		}
+	],
+	// Preserve dashboard-managed runtime variables on deploy. Without keep_vars,
+	// `wrangler deploy` replaces dashboard variables with the vars declared in
+	// this file; secrets survive, but plain runtime variables are removed.
+	// MyTradeBox deliberately manages runtime values in the Cloudflare dashboard,
+	// so dashboard variables are the source of truth for deployed configuration.
+	//
+	// Edge-layer primary defense for the public territory checker
+	// (/api/territory-availability), ahead of the portable secondary layer
+	// in check_territory_availability() itself (rate_limit_events table —
+	// see supabase/migrations/20260907171200_territory_checker_rate_limit.sql).
+	// Simple sliding-window: 30 requests per 60s per rate-limiting key (the
+	// route derives the key from the request IP, see lib/rate-limit.ts).
+	// This binding has no local-dev equivalent — wrangler dev/next dev fall
+	// straight through to the DB-level layer, which is why that layer alone
+	// still has to hold on its own.
+	"unsafe": {
+		"bindings": [
+			{
+				"name": "TERRITORY_CHECK_LIMITER",
+				"type": "ratelimit",
+				"namespace_id": "1001",
+				"simple": { "limit": 30, "period": 60 }
+			}
+		]
+	},
+	"observability": {
+		"enabled": true
+	}
+	// Optional, for later: R2-backed incremental cache and Cloudflare Images optimization.
+	// Requires `wrangler r2 bucket create tradesignal-opennext-cache` first — see README.
+	// "r2_buckets": [
+	//   { "binding": "NEXT_INC_CACHE_R2_BUCKET", "bucket_name": "tradesignal-opennext-cache" }
+	// ],
+	// "images": { "binding": "IMAGES" }
+}

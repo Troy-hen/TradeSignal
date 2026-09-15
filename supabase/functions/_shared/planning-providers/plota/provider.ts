@@ -1,0 +1,147 @@
+import type { NormalisedApplication, PlanningDataProvider, RawApplication } from "../types.ts";
+import { normaliseApplication } from "../normalise.ts";
+import { PlotaApiError, PlotaClient } from "./client.ts";
+import type { PlotaApplication, PlotaListMeta } from "./types.ts";
+
+export class PlotaTierLimitationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "PlotaTierLimitationError";
+  }
+}
+
+function toRawApplication(app: PlotaApplication): RawApplication {
+  const appealStatus =
+    app.appeal_status ??
+    (typeof app.appeal === "string" ? app.appeal : app.appeal?.status ?? app.appeal?.outcome ?? null);
+
+  const commercial =
+    typeof app.commercial === "boolean"
+      ? app.commercial
+      : typeof app.commercial_work === "boolean"
+        ? app.commercial_work
+        : null;
+
+  return {
+    provider: "plota",
+    providerId: app.id,
+    reference: app.reference || app.id,
+    authorityName: app.authority?.name ?? null,
+    authorityCode: app.authority?.slug ?? null,
+    addressText: app.address ?? null,
+    postcode: app.postcode ?? null,
+    latitude: app.location?.lat ?? null,
+    longitude: app.location?.lng ?? null,
+    applicationType: app.planning_route ?? app.category?.label ?? app.procedure ?? null,
+    proposalDescription: app.description ?? app.proposal ?? null,
+    stage: app.stage ?? null,
+    statusRaw: app.status ?? null,
+    decisionOutcomeRaw: app.decision?.outcome ?? null,
+    receivedDate: app.date_received ?? null,
+    validatedDate: app.date_validated ?? null,
+    decisionDueDate: app.key_dates?.target_decision ?? null,
+    decisionDate: app.date_decided ?? app.decision?.issued_date ?? null,
+    appealStatus,
+    dwellingCount: app.dwelling_count ?? null,
+    isCommercial: commercial,
+    floorspaceSqm: app.floorspace_sqm ?? null,
+    // Contact-bearing fields are absent from normal ingestion because
+    // include_contact=true is reserved for explicit, metered contact lookups.
+    applicantName: app.applicant_name ?? null,
+    agentCompany: app.agent_company ?? null,
+    estimatedValueGbp: null,
+    sourceUrl: app.links?.council ?? app.links?.plota ?? null,
+    changedAt: app.changed_at ?? null,
+    raw: app as unknown as Record<string, unknown>,
+  };
+}
+
+/**
+ * Uses Plota's bounded cursor-paginated read path. Plan capabilities are
+ * detected from the API itself so upgrading a key later needs no plan-tier
+ * environment variable or code change.
+ */
+export class PlotaPlanningProvider implements PlanningDataProvider {
+  constructor(private readonly client: PlotaClient) {}
+
+  async *fetchNewApplications({ since, dateTo, cursor }: { since?: string; dateTo?: string; cursor?: string }): AsyncGenerator<RawApplication[]> {
+    for await (const page of this.client.paginate("/applications", { date_from: since, date_to: dateTo, cursor })) {
+      yield page.map(toRawApplication);
+    }
+  }
+
+  /**
+   * changed_since is available on higher Plota tiers. We optimistically try
+   * the endpoint and translate an entitlement rejection into a stable domain
+   * error so ingestion can fall back to rotating undecided applications.
+   */
+  async *fetchUpdatedApplications({ since, cursor }: { since: string; cursor?: string }): AsyncGenerator<RawApplication[]> {
+    try {
+      for await (const page of this.client.paginate("/applications", { changed_since: since, cursor })) {
+        yield page.map(toRawApplication);
+      }
+    } catch (error) {
+      if (error instanceof PlotaApiError && error.status === 403) {
+        throw new PlotaTierLimitationError(
+          "Plota changed_since is not enabled for this API key; fall back to re-checking undecided applications.",
+        );
+      }
+      throw error;
+    }
+  }
+
+  async getApplication(providerId: string): Promise<RawApplication | null> {
+    const app = await this.client.getApplication(providerId);
+    return app ? toRawApplication(app) : null;
+  }
+
+  async searchByPostcode(
+    postcodeOrDistrict: string,
+    opts?: { radius?: number; maxPages?: number; dateFrom?: string; dateTo?: string },
+  ): Promise<RawApplication[]> {
+    const trimmed = postcodeOrDistrict.trim().toUpperCase();
+    const maxPages = Math.max(1, Math.min(opts?.maxPages ?? 1, 20));
+    const path = /\s/.test(trimmed) ? "/applications/nearby" : "/applications";
+    const searchParams = /\s/.test(trimmed)
+      ? {
+          postcode: trimmed,
+          radius: Math.min(opts?.radius ?? 1000, 5000),
+          date_from: opts?.dateFrom,
+          date_to: opts?.dateTo,
+        }
+      : { postcode: trimmed, date_from: opts?.dateFrom, date_to: opts?.dateTo };
+    const apps: PlotaApplication[] = [];
+    let pagesRead = 0;
+    for await (const page of this.client.paginate(path, searchParams)) {
+      apps.push(...page);
+      pagesRead++;
+      if (pagesRead >= maxPages) break;
+    }
+    return apps.map(toRawApplication);
+  }
+
+  get lastMeta(): PlotaListMeta | null {
+    return this.client.lastMeta;
+  }
+
+  get lastPageCount(): number {
+    return this.client.lastPageCount;
+  }
+
+  get apiRequestCount(): number {
+    return this.client.requestCount;
+  }
+
+  get nextCursor(): string | null {
+    return this.client.nextCursor;
+  }
+
+  async searchByDate(dateFrom: string, dateTo: string): Promise<RawApplication[]> {
+    const apps = await this.client.list("/applications", { date_from: dateFrom, date_to: dateTo });
+    return apps.map(toRawApplication);
+  }
+
+  normaliseApplication(raw: RawApplication): Promise<NormalisedApplication> {
+    return normaliseApplication(raw);
+  }
+}
