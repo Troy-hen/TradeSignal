@@ -72,9 +72,9 @@ type Selection =
 // large area, which is what made drill-down look like a blurred screenshot.
 const UK_BOUNDS = { west: -10, east: 4, north: 61.7, south: 49 };
 const MAP_TILE_SIZE = 256;
-const MAP_MIN_ZOOM = 0.55;
+const MAP_MIN_ZOOM = 0;
 const MAP_MAX_ZOOM = 3.2;
-const INITIAL_CAMERA = { latitude: 54.95, longitude: -2.2, zoom: 0.8 };
+const INITIAL_CAMERA = { latitude: 54.95, longitude: -3, zoom: 0.8 };
 
 type MapCamera = typeof INITIAL_CAMERA;
 type MapViewportSize = { width: number; height: number };
@@ -87,6 +87,7 @@ export function OpportunityMap({ points, signals }: { points: OpportunityMapPoin
   const [viewportSize, setViewportSize] = useState<MapViewportSize>({ width: 0, height: 0 });
   const dragRef = useRef<{ pointerId: number; startX: number; startY: number; camera: MapCamera } | null>(null);
   const mapViewportRef = useRef<HTMLDivElement>(null);
+  const hasFittedInitialCamera = useRef(false);
   const zoom = camera.zoom;
 
   const allItems = useMemo(() => toMapItems(points, signals), [points, signals]);
@@ -139,7 +140,7 @@ export function OpportunityMap({ points, signals }: { points: OpportunityMapPoin
   }
 
   function resetMap() {
-    setCamera(INITIAL_CAMERA);
+    setCamera({ ...INITIAL_CAMERA, zoom: fitUiZoom(viewportSize) });
     setSelection(null);
     setScopeHistory([]);
   }
@@ -192,6 +193,10 @@ export function OpportunityMap({ points, signals }: { points: OpportunityMapPoin
     if (!viewport) return;
     const updateSize = () => setViewportSize({ width: viewport.clientWidth, height: viewport.clientHeight });
     updateSize();
+    if (!hasFittedInitialCamera.current && viewport.clientWidth > 0 && viewport.clientHeight > 0) {
+      hasFittedInitialCamera.current = true;
+      setCamera((current) => ({ ...current, zoom: fitUiZoom({ width: viewport.clientWidth, height: viewport.clientHeight }) }));
+    }
     const observer = new ResizeObserver(updateSize);
     observer.observe(viewport);
     return () => observer.disconnect();
@@ -562,6 +567,17 @@ function buildMapTiles(camera: MapCamera, viewport: MapViewportSize): MapTile[] 
 
 function mapZoomForUiZoom(zoom: number) {
   return 7 + (zoom - 0.8) * 1.25;
+}
+
+function fitUiZoom(viewport: MapViewportSize) {
+  const width = viewport.width || 1000;
+  const height = viewport.height || 560;
+  const longitudeSpan = UK_BOUNDS.east - UK_BOUNDS.west + 1.5;
+  const horizontalMapZoom = Math.log2((width * 360) / (longitudeSpan * MAP_TILE_SIZE));
+  const mercatorSpanAtZero = Math.abs(worldPixelY(UK_BOUNDS.north, 0) - worldPixelY(UK_BOUNDS.south, 0));
+  const verticalMapZoom = Math.log2((height * 0.9) / mercatorSpanAtZero);
+  const fittedMapZoom = Math.min(horizontalMapZoom, verticalMapZoom) - 0.1;
+  return clamp(0.8 + (fittedMapZoom - 7) / 1.25, MAP_MIN_ZOOM, 0.85);
 }
 
 function tileZoomForZoom(zoom: number) {
