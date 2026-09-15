@@ -72,16 +72,22 @@ type Selection =
 // large area, which is what made drill-down look like a blurred screenshot.
 const UK_BOUNDS = { west: -10, east: 4, north: 61.7, south: 49 };
 const MAP_TILE_SIZE = 256;
-const MAP_TILE_ZOOM = 7;
+const MAP_MIN_ZOOM = 0.55;
+const MAP_MAX_ZOOM = 3.2;
+const INITIAL_CAMERA = { latitude: 54.95, longitude: -2.2, zoom: 0.8 };
+
+type MapCamera = typeof INITIAL_CAMERA;
+type MapViewportSize = { width: number; height: number };
 
 export function OpportunityMap({ points, signals }: { points: OpportunityMapPoint[]; signals: MarketSignalMapPoint[]; trades?: unknown[] }) {
   const [selection, setSelection] = useState<Selection>(null);
   const [scopeHistory, setScopeHistory] = useState<string[][]>([]);
-  const [zoom, setZoom] = useState(0.8);
-  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [camera, setCamera] = useState<MapCamera>(INITIAL_CAMERA);
   const [isDragging, setIsDragging] = useState(false);
-  const dragRef = useRef<{ pointerId: number; startX: number; startY: number; originX: number; originY: number } | null>(null);
+  const [viewportSize, setViewportSize] = useState<MapViewportSize>({ width: 0, height: 0 });
+  const dragRef = useRef<{ pointerId: number; startX: number; startY: number; camera: MapCamera } | null>(null);
   const mapViewportRef = useRef<HTMLDivElement>(null);
+  const zoom = camera.zoom;
 
   const allItems = useMemo(() => toMapItems(points, signals), [points, signals]);
   const activeScopeIds = scopeHistory.at(-1) ?? null;
@@ -95,27 +101,17 @@ export function OpportunityMap({ points, signals }: { points: OpportunityMapPoin
   const visibleCategories = useMemo(() => categoryCounts(visibleItems), [visibleItems]);
 
   function changeZoom(nextZoom: number, focalPoint?: { x: number; y: number }) {
-    const clampedZoom = clamp(nextZoom, 0.55, 3.2);
+    const clampedZoom = clamp(nextZoom, MAP_MIN_ZOOM, MAP_MAX_ZOOM);
     const viewport = mapViewportRef.current;
-    if (viewport && focalPoint && zoom > 0) {
-      const ratio = clampedZoom / zoom;
-      setPan((current) => clampPan({ x: current.x - focalPoint.x * (ratio - 1), y: current.y - focalPoint.y * (ratio - 1) }, viewport, clampedZoom));
+    if (viewport && focalPoint && viewportSize.width > 0 && viewportSize.height > 0) {
+      setCamera((current) => zoomAroundPoint(current, clampedZoom, focalPoint));
+      return;
     }
-    setZoom(clampedZoom);
+    setCamera((current) => ({ ...current, zoom: clampedZoom }));
   }
 
   function focusMap(latitude: number, longitude: number, nextZoom: number) {
-    const viewport = mapViewportRef.current;
-    if (viewport) {
-      const projected = positionPercent(latitude, longitude);
-      const mapHeight = viewport.clientHeight;
-      const mapWidth = Math.max(viewport.clientWidth, mapHeight * 2);
-      setPan(clampPan({
-        x: ((50 - projected.x) / 100) * mapWidth * nextZoom,
-        y: ((50 - projected.y) / 100) * mapHeight * nextZoom,
-      }, viewport, nextZoom));
-    }
-    setZoom(nextZoom);
+    setCamera({ latitude, longitude, zoom: clamp(nextZoom, MAP_MIN_ZOOM, MAP_MAX_ZOOM) });
   }
 
   function handleClusterClick(cluster: OpportunityCluster) {
@@ -143,16 +139,16 @@ export function OpportunityMap({ points, signals }: { points: OpportunityMapPoin
   }
 
   function resetMap() {
-    setZoom(0.8);
-    setPan({ x: 0, y: 0 });
+    setCamera(INITIAL_CAMERA);
     setSelection(null);
     setScopeHistory([]);
   }
 
   function handlePointerDown(event: ReactPointerEvent<HTMLDivElement>) {
     if (event.button !== 0) return;
+    if (event.target instanceof Element && event.target.closest("button")) return;
     event.currentTarget.setPointerCapture(event.pointerId);
-    dragRef.current = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, originX: pan.x, originY: pan.y };
+    dragRef.current = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, camera };
     setIsDragging(true);
   }
 
@@ -160,10 +156,13 @@ export function OpportunityMap({ points, signals }: { points: OpportunityMapPoin
     const drag = dragRef.current;
     if (!drag || drag.pointerId !== event.pointerId) return;
     event.preventDefault();
-    setPan(() => clampPan({
-      x: drag.originX + event.clientX - drag.startX,
-      y: drag.originY + event.clientY - drag.startY,
-    }, mapViewportRef.current, zoom));
+    const tileZoom = tileZoomForZoom(drag.camera.zoom);
+    const scale = tileScaleForZoom(drag.camera.zoom, tileZoom);
+    const startX = worldPixelX(drag.camera.longitude, tileZoom);
+    const startY = worldPixelY(drag.camera.latitude, tileZoom);
+    const longitude = inverseWorldPixelX(startX - (event.clientX - drag.startX) / scale, tileZoom);
+    const latitude = inverseWorldPixelY(startY - (event.clientY - drag.startY) / scale, tileZoom);
+    setCamera({ ...drag.camera, latitude, longitude });
   }
 
   function endDrag(event: ReactPointerEvent<HTMLDivElement>) {
@@ -181,14 +180,22 @@ export function OpportunityMap({ points, signals }: { points: OpportunityMapPoin
       event.stopPropagation();
       const rect = viewport.getBoundingClientRect();
       const focalPoint = { x: event.clientX - rect.left - rect.width / 2, y: event.clientY - rect.top - rect.height / 2 };
-      const nextZoom = clamp(zoom + (event.deltaY < 0 ? 0.12 : -0.12), 0.55, 3.2);
-      const ratio = nextZoom / zoom;
-      setPan((origin) => clampPan({ x: origin.x - focalPoint.x * (ratio - 1), y: origin.y - focalPoint.y * (ratio - 1) }, viewport, nextZoom));
-      setZoom(nextZoom);
+      const nextZoom = clamp(zoom + (event.deltaY < 0 ? 0.12 : -0.12), MAP_MIN_ZOOM, MAP_MAX_ZOOM);
+      setCamera((current) => zoomAroundPoint(current, nextZoom, focalPoint));
     };
     viewport.addEventListener("wheel", handleNativeWheel, { passive: false });
     return () => viewport.removeEventListener("wheel", handleNativeWheel);
   }, [zoom]);
+
+  useEffect(() => {
+    const viewport = mapViewportRef.current;
+    if (!viewport) return;
+    const updateSize = () => setViewportSize({ width: viewport.clientWidth, height: viewport.clientHeight });
+    updateSize();
+    const observer = new ResizeObserver(updateSize);
+    observer.observe(viewport);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <section className="min-w-0 overflow-hidden rounded-3xl border border-light-grey bg-white p-4 sm:p-7">
@@ -201,16 +208,16 @@ export function OpportunityMap({ points, signals }: { points: OpportunityMapPoin
       <div className="mt-5 grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(300px,0.45fr)]">
         <div ref={mapViewportRef} className="relative min-h-[430px] min-w-0 overflow-hidden overscroll-contain rounded-2xl border border-[#cbd9de] bg-[#e8f0f2] sm:min-h-[560px]" role="region" aria-label="Interactive opportunity exploration map">
           <div
-            className={"absolute inset-y-0 left-1/2 h-full w-auto select-none touch-none will-change-transform " + (isDragging ? "cursor-grabbing" : "cursor-grab transition-transform duration-500 ease-out")}
-            style={{ aspectRatio: "2 / 1", transform: "translate3d(calc(-50% + " + pan.x + "px), " + pan.y + "px, 0) scale(" + zoom + ")", transformOrigin: "center" }}
+            className={"absolute inset-0 select-none touch-none " + (isDragging ? "cursor-grabbing" : "cursor-grab")}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={endDrag}
             onPointerCancel={endDrag}
-            aria-label="Approximate opportunity map of the United Kingdom"
+            aria-label="Interactive opportunity map of the United Kingdom"
           >
-            <MapTileLayer />
+            <MapTileLayer camera={camera} viewport={viewportSize} isDragging={isDragging} />
 
+            <div className="absolute inset-0">
             {clusters.map((cluster) => {
               const isIndividual = cluster.items.length === 1;
               const topCategory = cluster.categories[0];
@@ -224,8 +231,8 @@ export function OpportunityMap({ points, signals }: { points: OpportunityMapPoin
                   type="button"
                   onPointerDown={(event) => event.stopPropagation()}
                   onClick={() => handleClusterClick(cluster)}
-                  className={"absolute z-20 -translate-x-1/2 -translate-y-1/2 border-2 border-white text-white shadow-lg transition hover:z-30 hover:scale-110 " + markerTone(cluster) + " " + (isIndividual ? "flex h-9 w-9 items-center justify-center rounded-full text-[10px] font-black " : "flex max-w-[150px] items-center gap-1.5 rounded-full px-2.5 py-2 text-[10px] font-bold ") + (selected ? "ring-4 ring-signal-orange/30" : "")}
-                  style={positionStyle(cluster.latitude, cluster.longitude)}
+                  className={"absolute z-20 -translate-x-1/2 -translate-y-1/2 border-2 border-white text-white shadow-lg transition hover:z-30 hover:scale-110 " + (!isDragging ? "duration-300 ease-out " : "") + markerTone(cluster) + " " + (isIndividual ? "flex h-9 w-9 items-center justify-center rounded-full text-[10px] font-black " : "flex max-w-[150px] items-center gap-1.5 rounded-full px-2.5 py-2 text-[10px] font-bold ") + (selected ? "ring-4 ring-signal-orange/30" : "")}
+                  style={positionStyle(cluster.latitude, cluster.longitude, camera, viewportSize)}
                   aria-label={isIndividual ? "View " + cluster.items[0].title : cluster.items.length + " opportunities: " + cluster.categories.map((item) => item.label + " " + item.count).join(", ")}
                   title={cluster.categories.map((item) => item.label + " · " + item.count).join("\n")}
                 >
@@ -235,6 +242,7 @@ export function OpportunityMap({ points, signals }: { points: OpportunityMapPoin
                 </button>
               );
             })}
+            </div>
           </div>
 
           <div className="absolute left-3 top-3 z-40 flex items-center gap-2">
@@ -268,22 +276,24 @@ export function OpportunityMap({ points, signals }: { points: OpportunityMapPoin
   );
 }
 
-function MapTileLayer() {
-  const tiles = useMemo(() => buildMapTiles(MAP_TILE_ZOOM), []);
+function MapTileLayer({ camera, viewport, isDragging }: { camera: MapCamera; viewport: MapViewportSize; isDragging: boolean }) {
+  const tiles = useMemo(() => buildMapTiles(camera, viewport), [camera, viewport]);
 
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden bg-[#dbe7e7]" aria-hidden="true">
-      {tiles.map((tile) => (
-        <img
+      {tiles.map((tile) => {
+        // OSM tiles are dynamic external imagery and must remain unoptimized.
+        // eslint-disable-next-line @next/next/no-img-element
+        return <img
           key={tile.key}
           src={tile.src}
           alt=""
           draggable={false}
           loading="eager"
-          className="pointer-events-none absolute max-w-none select-none"
-          style={{ left: tile.left + "%", top: tile.top + "%", width: tile.width + "%", height: tile.height + "%" }}
-        />
-      ))}
+          className={"pointer-events-none absolute max-w-none select-none " + (!isDragging ? "transition-[left,top,width,height] duration-300 ease-out" : "")}
+          style={{ left: tile.left + "px", top: tile.top + "px", width: tile.width + "px", height: tile.height + "px" }}
+        />;
+      })}
       <div className="pointer-events-none absolute inset-0 bg-white/10" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,transparent_0,rgba(232,240,242,0.04)_55%,rgba(31,41,55,0.12)_100%)]" />
       <div className="pointer-events-none absolute bottom-1 left-2 rounded bg-white/80 px-1.5 py-0.5 text-[9px] font-medium text-slate/80 shadow-sm">© OpenStreetMap contributors</div>
@@ -394,16 +404,18 @@ function toMapItems(points: OpportunityMapPoint[], signals: MarketSignalMapPoint
 
 function clusterItems(items: MapItem[], zoom: number): OpportunityCluster[] {
   if (zoom >= 2.75) {
-    return items.map((item, index) => {
-      const offset = markerOffset(index, items.length);
-      return {
-        id: "item:" + item.id,
-        latitude: item.latitude + offset.latitude,
-        longitude: item.longitude + offset.longitude,
-        items: [item],
-        categories: [{ label: item.category, count: 1 }],
-      };
-    });
+    // Individual markers must stay on the opportunity's real coordinates.
+    // The old renderer added a large geographic ring here to separate points;
+    // that made the map visually misleading and disconnected markers from
+    // their underlying signals. Overlap is handled by the clustering levels
+    // before this point, never by moving the data.
+    return items.map((item) => ({
+      id: "item:" + item.id,
+      latitude: item.latitude,
+      longitude: item.longitude,
+      items: [item],
+      categories: [{ label: item.category, count: 1 }],
+    }));
   }
 
   const cell = clusterCell(zoom);
@@ -475,46 +487,82 @@ function compactCategory(value: string) {
   return clean.length > 15 ? clean.slice(0, 14) + "…" : clean;
 }
 
-function positionPercent(latitude: number, longitude: number) {
-  const x = ((longitude - UK_BOUNDS.west) / (UK_BOUNDS.east - UK_BOUNDS.west)) * 100;
-  const mercator = (value: number) => Math.log(Math.tan(Math.PI / 4 + (value * Math.PI / 180) / 2));
-  const northY = mercator(UK_BOUNDS.north);
-  const southY = mercator(UK_BOUNDS.south);
-  const y = ((northY - mercator(latitude)) / (northY - southY)) * 100;
-  return { x, y };
-}
-
 type MapTile = { key: string; src: string; left: number; top: number; width: number; height: number };
 
-function buildMapTiles(zoom: number): MapTile[] {
-  const minX = worldPixelX(UK_BOUNDS.west, zoom);
-  const maxX = worldPixelX(UK_BOUNDS.east, zoom);
-  const minY = worldPixelY(UK_BOUNDS.north, zoom);
-  const maxY = worldPixelY(UK_BOUNDS.south, zoom);
-  const tileMinX = Math.floor(minX / MAP_TILE_SIZE);
-  const tileMaxX = Math.floor(maxX / MAP_TILE_SIZE);
-  const tileMinY = Math.floor(minY / MAP_TILE_SIZE);
-  const tileMaxY = Math.floor(maxY / MAP_TILE_SIZE);
-  const width = maxX - minX;
-  const height = maxY - minY;
+function buildMapTiles(camera: MapCamera, viewport: MapViewportSize): MapTile[] {
+  const width = viewport.width || 1000;
+  const height = viewport.height || 560;
+  const tileZoom = tileZoomForZoom(camera.zoom);
+  const scale = tileScaleForZoom(camera.zoom, tileZoom);
+  const centerX = worldPixelX(camera.longitude, tileZoom);
+  const centerY = worldPixelY(camera.latitude, tileZoom);
+  const visibleWorldWidth = width / scale;
+  const visibleWorldHeight = height / scale;
+  const minTileX = Math.floor((centerX - visibleWorldWidth / 2) / MAP_TILE_SIZE) - 1;
+  const maxTileX = Math.floor((centerX + visibleWorldWidth / 2) / MAP_TILE_SIZE) + 1;
+  const minTileY = Math.floor((centerY - visibleWorldHeight / 2) / MAP_TILE_SIZE) - 1;
+  const maxTileY = Math.floor((centerY + visibleWorldHeight / 2) / MAP_TILE_SIZE) + 1;
+  const worldTileCount = 2 ** tileZoom;
   const tiles: MapTile[] = [];
-  const worldTileCount = 2 ** zoom;
 
-  for (let tileY = tileMinY; tileY <= tileMaxY; tileY += 1) {
+  for (let tileY = minTileY; tileY <= maxTileY; tileY += 1) {
     if (tileY < 0 || tileY >= worldTileCount) continue;
-    for (let tileX = tileMinX; tileX <= tileMaxX; tileX += 1) {
+    for (let tileX = minTileX; tileX <= maxTileX; tileX += 1) {
       const wrappedX = ((tileX % worldTileCount) + worldTileCount) % worldTileCount;
       tiles.push({
-        key: zoom + ":" + tileX + ":" + tileY,
-        src: "https://tile.openstreetmap.org/" + zoom + "/" + wrappedX + "/" + tileY + ".png",
-        left: ((tileX * MAP_TILE_SIZE - minX) / width) * 100,
-        top: ((tileY * MAP_TILE_SIZE - minY) / height) * 100,
-        width: (MAP_TILE_SIZE / width) * 100,
-        height: (MAP_TILE_SIZE / height) * 100,
+        key: tileZoom + ":" + tileX + ":" + tileY,
+        src: "https://tile.openstreetmap.org/" + tileZoom + "/" + wrappedX + "/" + tileY + ".png",
+        left: width / 2 + (tileX * MAP_TILE_SIZE - centerX) * scale,
+        top: height / 2 + (tileY * MAP_TILE_SIZE - centerY) * scale,
+        width: MAP_TILE_SIZE * scale,
+        height: MAP_TILE_SIZE * scale,
       });
     }
   }
   return tiles;
+}
+
+function mapZoomForUiZoom(zoom: number) {
+  return 7 + (zoom - 0.8) * 1.25;
+}
+
+function tileZoomForZoom(zoom: number) {
+  return clamp(Math.round(mapZoomForUiZoom(zoom)), 5, 10);
+}
+
+function tileScaleForZoom(zoom: number, tileZoom = tileZoomForZoom(zoom)) {
+  return 2 ** (mapZoomForUiZoom(zoom) - tileZoom);
+}
+
+function positionStyle(latitude: number, longitude: number, camera: MapCamera, viewport: MapViewportSize): CSSProperties {
+  const width = viewport.width || 1000;
+  const height = viewport.height || 560;
+  const tileZoom = tileZoomForZoom(camera.zoom);
+  const scale = tileScaleForZoom(camera.zoom, tileZoom);
+  const centerX = worldPixelX(camera.longitude, tileZoom);
+  const centerY = worldPixelY(camera.latitude, tileZoom);
+  return {
+    left: width / 2 + (worldPixelX(longitude, tileZoom) - centerX) * scale,
+    top: height / 2 + (worldPixelY(latitude, tileZoom) - centerY) * scale,
+  };
+}
+
+function zoomAroundPoint(camera: MapCamera, nextZoom: number, focalPoint: { x: number; y: number }): MapCamera {
+  const oldTileZoom = tileZoomForZoom(camera.zoom);
+  const oldScale = tileScaleForZoom(camera.zoom, oldTileZoom);
+  const oldCenterX = worldPixelX(camera.longitude, oldTileZoom);
+  const oldCenterY = worldPixelY(camera.latitude, oldTileZoom);
+  const pointLongitude = inverseWorldPixelX(oldCenterX + focalPoint.x / oldScale, oldTileZoom);
+  const pointLatitude = inverseWorldPixelY(oldCenterY + focalPoint.y / oldScale, oldTileZoom);
+  const nextTileZoom = tileZoomForZoom(nextZoom);
+  const nextScale = tileScaleForZoom(nextZoom, nextTileZoom);
+  const nextPointX = worldPixelX(pointLongitude, nextTileZoom);
+  const nextPointY = worldPixelY(pointLatitude, nextTileZoom);
+  return {
+    longitude: inverseWorldPixelX(nextPointX - focalPoint.x / nextScale, nextTileZoom),
+    latitude: inverseWorldPixelY(nextPointY - focalPoint.y / nextScale, nextTileZoom),
+    zoom: nextZoom,
+  };
 }
 
 function worldPixelX(longitude: number, zoom: number) {
@@ -528,28 +576,21 @@ function worldPixelY(latitude: number, zoom: number) {
   return mercator * MAP_TILE_SIZE * 2 ** zoom;
 }
 
-function positionStyle(latitude: number, longitude: number): CSSProperties {
-  const point = positionPercent(latitude, longitude);
-  return { left: point.x + "%", top: point.y + "%" };
+function inverseWorldPixelX(value: number, zoom: number) {
+  const worldSize = MAP_TILE_SIZE * 2 ** zoom;
+  const wrapped = ((value % worldSize) + worldSize) % worldSize;
+  return (wrapped / worldSize) * 360 - 180;
 }
 
-function markerOffset(index: number, total: number) {
-  if (total <= 1) return { latitude: 0, longitude: 0 };
-  const angle = (index / total) * Math.PI * 2 - Math.PI / 2;
-  const distance = Math.min(0.58, 0.34 + total * 0.035);
-  return { latitude: Math.sin(angle) * distance, longitude: Math.cos(angle) * distance * 1.4 };
+function inverseWorldPixelY(value: number, zoom: number) {
+  const worldSize = MAP_TILE_SIZE * 2 ** zoom;
+  const normalized = clamp(value / worldSize, 0, 1);
+  const mercator = Math.PI * (1 - 2 * normalized);
+  return (Math.atan(Math.sinh(mercator)) * 180) / Math.PI;
 }
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
-}
-
-function clampPan(pan: { x: number; y: number }, viewport: HTMLDivElement | null, zoom: number) {
-  if (!viewport) return pan;
-  const baseWidth = Math.max(viewport.clientWidth, viewport.clientHeight * 2);
-  const xLimit = Math.max(80, (baseWidth * zoom - viewport.clientWidth) / 2 + 80);
-  const yLimit = Math.max(80, (viewport.clientHeight * zoom - viewport.clientHeight) / 2 + 80);
-  return { x: clamp(pan.x, -xLimit, xLimit), y: clamp(pan.y, -yLimit, yLimit) };
 }
 
 function humanize(value: string) {
