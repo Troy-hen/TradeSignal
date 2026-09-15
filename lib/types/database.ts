@@ -6781,4 +6781,1655 @@ export type Database = {
         }[]
       }
       browse_territory_trade_intelligence: {
-        Args: { p_postcode_district: st
+        Args: { p_postcode_district: string; p_trade_slug: string }
+        Returns: {
+          commercial_development_count: number
+          contract_award_count: number
+          estimated_trade_value_gbp: number
+          owns_territory: boolean
+          planning_count: number
+          postcode_district: string
+          public_pipeline_count: number
+          tender_count: number
+          total_opportunity_count: number
+          trade_name: string
+          trade_slug: string
+        }[]
+      }
+      browse_territory_trade_signal_feed: {
+        Args: {
+          p_limit?: number
+          p_postcode_district: string
+          p_trade_slug: string
+        }
+        Returns: {
+          access_level: string
+          buyer_name: string
+          deadline_at: string
+          estimated_trade_value_high: number
+          estimated_trade_value_low: number
+          headline: string
+          opportunity_bucket: string
+          published_at: string
+          recommended_action: string
+          score: number
+          source_kind: string
+          source_record_id: string
+          source_url: string
+          stage: string
+          summary: string
+        }[]
+      }
+      cancel_lead_follow_up: {
+        Args: { p_follow_up_id: string }
+        Returns: {
+          company_id: string
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          created_by: string | null
+          due_at: string
+          id: string
+          lead_match_id: string
+          note: string | null
+          notified_at: string | null
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "lead_follow_ups"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      change_coverage_plan: {
+        Args: { p_coverage_plan_id: string; p_postcode_districts: string[] }
+        Returns: {
+          coverage_plan_id: string
+          monthly_price_pence: number
+          postcode_count: number
+        }[]
+      }
+      check_territory_availability: {
+        Args: { p_postcode_district: string; p_trade_slug: string }
+        Returns: {
+          applications_last_30d: number
+          estimated_construction_activity_gbp: number
+          estimated_trade_value_gbp: number
+          high_priority_count: number
+          monthly_price_pence: number
+          territory_status: string
+        }[]
+      }
+      claim_classification_batch: {
+        Args: { p_limit?: number }
+        Returns: {
+          attempts: number
+          id: string
+          planning_application_id: string
+          previous_status: Database["public"]["Enums"]["classification_status"]
+        }[]
+      }
+      company_has_market_signal_access: {
+        Args: { p_company_id: string; p_match_id: string }
+        Returns: boolean
+      }
+      complete_contact_enrichment_lookup: {
+        Args: { p_error_code?: string; p_lookup_id: string; p_status: string }
+        Returns: undefined
+      }
+      complete_lead_follow_up: {
+        Args: { p_follow_up_id: string }
+        Returns: {
+          company_id: string
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          created_by: string | null
+          due_at: string
+          id: string
+          lead_match_id: string
+          note: string | null
+          notified_at: string | null
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "lead_follow_ups"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      complete_outreach_generation: {
+        Args: {
+          p_error_code?: string
+          p_estimated_cost_usd?: number
+          p_generation_id: string
+          p_input_tokens?: number
+          p_model?: string
+          p_output_tokens?: number
+          p_status: string
+        }
+        Returns: undefined
+      }
+      claim_trial_lead_unlock: {
+        Args: { p_company_id: string; p_lead_unlock_id: string }
+        Returns: boolean
+      }
+      compute_opportunity_score: {
+        Args: {
+          p_ai_confidence: number
+          p_decision_date: string
+          p_fit_score: number
+          p_project_size: Database["public"]["Enums"]["project_size_category"]
+          p_received_date: string
+          p_status: Database["public"]["Enums"]["planning_application_status"]
+          p_trade_value_high: number
+        }
+        Returns: {
+          bucket: Database["public"]["Enums"]["opportunity_bucket"]
+          score: number
+        }[]
+      }
+      coverage_plan_price: {
+        Args: {
+          p_billing_mode?: Database["public"]["Enums"]["coverage_billing_mode"]
+          p_discount_percent?: number
+          p_postcode_count: number
+        }
+        Returns: number
+      }
+      coverage_unit_price: { Args: { p_position: number }; Returns: number }
+      create_company_and_claim_ownership: {
+        Args: { p_billing_email: string; p_trading_name: string }
+        Returns: {
+          address_line1: string | null
+          address_line2: string | null
+          billing_email: string
+          city: string | null
+          companies_house_number: string | null
+          created_at: string
+          deleted_at: string | null
+          id: string
+          legal_name: string | null
+          logo_url: string | null
+          phone: string | null
+          postcode: string | null
+          stripe_customer_id: string | null
+          trading_name: string
+          updated_at: string
+          verified: boolean
+          website: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "companies"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_lead_follow_up: {
+        Args: { p_due_at: string; p_lead_match_id: string; p_note?: string }
+        Returns: {
+          company_id: string
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          created_by: string | null
+          due_at: string
+          id: string
+          lead_match_id: string
+          note: string | null
+          notified_at: string | null
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "lead_follow_ups"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      disablelongtransactions: { Args: never; Returns: string }
+      dropgeometrycolumn:
+        | {
+            Args: {
+              catalog_name: string
+              column_name: string
+              schema_name: string
+              table_name: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              column_name: string
+              schema_name: string
+              table_name: string
+            }
+            Returns: string
+          }
+        | { Args: { column_name: string; table_name: string }; Returns: string }
+      dropgeometrytable:
+        | {
+            Args: {
+              catalog_name: string
+              schema_name: string
+              table_name: string
+            }
+            Returns: string
+          }
+        | { Args: { schema_name: string; table_name: string }; Returns: string }
+        | { Args: { table_name: string }; Returns: string }
+      enablelongtransactions: { Args: never; Returns: string }
+      enqueue_market_signal_fetches: {
+        Args: { p_limit?: number; p_since?: string }
+        Returns: number
+      }
+      equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      expire_stale_territory_reservations: { Args: never; Returns: undefined }
+      geometry: { Args: { "": string }; Returns: unknown }
+      geometry_above: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_below: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_cmp: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      geometry_contained_3d: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_contains: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_contains_3d: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_distance_box: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      geometry_distance_centroid: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      geometry_eq: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_ge: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_gt: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_le: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_left: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_lt: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_overabove: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_overbelow: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_overlaps: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_overlaps_3d: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_overleft: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_overright: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_right: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_same: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_same_3d: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geometry_within: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      geomfromewkt: { Args: { "": string }; Returns: unknown }
+      get_conversion_learning_benchmarks: {
+        Args: { p_min_platform_sample?: number }
+        Returns: {
+          audience_type: string
+          channel: string
+          opened_count: number
+          quote_count: number
+          quote_rate: number
+          response_count: number
+          response_rate: number
+          sample_size: number
+          scope: string
+          source_type: string
+          trade_name: string
+          win_rate: number
+          won_count: number
+          won_value_gbp: number
+        }[]
+      }
+      get_outreach_generation_status: {
+        Args: { p_opportunity_id: string }
+        Returns: {
+          daily_remaining: number
+          daily_used: number
+          monthly_remaining: number
+          monthly_used: number
+          remaining_generations: number
+          used_generations: number
+        }[]
+      }
+      get_owned_market_signal: {
+        Args: { p_match_id: string }
+        Returns: {
+          buyer_identifier: string
+          buyer_name: string
+          contact: Json
+          contract_end_date: string
+          contract_start_date: string
+          cpv_codes: string[]
+          current_action: string
+          deadline_at: string
+          estimated_trade_value_high: number
+          estimated_trade_value_low: number
+          external_ocid: string
+          fit_score: number
+          location_text: string
+          market_signal_trade_match_id: string
+          match_reasons: string[]
+          notice_type: string
+          opportunity_bucket: string
+          postcode_district: string
+          procurement_stage: string
+          project_value_high: number
+          project_value_low: number
+          published_at: string
+          recommended_action: string
+          signal_id: string
+          signal_type: string
+          source: string
+          source_url: string
+          summary: string
+          supplier_name: string
+          title: string
+          trade_name: string
+          trade_slug: string
+        }[]
+      }
+      gettransactionid: { Args: never; Returns: unknown }
+      has_active_lead_match: {
+        Args: { target_application_id: string }
+        Returns: boolean
+      }
+      has_active_lead_match_for_opportunity: {
+        Args: { target_opportunity_id: string }
+        Returns: boolean
+      }
+      invite_company_member: {
+        Args: {
+          p_company_id: string
+          p_invited_email: string
+          p_role?: Database["public"]["Enums"]["company_member_role"]
+        }
+        Returns: {
+          company_id: string
+          created_at: string
+          id: string
+          invited_at: string | null
+          invited_email: string | null
+          joined_at: string | null
+          role: Database["public"]["Enums"]["company_member_role"]
+          status: Database["public"]["Enums"]["company_member_status"]
+          updated_at: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "company_memberships"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      is_company_admin: {
+        Args: { target_company_id: string }
+        Returns: boolean
+      }
+      is_company_member: {
+        Args: { target_company_id: string }
+        Returns: boolean
+      }
+      is_platform_admin: { Args: never; Returns: boolean }
+      list_lead_follow_ups: {
+        Args: { p_lead_match_id: string }
+        Returns: {
+          company_id: string
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          created_by: string | null
+          due_at: string
+          id: string
+          lead_match_id: string
+          note: string | null
+          notified_at: string | null
+          status: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "lead_follow_ups"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      longtransactionsenabled: { Args: never; Returns: boolean }
+      market_signal_is_current: {
+        Args: { p_deadline: string; p_published: string; p_type: string }
+        Returns: boolean
+      }
+      normalise_market_signal_region: {
+        Args: { p_region: string }
+        Returns: string
+      }
+      opt_out_quote_link: {
+        Args: { p_reason?: string; p_token_hash: string }
+        Returns: {
+          already_opted_out: boolean
+          company_id: string
+          opportunity_id: string
+          response_link_id: string
+        }[]
+      }
+      populate_geometry_columns:
+        | { Args: { tbl_oid: unknown; use_typmod?: boolean }; Returns: number }
+        | { Args: { use_typmod?: boolean }; Returns: string }
+      postgis_constraint_dims: {
+        Args: { geomcolumn: string; geomschema: string; geomtable: string }
+        Returns: number
+      }
+      postgis_constraint_srid: {
+        Args: { geomcolumn: string; geomschema: string; geomtable: string }
+        Returns: number
+      }
+      postgis_constraint_type: {
+        Args: { geomcolumn: string; geomschema: string; geomtable: string }
+        Returns: string
+      }
+      postgis_extensions_upgrade: { Args: never; Returns: string }
+      postgis_full_version: { Args: never; Returns: string }
+      postgis_geos_version: { Args: never; Returns: string }
+      postgis_lib_build_date: { Args: never; Returns: string }
+      postgis_lib_revision: { Args: never; Returns: string }
+      postgis_lib_version: { Args: never; Returns: string }
+      postgis_libjson_version: { Args: never; Returns: string }
+      postgis_liblwgeom_version: { Args: never; Returns: string }
+      postgis_libprotobuf_version: { Args: never; Returns: string }
+      postgis_libxml_version: { Args: never; Returns: string }
+      postgis_proj_version: { Args: never; Returns: string }
+      postgis_scripts_build_date: { Args: never; Returns: string }
+      postgis_scripts_installed: { Args: never; Returns: string }
+      postgis_scripts_released: { Args: never; Returns: string }
+      postgis_svn_version: { Args: never; Returns: string }
+      postgis_type_name: {
+        Args: {
+          coord_dimension: number
+          geomname: string
+          use_new_name?: boolean
+        }
+        Returns: string
+      }
+      postgis_version: { Args: never; Returns: string }
+      postgis_wagyu_version: { Args: never; Returns: string }
+      prune_rate_limit_events: { Args: never; Returns: undefined }
+      queue_public_market_signal_fetch: {
+        Args: { p_url: string }
+        Returns: number
+      }
+      read_public_market_signal_fetch: {
+        Args: { p_request_id: number }
+        Returns: {
+          content: string
+          error_msg: string
+          status_code: number
+          timed_out: boolean
+        }[]
+      }
+      refresh_opportunity_customer_matches: {
+        Args: { p_opportunity_id: string }
+        Returns: number
+      }
+      remove_company_member: {
+        Args: { p_membership_id: string }
+        Returns: undefined
+      }
+      replace_customer_profile_terms: {
+        Args: { p_company_id: string; p_terms: Json }
+        Returns: undefined
+      }
+      rescore_stale_opportunities: { Args: never; Returns: undefined }
+      reserve_contact_enrichment_lookup: {
+        Args: { p_planning_application_id: string }
+        Returns: {
+          allowed: boolean
+          company_id: string
+          lookup_id: string
+          reason: string
+          remaining: number
+        }[]
+      }
+      reserve_coverage_plan: {
+        Args: {
+          p_billing_mode?: Database["public"]["Enums"]["coverage_billing_mode"]
+          p_coverage_area_id?: string
+          p_postcode_districts: string[]
+          p_trade_category_id: string
+        }
+        Returns: {
+          coverage_plan_id: string
+          first_territory_claim_id: string
+          monthly_price_pence: number
+          postcode_count: number
+        }[]
+      }
+      reserve_outreach_generation: {
+        Args: { p_opportunity_id: string }
+        Returns: {
+          allowed: boolean
+          generation_count: number
+          generation_id: string
+          reason: string
+          remaining_generations: number
+        }[]
+      }
+      reserve_territory: {
+        Args: { p_postcode_district: string; p_trade_category_id: string }
+        Returns: {
+          activated_at: string | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          company_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          reserved_at: string
+          reserved_expires_at: string | null
+          status: Database["public"]["Enums"]["territory_claim_status"]
+          stripe_checkout_session_id: string | null
+          stripe_subscription_id: string | null
+          suspended_at: string | null
+          territory_id: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "territory_claims"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      score_opportunity_factors: {
+        Args: {
+          p_factors: Json
+          p_formula_version?: string
+          p_market_id: string
+        }
+        Returns: {
+          formula_version: string
+          score: number
+          temperature: string
+        }[]
+      }
+      search_assistant_knowledge: {
+        Args: {
+          p_match_count?: number
+          p_query: string
+          p_query_embedding?: string
+        }
+        Returns: {
+          category: string
+          content: string
+          document_slug: string
+          document_title: string
+          heading: string
+          relevance: number
+        }[]
+      }
+      search_market_trade_signals: {
+        Args: {
+          p_limit?: number
+          p_location: string
+          p_signal_type?: string
+          p_trade_slug?: string
+        }
+        Returns: {
+          access_level: string
+          buyer_name: string
+          deadline_at: string
+          estimated_trade_value_high: number
+          estimated_trade_value_low: number
+          fit_score: number
+          market_signal_trade_match_id: string
+          post_town: string
+          postcode_district: string
+          procurement_stage: string
+          recommended_action: string
+          signal_type: string
+          source_url: string
+          title: string
+          total_matches: number
+          trade_name: string
+          trade_slug: string
+        }[]
+      }
+      search_opportunity_teasers: {
+        Args: {
+          p_limit?: number
+          p_location: string
+          p_status?: string
+          p_trade_slug?: string
+        }
+        Returns: {
+          access_level: string
+          estimated_trade_value_high: number
+          estimated_trade_value_low: number
+          monthly_price_pence: number
+          opportunity_bucket: string
+          opportunity_id: string
+          opportunity_score: number
+          planning_status: string
+          post_town: string
+          postcode_district: string
+          project_type: string
+          recommended_action: string
+          summary: string
+          territory_status: string
+          total_matches: number
+          trade_name: string
+          trade_slug: string
+        }[]
+      }
+      set_market_signal_action: {
+        Args: {
+          p_action: string
+          p_contract_value_gbp?: number
+          p_match_id: string
+          p_note?: string
+        }
+        Returns: undefined
+      }
+      st_3dclosestpoint: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_3ddistance: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      st_3dintersects: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      st_3dlongestline: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_3dmakebox: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_3dmaxdistance: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      st_3dshortestline: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_addpoint: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_angle:
+        | { Args: { line1: unknown; line2: unknown }; Returns: number }
+        | {
+            Args: { pt1: unknown; pt2: unknown; pt3: unknown; pt4?: unknown }
+            Returns: number
+          }
+      st_area:
+        | { Args: { geog: unknown; use_spheroid?: boolean }; Returns: number }
+        | { Args: { "": string }; Returns: number }
+      st_asencodedpolyline: {
+        Args: { geom: unknown; nprecision?: number }
+        Returns: string
+      }
+      st_asewkt: { Args: { "": string }; Returns: string }
+      st_asgeojson:
+        | {
+            Args: { geog: unknown; maxdecimaldigits?: number; options?: number }
+            Returns: string
+          }
+        | {
+            Args: { geom: unknown; maxdecimaldigits?: number; options?: number }
+            Returns: string
+          }
+        | {
+            Args: {
+              geom_column?: string
+              maxdecimaldigits?: number
+              pretty_bool?: boolean
+              r: Record<string, unknown>
+            }
+            Returns: string
+          }
+        | { Args: { "": string }; Returns: string }
+      st_asgml:
+        | {
+            Args: {
+              geog: unknown
+              id?: string
+              maxdecimaldigits?: number
+              nprefix?: string
+              options?: number
+            }
+            Returns: string
+          }
+        | {
+            Args: { geom: unknown; maxdecimaldigits?: number; options?: number }
+            Returns: string
+          }
+        | { Args: { "": string }; Returns: string }
+        | {
+            Args: {
+              geog: unknown
+              id?: string
+              maxdecimaldigits?: number
+              nprefix?: string
+              options?: number
+              version: number
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              geom: unknown
+              id?: string
+              maxdecimaldigits?: number
+              nprefix?: string
+              options?: number
+              version: number
+            }
+            Returns: string
+          }
+      st_askml:
+        | {
+            Args: { geog: unknown; maxdecimaldigits?: number; nprefix?: string }
+            Returns: string
+          }
+        | {
+            Args: { geom: unknown; maxdecimaldigits?: number; nprefix?: string }
+            Returns: string
+          }
+        | { Args: { "": string }; Returns: string }
+      st_aslatlontext: {
+        Args: { geom: unknown; tmpl?: string }
+        Returns: string
+      }
+      st_asmarc21: { Args: { format?: string; geom: unknown }; Returns: string }
+      st_asmvtgeom: {
+        Args: {
+          bounds: unknown
+          buffer?: number
+          clip_geom?: boolean
+          extent?: number
+          geom: unknown
+        }
+        Returns: unknown
+      }
+      st_assvg:
+        | {
+            Args: { geog: unknown; maxdecimaldigits?: number; rel?: number }
+            Returns: string
+          }
+        | {
+            Args: { geom: unknown; maxdecimaldigits?: number; rel?: number }
+            Returns: string
+          }
+        | { Args: { "": string }; Returns: string }
+      st_astext: { Args: { "": string }; Returns: string }
+      st_astwkb:
+        | {
+            Args: {
+              geom: unknown
+              prec?: number
+              prec_m?: number
+              prec_z?: number
+              with_boxes?: boolean
+              with_sizes?: boolean
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              geom: unknown[]
+              ids: number[]
+              prec?: number
+              prec_m?: number
+              prec_z?: number
+              with_boxes?: boolean
+              with_sizes?: boolean
+            }
+            Returns: string
+          }
+      st_asx3d: {
+        Args: { geom: unknown; maxdecimaldigits?: number; options?: number }
+        Returns: string
+      }
+      st_azimuth:
+        | { Args: { geog1: unknown; geog2: unknown }; Returns: number }
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: number }
+      st_boundingdiagonal: {
+        Args: { fits?: boolean; geom: unknown }
+        Returns: unknown
+      }
+      st_buffer:
+        | {
+            Args: { geom: unknown; options?: string; radius: number }
+            Returns: unknown
+          }
+        | {
+            Args: { geom: unknown; quadsegs: number; radius: number }
+            Returns: unknown
+          }
+      st_centroid: { Args: { "": string }; Returns: unknown }
+      st_clipbybox2d: {
+        Args: { box: unknown; geom: unknown }
+        Returns: unknown
+      }
+      st_closestpoint: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_collect: { Args: { geom1: unknown; geom2: unknown }; Returns: unknown }
+      st_concavehull: {
+        Args: {
+          param_allow_holes?: boolean
+          param_geom: unknown
+          param_pctconvex: number
+        }
+        Returns: unknown
+      }
+      st_contains: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      st_containsproperly: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      st_coorddim: { Args: { geometry: unknown }; Returns: number }
+      st_coveredby:
+        | { Args: { geog1: unknown; geog2: unknown }; Returns: boolean }
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      st_covers:
+        | { Args: { geog1: unknown; geog2: unknown }; Returns: boolean }
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      st_crosses: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      st_curvetoline: {
+        Args: { flags?: number; geom: unknown; tol?: number; toltype?: number }
+        Returns: unknown
+      }
+      st_delaunaytriangles: {
+        Args: { flags?: number; g1: unknown; tolerance?: number }
+        Returns: unknown
+      }
+      st_difference: {
+        Args: { geom1: unknown; geom2: unknown; gridsize?: number }
+        Returns: unknown
+      }
+      st_disjoint: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      st_distance:
+        | {
+            Args: { geog1: unknown; geog2: unknown; use_spheroid?: boolean }
+            Returns: number
+          }
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: number }
+      st_distancesphere:
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: number }
+        | {
+            Args: { geom1: unknown; geom2: unknown; radius: number }
+            Returns: number
+          }
+      st_distancespheroid: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      st_dwithin: {
+        Args: {
+          geog1: unknown
+          geog2: unknown
+          tolerance: number
+          use_spheroid?: boolean
+        }
+        Returns: boolean
+      }
+      st_equals: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      st_expand:
+        | { Args: { box: unknown; dx: number; dy: number }; Returns: unknown }
+        | {
+            Args: { box: unknown; dx: number; dy: number; dz?: number }
+            Returns: unknown
+          }
+        | {
+            Args: {
+              dm?: number
+              dx: number
+              dy: number
+              dz?: number
+              geom: unknown
+            }
+            Returns: unknown
+          }
+      st_force3d: { Args: { geom: unknown; zvalue?: number }; Returns: unknown }
+      st_force3dm: {
+        Args: { geom: unknown; mvalue?: number }
+        Returns: unknown
+      }
+      st_force3dz: {
+        Args: { geom: unknown; zvalue?: number }
+        Returns: unknown
+      }
+      st_force4d: {
+        Args: { geom: unknown; mvalue?: number; zvalue?: number }
+        Returns: unknown
+      }
+      st_generatepoints:
+        | { Args: { area: unknown; npoints: number }; Returns: unknown }
+        | {
+            Args: { area: unknown; npoints: number; seed: number }
+            Returns: unknown
+          }
+      st_geogfromtext: { Args: { "": string }; Returns: unknown }
+      st_geographyfromtext: { Args: { "": string }; Returns: unknown }
+      st_geohash:
+        | { Args: { geog: unknown; maxchars?: number }; Returns: string }
+        | { Args: { geom: unknown; maxchars?: number }; Returns: string }
+      st_geomcollfromtext: { Args: { "": string }; Returns: unknown }
+      st_geometricmedian: {
+        Args: {
+          fail_if_not_converged?: boolean
+          g: unknown
+          max_iter?: number
+          tolerance?: number
+        }
+        Returns: unknown
+      }
+      st_geometryfromtext: { Args: { "": string }; Returns: unknown }
+      st_geomfromewkt: { Args: { "": string }; Returns: unknown }
+      st_geomfromgeojson:
+        | { Args: { "": Json }; Returns: unknown }
+        | { Args: { "": Json }; Returns: unknown }
+        | { Args: { "": string }; Returns: unknown }
+      st_geomfromgml: { Args: { "": string }; Returns: unknown }
+      st_geomfromkml: { Args: { "": string }; Returns: unknown }
+      st_geomfrommarc21: { Args: { marc21xml: string }; Returns: unknown }
+      st_geomfromtext: { Args: { "": string }; Returns: unknown }
+      st_gmltosql: { Args: { "": string }; Returns: unknown }
+      st_hasarc: { Args: { geometry: unknown }; Returns: boolean }
+      st_hausdorffdistance: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      st_hexagon: {
+        Args: { cell_i: number; cell_j: number; origin?: unknown; size: number }
+        Returns: unknown
+      }
+      st_hexagongrid: {
+        Args: { bounds: unknown; size: number }
+        Returns: Record<string, unknown>[]
+      }
+      st_interpolatepoint: {
+        Args: { line: unknown; point: unknown }
+        Returns: number
+      }
+      st_intersection: {
+        Args: { geom1: unknown; geom2: unknown; gridsize?: number }
+        Returns: unknown
+      }
+      st_intersects:
+        | { Args: { geog1: unknown; geog2: unknown }; Returns: boolean }
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      st_isvaliddetail: {
+        Args: { flags?: number; geom: unknown }
+        Returns: Database["public"]["CompositeTypes"]["valid_detail"]
+        SetofOptions: {
+          from: "*"
+          to: "valid_detail"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      st_length:
+        | { Args: { geog: unknown; use_spheroid?: boolean }; Returns: number }
+        | { Args: { "": string }; Returns: number }
+      st_letters: { Args: { font?: Json; letters: string }; Returns: unknown }
+      st_linecrossingdirection: {
+        Args: { line1: unknown; line2: unknown }
+        Returns: number
+      }
+      st_linefromencodedpolyline: {
+        Args: { nprecision?: number; txtin: string }
+        Returns: unknown
+      }
+      st_linefromtext: { Args: { "": string }; Returns: unknown }
+      st_linelocatepoint: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      st_linetocurve: { Args: { geometry: unknown }; Returns: unknown }
+      st_locatealong: {
+        Args: { geometry: unknown; leftrightoffset?: number; measure: number }
+        Returns: unknown
+      }
+      st_locatebetween: {
+        Args: {
+          frommeasure: number
+          geometry: unknown
+          leftrightoffset?: number
+          tomeasure: number
+        }
+        Returns: unknown
+      }
+      st_locatebetweenelevations: {
+        Args: { fromelevation: number; geometry: unknown; toelevation: number }
+        Returns: unknown
+      }
+      st_longestline: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_makebox2d: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_makeline: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_makevalid: {
+        Args: { geom: unknown; params: string }
+        Returns: unknown
+      }
+      st_maxdistance: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: number
+      }
+      st_minimumboundingcircle: {
+        Args: { inputgeom: unknown; segs_per_quarter?: number }
+        Returns: unknown
+      }
+      st_mlinefromtext: { Args: { "": string }; Returns: unknown }
+      st_mpointfromtext: { Args: { "": string }; Returns: unknown }
+      st_mpolyfromtext: { Args: { "": string }; Returns: unknown }
+      st_multilinestringfromtext: { Args: { "": string }; Returns: unknown }
+      st_multipointfromtext: { Args: { "": string }; Returns: unknown }
+      st_multipolygonfromtext: { Args: { "": string }; Returns: unknown }
+      st_node: { Args: { g: unknown }; Returns: unknown }
+      st_normalize: { Args: { geom: unknown }; Returns: unknown }
+      st_offsetcurve: {
+        Args: { distance: number; line: unknown; params?: string }
+        Returns: unknown
+      }
+      st_orderingequals: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      st_overlaps: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: boolean
+      }
+      st_perimeter: {
+        Args: { geog: unknown; use_spheroid?: boolean }
+        Returns: number
+      }
+      st_pointfromtext: { Args: { "": string }; Returns: unknown }
+      st_pointm: {
+        Args: {
+          mcoordinate: number
+          srid?: number
+          xcoordinate: number
+          ycoordinate: number
+        }
+        Returns: unknown
+      }
+      st_pointz: {
+        Args: {
+          srid?: number
+          xcoordinate: number
+          ycoordinate: number
+          zcoordinate: number
+        }
+        Returns: unknown
+      }
+      st_pointzm: {
+        Args: {
+          mcoordinate: number
+          srid?: number
+          xcoordinate: number
+          ycoordinate: number
+          zcoordinate: number
+        }
+        Returns: unknown
+      }
+      st_polyfromtext: { Args: { "": string }; Returns: unknown }
+      st_polygonfromtext: { Args: { "": string }; Returns: unknown }
+      st_project: {
+        Args: { azimuth: number; distance: number; geog: unknown }
+        Returns: unknown
+      }
+      st_quantizecoordinates: {
+        Args: {
+          g: unknown
+          prec_m?: number
+          prec_x: number
+          prec_y?: number
+          prec_z?: number
+        }
+        Returns: unknown
+      }
+      st_reduceprecision: {
+        Args: { geom: unknown; gridsize: number }
+        Returns: unknown
+      }
+      st_relate: { Args: { geom1: unknown; geom2: unknown }; Returns: string }
+      st_removerepeatedpoints: {
+        Args: { geom: unknown; tolerance?: number }
+        Returns: unknown
+      }
+      st_segmentize: {
+        Args: { geog: unknown; max_segment_length: number }
+        Returns: unknown
+      }
+      st_setsrid:
+        | { Args: { geog: unknown; srid: number }; Returns: unknown }
+        | { Args: { geom: unknown; srid: number }; Returns: unknown }
+      st_sharedpaths: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_shortestline: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_simplifypolygonhull: {
+        Args: { geom: unknown; is_outer?: boolean; vertex_fraction: number }
+        Returns: unknown
+      }
+      st_split: { Args: { geom1: unknown; geom2: unknown }; Returns: unknown }
+      st_square: {
+        Args: { cell_i: number; cell_j: number; origin?: unknown; size: number }
+        Returns: unknown
+      }
+      st_squaregrid: {
+        Args: { bounds: unknown; size: number }
+        Returns: Record<string, unknown>[]
+      }
+      st_srid:
+        | { Args: { geog: unknown }; Returns: number }
+        | { Args: { geom: unknown }; Returns: number }
+      st_subdivide: {
+        Args: { geom: unknown; gridsize?: number; maxvertices?: number }
+        Returns: unknown[]
+      }
+      st_swapordinates: {
+        Args: { geom: unknown; ords: unknown }
+        Returns: unknown
+      }
+      st_symdifference: {
+        Args: { geom1: unknown; geom2: unknown; gridsize?: number }
+        Returns: unknown
+      }
+      st_symmetricdifference: {
+        Args: { geom1: unknown; geom2: unknown }
+        Returns: unknown
+      }
+      st_tileenvelope: {
+        Args: {
+          bounds?: unknown
+          margin?: number
+          x: number
+          y: number
+          zoom: number
+        }
+        Returns: unknown
+      }
+      st_touches: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      st_transform:
+        | {
+            Args: { from_proj: string; geom: unknown; to_proj: string }
+            Returns: unknown
+          }
+        | {
+            Args: { from_proj: string; geom: unknown; to_srid: number }
+            Returns: unknown
+          }
+        | { Args: { geom: unknown; to_proj: string }; Returns: unknown }
+      st_triangulatepolygon: { Args: { g1: unknown }; Returns: unknown }
+      st_union:
+        | { Args: { geom1: unknown; geom2: unknown }; Returns: unknown }
+        | {
+            Args: { geom1: unknown; geom2: unknown; gridsize: number }
+            Returns: unknown
+          }
+      st_voronoilines: {
+        Args: { extend_to?: unknown; g1: unknown; tolerance?: number }
+        Returns: unknown
+      }
+      st_voronoipolygons: {
+        Args: { extend_to?: unknown; g1: unknown; tolerance?: number }
+        Returns: unknown
+      }
+      st_within: { Args: { geom1: unknown; geom2: unknown }; Returns: boolean }
+      st_wkbtosql: { Args: { wkb: string }; Returns: unknown }
+      st_wkttosql: { Args: { "": string }; Returns: unknown }
+      st_wrapx: {
+        Args: { geom: unknown; move: number; wrap: number }
+        Returns: unknown
+      }
+      submit_quote_link_response: {
+        Args: {
+          p_email: string
+          p_message: string
+          p_name: string
+          p_permission_text: string
+          p_permission_text_version: string
+          p_phone: string
+          p_preferred_contact_method: string
+          p_token_hash: string
+        }
+        Returns: {
+          already_submitted: boolean
+          audience_type: string
+          company_id: string
+          lead_match_id: string
+          opportunity_id: string
+          quote_request_id: string
+        }[]
+      }
+      sync_application_trade_opportunity_to_graph: {
+        Args: { p_legacy_opportunity_id: string }
+        Returns: string
+      }
+      sync_legacy_lead_match_to_graph: {
+        Args: { p_lead_match_id: string }
+        Returns: undefined
+      }
+      sync_market_signal_to_graph: {
+        Args: { p_market_signal_id: string }
+        Returns: string
+      }
+      sync_planning_application_to_graph: {
+        Args: { p_planning_application_id: string }
+        Returns: string
+      }
+      unlockrows: { Args: { "": string }; Returns: number }
+      updategeometrysrid: {
+        Args: {
+          catalogn_name: string
+          column_name: string
+          new_srid_in: number
+          schema_name: string
+          table_name: string
+        }
+        Returns: string
+      }
+      upsert_company_notification_preferences: {
+        Args: {
+          p_approval_alerts_enabled: boolean
+          p_channel_email: boolean
+          p_company_id: string
+          p_digest_frequency: string
+          p_digest_min_score: number
+          p_instant_alert_min_score: number
+          p_nearby_opportunity_alerts_enabled: boolean
+        }
+        Returns: {
+          approval_alerts_enabled: boolean
+          channel_email: boolean
+          company_id: string
+          created_at: string
+          digest_frequency: string
+          digest_min_score: number
+          id: string
+          instant_alert_min_score: number
+          nearby_opportunity_alerts_enabled: boolean
+          updated_at: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "notification_preferences"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      upsert_planning_application: {
+        Args: { p_application: Json }
+        Returns: {
+          id: string
+          is_changed: boolean
+          is_new: boolean
+        }[]
+      }
+    }
+    Enums: {
+      application_update_change_type:
+        | "status_change"
+        | "decision_recorded"
+        | "date_updated"
+        | "description_updated"
+        | "other"
+      classification_status:
+        | "pending"
+        | "completed"
+        | "failed"
+        | "stale"
+        | "processing"
+      company_member_role: "owner" | "admin" | "member"
+      company_member_status: "invited" | "active" | "removed"
+      coverage_billing_mode: "custom" | "county"
+      coverage_plan_item_status:
+        | "active"
+        | "pending_add"
+        | "pending_remove"
+        | "removed"
+        | "expired"
+      coverage_plan_status:
+        | "reserved"
+        | "active"
+        | "pending_change"
+        | "suspended"
+        | "cancelled"
+        | "expired"
+      lead_action_type:
+        | "viewed"
+        | "saved"
+        | "contacted"
+        | "quoted"
+        | "won"
+        | "lost"
+      opportunity_bucket: "hot" | "strong" | "possible" | "low"
+      planning_application_status:
+        | "submitted"
+        | "validated"
+        | "under_consideration"
+        | "decision_expected"
+        | "approved"
+        | "rejected"
+        | "withdrawn"
+        | "appeal_lodged"
+        | "unknown"
+      project_size_category: "small" | "medium" | "large" | "major"
+      subscription_status:
+        | "trialing"
+        | "active"
+        | "past_due"
+        | "canceled"
+        | "unpaid"
+        | "incomplete"
+        | "incomplete_expired"
+      territory_claim_status:
+        | "reserved"
+        | "active"
+        | "suspended"
+        | "expired"
+        | "cancelled"
+    }
+    CompositeTypes: {
+      geometry_dump: {
+        path: number[] | null
+        geom: unknown
+      }
+      valid_detail: {
+        valid: boolean | null
+        reason: string | null
+        location: unknown
+      }
+    }
+  }
+}
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never) = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never) = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never) = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  public: {
+    Enums: {
+      application_update_change_type: [
+        "status_change",
+        "decision_recorded",
+        "date_updated",
+        "description_updated",
+        "other",
+      ],
+      classification_status: [
+        "pending",
+        "completed",
+        "failed",
+        "stale",
+        "processing",
+      ],
+      company_member_role: ["owner", "admin", "member"],
+      company_member_status: ["invited", "active", "removed"],
+      coverage_billing_mode: ["custom", "county"],
+      coverage_plan_item_status: [
+        "active",
+        "pending_add",
+        "pending_remove",
+        "removed",
+        "expired",
+      ],
+      coverage_plan_status: [
+        "reserved",
+        "active",
+        "pending_change",
+        "suspended",
+        "cancelled",
+        "expired",
+      ],
+      lead_action_type: [
+        "viewed",
+        "saved",
+        "contacted",
+        "quoted",
+        "won",
+        "lost",
+      ],
+      opportunity_bucket: ["hot", "strong", "possible", "low"],
+      planning_application_status: [
+        "submitted",
+        "validated",
+        "under_consideration",
+        "decision_expected",
+        "approved",
+        "rejected",
+        "withdrawn",
+        "appeal_lodged",
+        "unknown",
+      ],
+      project_size_category: ["small", "medium", "large", "major"],
+      subscription_status: [
+        "trialing",
+        "active",
+        "past_due",
+        "canceled",
+        "unpaid",
+        "incomplete",
+        "incomplete_expired",
+      ],
+      territory_claim_status: [
+        "reserved",
+        "active",
+        "suspended",
+        "expired",
+        "cancelled",
+      ],
+    },
+  },
+} as const
