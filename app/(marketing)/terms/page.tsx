@@ -47,7 +47,7 @@ export default function TermsPage() {
           </LegalSection>
 
           <LegalSection title="5. Billing and cancellation">
-            <p>Monthly plan fees and individual unlock prices are shown before checkout and billed through the payment provider shown there. Your account is responsible for charges made by authorised users. A completed unlock is added to Purchased leads and remains available in the account while the relevant service records are retained. Cancellation and any refund rights follow the checkout terms and applicable consumer or business law.</p>
+            <p>New accounts may receive a 14-day platform trial with three included lead unlocks, as shown at signup. The monthly coverage fee is not charged until the trial ends; additional lead unlocks are charged at the price shown before checkout. Monthly plan fees and individual unlock prices are billed through the payment provider shown there. Your account is responsible for charges made by authorised users. A completed unlock is added to Purchased leads and remains available in the account while the relevant service records are retained. Cancellation and any refund rights follow the checkout terms and applicable consumer or business law.</p>
           </LegalSection>
 
           <LegalSection title="6. Intellectual property">

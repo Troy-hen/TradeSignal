@@ -194,6 +194,16 @@ export async function POST(request: Request) {
       company_id: company.id,
     };
 
+    // Trial eligibility belongs to the account, not to a postcode/trade
+    // selection. A reserved or abandoned checkout must not consume it.
+    const { data: trialAccount } = await adminDb
+      .from("companies")
+      .select("trial_started_at, trial_ends_at")
+      .eq("id", company.id)
+      .maybeSingle();
+    const trialEligible = process.env.EVERRO_TRIAL_ENABLED !== "false" && !trialAccount?.trial_started_at;
+    const checkoutMetadata = { ...metadata, trial_eligible: trialEligible ? "true" : "false" };
+
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       integration_identifier: "everro_checkout_" + randomLetters(8),
@@ -223,12 +233,14 @@ export async function POST(request: Request) {
         "&claim=" +
         encodeURIComponent(reservation.first_territory_claim_id),
       cancel_url: appUrl + "/territories/" + firstDistrict + "/" + trade.slug,
-      metadata,
-      subscription_data: { metadata },
+      metadata: checkoutMetadata,
+      // Collect a payment method now, but Stripe does not charge the monthly
+      // coverage fee until the 14-day trial ends.
+      payment_method_collection: "always",
+      subscription_data: { metadata: checkoutMetadata, ...(trialEligible ? { trial_period_days: 14 } : {}) },
     });
 
-    await adminDb
-      .from("territory_claims")
+    await adminDb.from("territory_claims")
       .update({ stripe_checkout_session_id: session.id })
       .in("id", claimIds)
       .eq("company_id", company.id)

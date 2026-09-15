@@ -11,7 +11,7 @@ export default function OnboardingCompanyPage() {
     <>
       <h1 className="mb-1 text-xl font-semibold text-charcoal">Tell us about your business</h1>
       <p className="mb-6 text-sm text-slate">
-        This takes a few seconds — you can add more detail later in Settings.
+        This takes a few seconds. Then choose coverage to start your 14-day Everro trial with three lead unlocks included.
       </p>
       <form action={formAction} className="space-y-4">
         <div>

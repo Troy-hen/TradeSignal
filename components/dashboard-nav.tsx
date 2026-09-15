@@ -6,9 +6,10 @@ import { usePathname, useSearchParams } from "next/navigation";
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: "overview" },
   { href: "/opportunities", label: "Marketplace", icon: "opportunities" },
-  { href: "/purchased", label: "Purchased", icon: "purchased" },
+  { href: "/purchased", label: "Lead workspace", icon: "purchased" },
+  { href: "/roi", label: "Insights", icon: "insights" },
   { href: "/coverage", label: "Plan & profile", icon: "claimed" },
-  { href: "/notifications", label: "Action centre", icon: "notifications" },
+  { href: "/notifications", label: "Follow-up", icon: "notifications" },
   { href: "/billing", label: "Billing", icon: "billing" },
   { href: "/settings", label: "Settings", icon: "settings" },
 ] as const;
@@ -50,6 +51,7 @@ function NavIcon({ name, active }: { name: string; active: boolean }) {
   if (name === "crm") return <svg viewBox="0 0 24 24" className={c} fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3.5" y="4" width="17" height="16" rx="2.5"/><path strokeLinecap="round" d="M8 8h8M8 12h5M8 16h3"/><circle cx="17" cy="15.5" r="2.25"/></svg>;
   if (name === "territories") return <svg viewBox="0 0 24 24" className={c} fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 21s7-5.25 7-11a7 7 0 1 0-14 0c0 5.75 7 11 7 11Z"/><circle cx="12" cy="10" r="2.25"/></svg>;
   if (name === "notifications") return <svg viewBox="0 0 24 24" className={c} fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M18 10a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 22h4"/></svg>;
+  if (name === "insights") return <svg viewBox="0 0 24 24" className={c} fill="none" stroke="currentColor" strokeWidth="1.8"><path strokeLinecap="round" d="M5 19V9M12 19V5M19 19v-7"/><path strokeLinecap="round" d="M3 19h18"/></svg>;
   if (name === "claimed") return <svg viewBox="0 0 24 24" className={c} fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M5 5.5A2.5 2.5 0 0 1 7.5 3H19v16H7.5A2.5 2.5 0 0 0 5 21.5v-16Z"/><path d="M5 5.5v16M9 7h6M9 11h6"/></svg>;
   if (name === "billing") return <svg viewBox="0 0 24 24" className={c} fill="none" stroke="currentColor" strokeWidth="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h3"/></svg>;
   return <svg viewBox="0 0 24 24" className={c} fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M12 3.5 13.4 5l2-.2.8 1.8 1.8.8-.2 2L19.5 11 18 12.5l.2 2-1.8.8-.8 1.8-2-.2L12 18.5l-1.5-1.6-2 .2-.8-1.8-1.8-.8.2-2L4.5 11 6 9.5l-.2-2 1.8-.8.8-1.8 2 .2L12 3.5Z"/><circle cx="12" cy="11" r="2.5"/></svg>;

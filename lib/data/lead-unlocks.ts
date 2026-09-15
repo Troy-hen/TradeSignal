@@ -19,6 +19,7 @@ export type LeadUnlockRow = {
   stripe_payment_intent_id: string | null;
   unlocked_at: string | null;
   vertical_key: string | null;
+  is_trial_credit: boolean;
 };
 
 type LooseResult = { data: unknown; error: { code?: string; message?: string } | null };

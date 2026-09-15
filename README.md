@@ -92,7 +92,7 @@ All scheduled via `pg_cron`/`pg_net` (see the relevant `supabase/migrations/*_cr
 
 ## Stripe configuration
 
-Set `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (in the Cloudflare Worker's env, not Supabase — see [Cloudflare deployment](#cloudflare-deployment)). Point Stripe's webhook at `<your-app-url>/api/webhooks/stripe`, subscribed to `checkout.session.completed`, `checkout.session.expired`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`, `invoice.payment_succeeded`.
+Set `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (in the Cloudflare Worker's env, not Supabase — see [Cloudflare deployment](#cloudflare-deployment)). Point Stripe's webhook at `<your-app-url>/api/webhooks/stripe`, subscribed to `checkout.session.completed`, `checkout.session.expired`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`, `invoice.payment_succeeded`.
 
 Territory pricing uses inline Checkout `price_data` (read live from `territories.monthly_price_pence`) rather than a pre-created Stripe Price catalog — an admin price change takes effect on the next checkout with no Stripe-side sync step, which matters given there's no practical way to pre-create Prices for ~3,000 postcode districts × N trades.
 

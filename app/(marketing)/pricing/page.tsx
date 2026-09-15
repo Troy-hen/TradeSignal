@@ -4,7 +4,7 @@ import { PricingGrid } from "@/components/marketing/pricing-grid";
 
 export const metadata: Metadata = {
   title: "Pricing",
-  description: "Simple geography-based Everro pricing with £20 individual opportunity unlocks.",
+  description: "Everro geography-based pricing with a 14-day trial, three included lead unlocks and £20 individual opportunity unlocks.",
 };
 
 export default function PricingPage() {
@@ -13,8 +13,8 @@ export default function PricingPage() {
       <section className="bg-charcoal px-6 py-20 text-white sm:py-28">
         <div className="mx-auto max-w-7xl lg:px-2">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-signal-orange">Pricing</p>
-          <h1 className="mt-5 max-w-4xl text-4xl font-bold tracking-tight sm:text-6xl">One platform fee. One £20 unlock price.</h1>
-          <p className="mt-6 max-w-2xl text-base leading-7 text-white/70 sm:text-lg">Choose the geography you need: Local, Regional or Nationwide. Every plan includes the same intelligence engine and all relevant opportunities; you pay £20 only when you choose to unlock an individual lead.</p>
+          <h1 className="mt-5 max-w-4xl text-4xl font-bold tracking-tight sm:text-6xl">Try the intelligence before you pay for coverage.</h1>
+          <p className="mt-6 max-w-2xl text-base leading-7 text-white/70 sm:text-lg">Choose Local, Regional or Nationwide coverage and start with a 14-day trial. Your first three lead unlocks are included, and the monthly coverage fee is not charged until the trial ends.</p>
         </div>
       </section>
 
@@ -26,7 +26,8 @@ export default function PricingPage() {
           <InfoCard title="What is included?" body="All relevant opportunities identified across the enabled intelligence sources. Your business profile tells the engine what to prioritise; you never need to buy a source or choose a vertical." />
           <InfoCard title="What does £20 unlock?" body="A successful individual unlock gives you the complete opportunity profile, evidence, decision-maker enrichment where available and the tools to save, export or push the lead to your CRM." />
           <InfoCard title="How are opportunities matched?" body="The same opportunity can be relevant to more than one customer. The engine compares the evidence with each supplier's profile, geography and stated customer fit before it appears in their marketplace." />
-          <InfoCard title="Are lead bundles required?" body="No. There are no forced packs, vertical add-ons or separate market subscriptions. The only charges are geographic platform access and the individual unlocks you choose." />
+          <InfoCard title="How does the trial work?" body="Choose coverage at signup and add a payment method in secure checkout. You get 14 days of platform access and three lead unlocks included; the monthly coverage fee begins only when the trial ends. Additional unlocks are £20 each." />
+          <InfoCard title="Are lead bundles required?" body="No. There are no forced packs, vertical add-ons or separate market subscriptions. After the trial, the only charges are geographic platform access and the individual unlocks you choose." />
           <InfoCard title="Can I preview before paying?" body="Yes. The public checker and protected opportunity previews let you judge the signal before subscribing or unlocking a lead. Values and signals are indicative, not promises of work." />
         </div>
       </section>

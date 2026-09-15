@@ -17,6 +17,7 @@ import { getOpportunityRelationshipIntelligence } from "@/lib/data/opportunity-i
 import { getStoredPropertyIntelligence } from "@/lib/data/property-intelligence";
 import { isPropertyIntelligenceConfigured } from "@/lib/property-intelligence";
 import { findLeadUnlock, isPaidUnlock } from "@/lib/data/lead-unlocks";
+import { listCrmConnections } from "@/lib/data/crm";
 import type { Database } from "@/lib/types/database";
 
 type Opportunity = Database["public"]["Tables"]["application_trade_opportunities"]["Row"];
@@ -42,7 +43,7 @@ export default async function OpportunityDetailPage({ params }: { params: Promis
   const isUnlocked = isPaidUnlock(unlock);
   const dataClient = isUnlocked ? createAdminClient() : supabase;
   const { data: opportunity } = await dataClient.from("application_trade_opportunities").select("*").eq("id", id).maybeSingle();
-  if (opportunity && isUnlocked) return <PaidBrief opportunity={opportunity} companyId={company.id} />;
+  if (opportunity && isUnlocked) return <PaidBrief opportunity={opportunity} companyId={company.id} unlockId={unlock!.id} />;
 
   const { data: teaserRows } = await supabase.rpc("browse_opportunity_teaser", { p_opportunity_id: id });
   const teaser = Array.isArray(teaserRows) ? teaserRows[0] : teaserRows;
@@ -88,13 +89,14 @@ function LockedBrief({ teaser }: { teaser: OpportunityTeaser }) {
   );
 }
 
-async function PaidBrief({ opportunity, companyId }: { opportunity: Opportunity; companyId: string }) {
+async function PaidBrief({ opportunity, companyId, unlockId }: { opportunity: Opportunity; companyId: string; unlockId: string }) {
   const supabase = createAdminClient();
-  const [{ data: application }, { data: classification }, { data: updates }, { data: matchState }] = await Promise.all([
+  const [{ data: application }, { data: classification }, { data: updates }, { data: matchState }, connections] = await Promise.all([
     supabase.from("planning_applications").select("*").eq("id", opportunity.planning_application_id).maybeSingle(),
     supabase.from("application_classifications").select("*").eq("id", opportunity.application_classification_id).maybeSingle(),
     supabase.from("planning_application_updates").select("id, change_type, previous_status, new_status, detected_at").eq("planning_application_id", opportunity.planning_application_id).order("detected_at", { ascending: false }),
     supabase.from("lead_match_current_state").select("lead_match_id, current_action").eq("application_trade_opportunity_id", opportunity.id).eq("company_id", companyId).maybeSingle(),
+    listCrmConnections(companyId),
   ]);
 
   if (!application || !classification) notFound();
@@ -121,7 +123,7 @@ async function PaidBrief({ opportunity, companyId }: { opportunity: Opportunity;
 
   return (
     <div className="min-w-0 space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><Link href="/purchased" className="inline-flex items-center gap-2 text-sm font-semibold text-slate hover:text-charcoal">← Purchased leads</Link><div className="flex flex-wrap gap-2"><CrmPushAction /><a href={`/api/opportunities/${opportunity.id}/pdf`} className="inline-flex self-start rounded-xl border border-light-grey bg-white px-4 py-2.5 text-sm font-semibold text-charcoal hover:border-signal-orange/40 sm:self-auto">Download brief ↓</a></div></div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><Link href="/purchased" className="inline-flex items-center gap-2 text-sm font-semibold text-slate hover:text-charcoal">← Lead workspace</Link><div className="flex flex-wrap gap-2"><CrmPushAction leadUnlockId={unlockId} connections={connections} /><a href={`/api/opportunities/${opportunity.id}/pdf`} className="inline-flex self-start rounded-xl border border-light-grey bg-white px-4 py-2.5 text-sm font-semibold text-charcoal hover:border-signal-orange/40 sm:self-auto">Download brief ↓</a></div></div>
 
       <section className="overflow-hidden rounded-[2rem] bg-charcoal text-white shadow-xl shadow-charcoal/10">
         <div className="grid gap-8 p-6 sm:p-9 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-start">

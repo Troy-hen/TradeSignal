@@ -3,6 +3,7 @@ import { getOwnedMarketSignals } from "@/lib/data/trade-intelligence";
 import { listPaidLeadUnlocks } from "@/lib/data/lead-unlocks";
 import { getCustomerProfile } from "@/lib/data/customer-profile";
 import { rankByCustomerProfile } from "@/lib/profile/relevance";
+import { listAlertRules, type AlertRule } from "@/lib/data/crm";
 
 export type InAppNotificationItem = {
   id: string;
@@ -23,12 +24,14 @@ type RankedItem = InAppNotificationItem & { score: number };
  * unlock exclusions so it cannot advertise a lead that is absent or owned.
  */
 export async function getInAppNotifications(companyId: string): Promise<InAppNotificationItem[]> {
-  const [planning, market, paidUnlocks, profile] = await Promise.all([
+  const [planning, market, paidUnlocks, profile, alertRules] = await Promise.all([
     getCompanyOpportunities(companyId, { bucket: "hot", action: "new", limit: 100 }),
     getOwnedMarketSignals(200),
     listPaidLeadUnlocks(companyId),
     getCustomerProfile(companyId),
+    listAlertRules(companyId),
   ]);
+  const enabledAlertRules = alertRules.filter((rule) => rule.enabled);
 
   const paidOpportunityIds = new Set(
     paidUnlocks
@@ -45,6 +48,7 @@ export async function getInAppNotifications(companyId: string): Promise<InAppNot
     .filter((item) =>
       item.bucket === "hot" &&
       (item.currentAction === null || item.currentAction === "new") &&
+      matchesAlertRules(enabledAlertRules, Number(item.score ?? 0), [item.signalFamily, item.tradeName, ...(item.matchedNeeds ?? [])], [item.locationLabel, item.district], [item.likelyStartWindow, item.opportunityTiming]) &&
       !(item.underlyingOpportunityIds ?? [item.opportunityId]).some((id) => paidOpportunityIds.has(id)),
     )
     .map((item) => {
@@ -67,6 +71,7 @@ export async function getInAppNotifications(companyId: string): Promise<InAppNot
     market.filter((item) =>
       item.opportunity_bucket === "hot" &&
       (item.current_action === null || item.current_action === "new") &&
+      matchesAlertRules(enabledAlertRules, Number(item.fit_score ?? 0), [item.signal_type, item.trade_name], [item.location_label, item.postcode_district], [item.procurement_stage]) &&
       !paidMarketSignalIds.has(item.market_signal_trade_match_id),
     ),
     profile,
@@ -95,4 +100,20 @@ export async function getInAppNotifications(companyId: string): Promise<InAppNot
       void score;
       return item;
     });
+}
+
+function matchesAlertRules(rules: AlertRule[], score: number, textValues: Array<string | null | undefined>, locationValues: Array<string | null | undefined>, windowValues: Array<string | null | undefined>) {
+  if (rules.length === 0) return true;
+  return rules.some((rule) => matchesAlertRule(rule, score, textValues, locationValues, windowValues));
+}
+
+function matchesAlertRule(rule: AlertRule, score: number, textValues: Array<string | null | undefined>, locationValues: Array<string | null | undefined>, windowValues: Array<string | null | undefined>) {
+  if (score < Number(rule.min_score)) return false;
+  return matchesAny(rule.signal_families, textValues) && matchesAny(rule.postcode_districts, locationValues) && matchesAny(rule.buying_windows, windowValues);
+}
+
+function matchesAny(filters: string[], values: Array<string | null | undefined>) {
+  if (filters.length === 0) return true;
+  const haystack = values.filter(Boolean).join(" ").toLowerCase();
+  return filters.some((filter) => filter.trim() && haystack.includes(filter.trim().toLowerCase()));
 }

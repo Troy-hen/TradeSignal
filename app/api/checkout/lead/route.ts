@@ -98,6 +98,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ demo: true, unlocked: true, url: destinationFor(target, request) });
   }
 
+  const trialRpc = admin as unknown as RpcBridge;
+  const { data: trialClaimed, error: trialError } = await trialRpc.rpc("claim_trial_lead_unlock", {
+    p_company_id: company.id,
+    p_lead_unlock_id: row.id,
+  });
+  if (!trialError && trialClaimed === true) {
+    return NextResponse.json({ trial: true, unlocked: true, url: destinationFor(target, request) });
+  }
+
   try {
     const [{ data: companyRow }, stripe] = await Promise.all([
       supabase

@@ -21,6 +21,7 @@ export function PricingGrid({ compact = false }: { items?: PricingItem[]; compac
             <p className="mt-5 text-base leading-7 text-slate">
               Every plan includes the same intelligence engine and every relevant source. The monthly platform fee is based on geography, then each opportunity you choose to unlock is {LEAD_UNLOCK_PRICE_GBP}.
             </p>
+            <p className="mt-4 inline-flex rounded-full border border-signal-orange/25 bg-signal-orange/[0.06] px-3 py-1.5 text-sm font-semibold text-charcoal">14-day trial · 3 lead unlocks included · no coverage charge until the trial ends</p>
           </div>
           {compact && (
             <Link href="/pricing" className="shrink-0 text-sm font-semibold text-signal-orange hover:text-[#e95f00]">
@@ -66,7 +67,7 @@ export function PricingGrid({ compact = false }: { items?: PricingItem[]; compac
 
         <div className="mt-7 grid gap-4 rounded-2xl border border-signal-orange/20 bg-signal-orange/[0.055] p-5 sm:grid-cols-2 sm:p-6">
           <div><p className="text-sm font-semibold text-charcoal">One platform, one intelligence engine</p><p className="mt-1 text-sm leading-6 text-slate">Every relevant source is included in your plan, with no vertical add-ons or forced lead bundles.</p></div>
-          <div><p className="text-sm font-semibold text-charcoal">The only two charges</p><p className="mt-1 text-sm leading-6 text-slate">Your monthly geographic coverage fee and {LEAD_UNLOCK_PRICE_GBP} for each individual opportunity you decide to unlock.</p></div>
+          <div><p className="text-sm font-semibold text-charcoal">The only two charges after trial</p><p className="mt-1 text-sm leading-6 text-slate">Your monthly geographic coverage fee starts after the 14-day trial, then each additional opportunity unlock is {LEAD_UNLOCK_PRICE_GBP}. Your first three unlocks are included.</p></div>
         </div>
       </div>
     </section>

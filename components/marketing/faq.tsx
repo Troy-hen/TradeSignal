@@ -14,6 +14,10 @@ export const FAQ_ITEMS = [
     answer: "Only geographic reach. Local is one county, selected towns or cities, or up to a 25-mile radius. Regional is up to three neighbouring counties, a larger place group, or up to 75 miles. Nationwide covers the UK.",
   },
   {
+    question: "How does the 14-day trial work?",
+    answer: "Choose your coverage at signup and add a payment method in secure checkout. You get 14 days with no monthly coverage charge and three lead unlocks included, regardless of the coverage shape you choose. The monthly coverage fee starts when the trial ends; additional lead unlocks are £20 each.",
+  },
+  {
     question: "What does it cost to unlock a lead?",
     answer: "Each individual opportunity you choose to unlock is £20. There are no forced lead bundles, vertical add-ons or separate source subscriptions.",
   },

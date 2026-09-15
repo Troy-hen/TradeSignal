@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { LeadUnlockButton } from "@/components/marketplace/lead-unlock-button";
-import { CrmPushAction } from "@/components/crm-push-action";
 import { LEAD_UNLOCK_PRICE_GBP } from "@/lib/coverage/pricing";
 
 export type MarketplaceCardData = {
@@ -93,7 +92,7 @@ export function MarketplaceCard({ item }: { item: MarketplaceCardData }) {
             <div><p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate">Indicative value</p><p className="mt-1 text-base font-bold text-charcoal">{formatGbpRange(item.valueLow, item.valueHigh)}</p></div>
             <div className="text-right"><p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate">Buying window</p><p className="mt-1 max-w-[120px] text-xs font-semibold text-charcoal">{item.buyingWindow ? humanize(item.buyingWindow) : "Current signal"}</p></div>
           </div>
-          {item.previewOnly ? <LeadUnlockButton previewOnly /> : item.unlocked ? <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2"><Link href={href} className="inline-flex items-center justify-center rounded-xl bg-charcoal px-4 py-3 text-sm font-semibold text-white transition hover:bg-charcoal/90">Open full brief <span className="ml-2">→</span></Link><CrmPushAction compact /></div> : <LeadUnlockButton opportunityId={item.opportunityId} marketSignalId={item.marketSignalId} />}
+          {item.previewOnly ? <LeadUnlockButton previewOnly /> : item.unlocked ? <Link href={href} className="inline-flex items-center justify-center rounded-xl bg-charcoal px-4 py-3 text-sm font-semibold text-white transition hover:bg-charcoal/90">Open full brief <span className="ml-2">→</span></Link> : <LeadUnlockButton opportunityId={item.opportunityId} marketSignalId={item.marketSignalId} />}
           {!item.previewOnly && !item.unlocked && <p className="mt-2 text-center text-[10px] leading-4 text-slate">One-time unlock · {LEAD_UNLOCK_PRICE_GBP} · no lead bundles</p>}
         </div>
       </div>
