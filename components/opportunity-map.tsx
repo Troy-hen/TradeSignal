@@ -404,18 +404,10 @@ function toMapItems(points: OpportunityMapPoint[], signals: MarketSignalMapPoint
 
 function clusterItems(items: MapItem[], zoom: number): OpportunityCluster[] {
   if (zoom >= 2.75) {
-    // Individual markers must stay on the opportunity's real coordinates.
-    // The old renderer added a large geographic ring here to separate points;
-    // that made the map visually misleading and disconnected markers from
-    // their underlying signals. Overlap is handled by the clustering levels
-    // before this point, never by moving the data.
-    return items.map((item) => ({
-      id: "item:" + item.id,
-      latitude: item.latitude,
-      longitude: item.longitude,
-      items: [item],
-      categories: [{ label: item.category, count: 1 }],
-    }));
+    // At the final level, cluster only markers that would still collide on
+    // screen. This keeps real coordinates intact while avoiding a stack of
+    // unreadable buttons for regional or same-district signals.
+    return clusterNearbyItems(items, zoom);
   }
 
   const cell = clusterCell(zoom);
@@ -434,6 +426,52 @@ function clusterItems(items: MapItem[], zoom: number): OpportunityCluster[] {
     items: [...groupedItems].sort((a, b) => Number(b.score ?? 0) - Number(a.score ?? 0)),
     categories: categoryCounts(groupedItems),
   })).sort((a, b) => b.items.length - a.items.length);
+}
+
+function clusterNearbyItems(items: MapItem[], zoom: number): OpportunityCluster[] {
+  const tileZoom = tileZoomForZoom(zoom);
+  const scale = tileScaleForZoom(zoom, tileZoom);
+  const radius = 42 / scale;
+  const groups: Array<{ items: MapItem[]; x: number; y: number }> = [];
+  const buckets = new Map<string, number[]>();
+
+  for (const item of items) {
+    const x = worldPixelX(item.longitude, tileZoom);
+    const y = worldPixelY(item.latitude, tileZoom);
+    const bucketX = Math.floor(x / radius);
+    const bucketY = Math.floor(y / radius);
+    const candidates = new Set<number>();
+    for (let xOffset = -1; xOffset <= 1; xOffset += 1) {
+      for (let yOffset = -1; yOffset <= 1; yOffset += 1) {
+        for (const groupIndex of buckets.get((bucketX + xOffset) + ":" + (bucketY + yOffset)) ?? []) candidates.add(groupIndex);
+      }
+    }
+    const nearbyIndex = [...candidates].find((groupIndex) => Math.hypot(groups[groupIndex].x - x, groups[groupIndex].y - y) <= radius);
+    if (nearbyIndex !== undefined) {
+      const nearby = groups[nearbyIndex];
+      nearby.items.push(item);
+      nearby.x = nearby.items.reduce((sum, current) => sum + worldPixelX(current.longitude, tileZoom), 0) / nearby.items.length;
+      nearby.y = nearby.items.reduce((sum, current) => sum + worldPixelY(current.latitude, tileZoom), 0) / nearby.items.length;
+      const groupBucket = bucketX + ":" + bucketY;
+      buckets.set(groupBucket, [...(buckets.get(groupBucket) ?? []), nearbyIndex]);
+    } else {
+      const groupIndex = groups.length;
+      groups.push({ items: [item], x, y });
+      const groupBucket = bucketX + ":" + bucketY;
+      buckets.set(groupBucket, [...(buckets.get(groupBucket) ?? []), groupIndex]);
+    }
+  }
+
+  return groups.map((group, index) => {
+    const sortedItems = [...group.items].sort((a, b) => Number(b.score ?? 0) - Number(a.score ?? 0));
+    return {
+      id: "item-group:" + index + ":" + sortedItems.map((item) => item.id).join(","),
+      latitude: sortedItems.reduce((sum, item) => sum + item.latitude, 0) / sortedItems.length,
+      longitude: sortedItems.reduce((sum, item) => sum + item.longitude, 0) / sortedItems.length,
+      items: sortedItems,
+      categories: categoryCounts(sortedItems),
+    };
+  }).sort((a, b) => b.items.length - a.items.length);
 }
 
 function clusterCell(zoom: number) {
